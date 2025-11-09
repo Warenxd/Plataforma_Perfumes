@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} Plataforma Perfumes {% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'src/output.css' %}">
+</head>
+<body class="font-Poppins bg-gray-300 text-gray-900">
+
+    <header class="bg-blue-600 text-white p-4">
+        <h1 class="text-5xl font-bold">Sistema de Perfumes</h1>
+    </header>
+    <main class="p-6">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</body>
+</html>
