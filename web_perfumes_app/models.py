@@ -26,8 +26,24 @@ class Estacion(models.Model):
 
 # TABLA DE PERFUMES
 class Perfume(models.Model):
-    nombre = models.CharField(max_length=50, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
+
+    GENERO_CHOICES = [
+        ('H', 'Hombre'),
+        ('U', 'Unisex'),
+    ]
+    TIENDA_CHOICES = [
+        ('SILK', 'Silk Perfumes'),
+        ('YAURAS', 'Yauras Perfumes'),
+        ('JOY', 'Joy Perfumes'),
+    ]
+
+    nombre = models.CharField(max_length=150, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
     precio = models.IntegerField(null=False, blank=False)
+    imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
+    marca = models.CharField(max_length=100, blank=True, null= True) #Autor del perfume
+    genero = models.CharField(max_length=1, choices=GENERO_CHOICES, default='H')
+    tienda = models.CharField(max_length=20, choices=TIENDA_CHOICES, default='SILK')
+    url_producto = models.URLField(blank=True, null=True)
     # --------------------------------------------------------------------------
     # Mis relaciones (Los ManyToMany siempre sus campos se escriben en plural, no en singular por buenas prácticas)
     acordes = models.ManyToManyField(Acorde, related_name='perfumes', blank=True)

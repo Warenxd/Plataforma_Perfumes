@@ -1,8 +1,81 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Menú Principal{% endblock %}
 
 {% block content %}
-<h2 class="text-2xl ">Bienvenido al sistema</h2>
-<p>Selecciona una opción del menú.</p>
+<h2 class="text-2xl">Bienvenido al sistema</h2>
+<p class="mb-4">Selecciona una opción del menú.</p>
+
+{% if error %}
+<div class="mb-4 p-3 rounded bg-red-100 text-red-700">{{ error }}</div>
+{% endif %}
+
+{% if perfumes %}
+
+<!-- COLUMNA Y FILA DE PERFUMES -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pl-24">
+  {% for p in perfumes %}
+
+  <!-- CONSTRUCCIÓN DE CARD -->
+  <div class="card">
+    <a href="{{ p.url_producto }}"
+      class="inline-block self-center transition-transform duration-200 hover:scale-110 mt-3" target="_blank">
+      {% if p.tienda == "SILK" %}
+      <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center"
+        style="height: 2rem;">
+      {% elif p.tienda == "YAURAS" %}
+      <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-8">
+      {% endif %}
+    </a>
+    {% if p.imagen %}
+    <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+    {% endif %}
+    <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">{{ p.marca }}</div>
+    <div class="px-4 py-1 mb-3 leading-4 text-base text-left font-bold text-gray-800 wrap-break-word">{{ p.nombre }}
+    </div>
+
+    <!-- BLOQUE DE ICONOS DE ESTACIONES -->
+    <div class="flex justify-center items-center mt-1 gap-4 text-blue-600 self-center">
+      <div class="flex flex-col items-center">
+        <i class="estacion fa-solid fa-snowflake text-2xl text-cyan-500"></i>
+        <span class="text-xs mt-1 text-gray-700 font-medium">Invierno</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <i class="estacion fa-solid fa-leaf text-2xl text-green-500"></i>
+        <span class="text-xs mt-1 text-gray-700 font-medium">Otoño</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <i class="estacion fa-solid fa-sun text-2xl text-yellow-500"></i>
+        <span class="text-xs mt-1 text-gray-700 font-medium">Verano</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <i class="estacion fa-solid fa-cannabis text-2xl text-yellow-900"></i>
+        <span class="text-xs mt-1 text-gray-700 font-medium">Primavera</span>
+      </div>
+    </div>
+    <div class="px-4 py-3 text-base mb-3 mt-auto self-center font-Alexandria  text-amber-600">${{ p.precio }}</div>
+  </div>
+  <!-- FIN DE CONSTRUCCIÓN DE CARD -->
+  {% endfor %}
+  <!-- CONTROLES DE PAGINACIÓN -->
+  <div class="mt-6 flex justify-center items-center gap-4">
+    {% if perfumes.has_previous %}
+    <a href="?page=1" class="px-3 py-1 border rounded">Primera</a>
+    <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 border rounded">Anterior</a>
+    {% endif %}
+
+    <span class="px-3 py-1">
+      Página {{ perfumes.number }} de {{ perfumes.paginator.num_pages }}
+    </span>
+
+    {% if perfumes.has_next %}
+    <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 border rounded">Siguiente</a>
+    <a href="?page={{ perfumes.paginator.num_pages }}" class="px-3 py-1 border rounded">Última</a>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p class="text-gray-600 mt-4">No hay perfumes en la base de datos.</p>
+{% endif %}
 {% endblock %}

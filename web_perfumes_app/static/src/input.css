@@ -10,3 +10,50 @@
     --font-Lexend: "Lexend", sans-serif;
     --font-Alexandria: "Alexandria", sans-serif;
 }
+
+@layer utilities {
+
+    /* PLANTILLA PARA CARDS DE PERFUMES */
+    .card {
+        box-sizing: border-box;
+        width: 260px;
+        height: 460px;
+        background: rgb(255, 255, 255);
+        border: 1px solid rgb(145, 145, 145);
+        box-shadow: 12px 17px 51px rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(6px);
+        border-radius: 17px;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.5s;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        user-select: none;
+        color: black;
+        overflow: hidden;
+        }
+    .card > img {
+        width: 100%;
+        height: 240px;
+        border-radius: 17px;
+        object-fit: contain;
+    }
+    .card:hover {
+        transform: scale(1.05);
+        }
+    .card:active {
+        transform: scale(0.95) rotateZ(1.7deg);
+        }
+
+    /* PLANTILLA PARA ICONO DE ESTACIONES DEL AÑO */
+    .estacion {
+        transition: transform 0.3 ease, filter 0.3 ease;
+    }
+    .estacion:hover{
+        transform: scale(1.25) rotate(5deg);
+        filter: brightness(1.2);
+        cursor: pointer;
+    }
+}
