@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load format_price %}
 
 {% block title %}Menú Principal{% endblock %}
 
@@ -34,7 +35,7 @@
     {% if p.imagen %}
     <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
     {% endif %}
-    <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">{{ p.marca }}</div>
+    <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">{{ p.marca.marca }}</div>
     <div class="px-4 py-1 mb-3 leading-4 text-base text-left font-bold text-gray-800 wrap-break-word">{{ p.nombre }}
     </div>
 
@@ -57,7 +58,7 @@
         <span class="text-xs mt-1 text-gray-700 font-medium">Otoño</span>
       </div>
     </div>
-    <div class="px-4 py-3 text-base mb-3 mt-auto self-center font-Alexandria  text-amber-600">${{ p.precio }}</div>
+    <div class="px-4 py-3 text-base mb-3 mt-auto self-center font-Alexandria  text-amber-600">${{ p.precio|clp }}</div>
   </div>
   <!-- FIN DE CONSTRUCCIÓN DE CARD -->
   {% endfor %}

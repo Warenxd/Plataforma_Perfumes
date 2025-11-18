@@ -23,6 +23,13 @@ class Estacion(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+# TABLA DE MARCA DE PERFUMES
+class Marca(models.Model):
+    marca = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.nombre
 
 # TABLA DE PERFUMES
 class Perfume(models.Model):
@@ -40,7 +47,7 @@ class Perfume(models.Model):
     nombre = models.CharField(max_length=150, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
     precio = models.IntegerField(null=False, blank=False)
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
-    marca = models.CharField(max_length=100, blank=True, null= True) #Autor del perfume
+    marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
     genero = models.CharField(max_length=1, choices=GENERO_CHOICES, default='H')
     tienda = models.CharField(max_length=20, choices=TIENDA_CHOICES, default='SILK')
     url_producto = models.URLField(blank=True, null=True)

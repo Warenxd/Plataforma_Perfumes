@@ -53,11 +53,13 @@ def scrapping_silk_perfumes():
                         perfume_agotado.delete()
                     continue
 
-            # MARCA
-            marca = None
+            # MARCA (como objeto relacionado)
+            marca_obj = None
             if card:
                 marca_el = card.find("p", class_="card__vendor")
-                marca = marca_el.get_text(strip=True) if marca_el else "Desconocida"
+                marca_nombre = marca_el.get_text(strip=True) if marca_el else "Desconocida"
+                from .models import Marca
+                marca_obj, _ = Marca.objects.get_or_create(marca=marca_nombre)
 
             # PRECIO
             price_el = card.find("strong", class_="price__current") if card else None
@@ -104,7 +106,7 @@ def scrapping_silk_perfumes():
             perfume, creado = Perfume.objects.get_or_create(
                 nombre=nombre,
                 defaults={
-                    "marca": marca or "",
+                    "marca": marca_obj,
                     "precio": precio,
                     "tienda": "SILK",
                     "url_producto": url_prod
@@ -114,9 +116,9 @@ def scrapping_silk_perfumes():
             if creado:
                 creados += 1
             else:
-                if perfume.precio != precio or perfume.marca != (marca or ""):
+                if perfume.precio != precio or perfume.marca != marca_obj:
                     perfume.precio = precio
-                    perfume.marca = marca or ""
+                    perfume.marca = marca_obj
                     perfume.save()
                     actualizados += 1
 
