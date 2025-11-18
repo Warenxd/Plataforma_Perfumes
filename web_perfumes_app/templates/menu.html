@@ -11,6 +11,8 @@
 <div class="mb-4 p-3 rounded bg-red-100 text-red-700">{{ error }}</div>
 {% endif %}
 
+<p class="mb-4 text-gray-700">Total de perfumes: {{ total_perfumes }}</p>
+
 {% if perfumes %}
 
 <!-- COLUMNA Y FILA DE PERFUMES -->
@@ -28,6 +30,7 @@
       <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-8">
       {% endif %}
     </a>
+    <!-- IMAGEN DE CARD -->
     {% if p.imagen %}
     <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
     {% endif %}
@@ -43,7 +46,7 @@
       </div>
       <div class="flex flex-col items-center">
         <i class="estacion fa-solid fa-leaf text-2xl text-green-500"></i>
-        <span class="text-xs mt-1 text-gray-700 font-medium">Otoño</span>
+        <span class="text-xs mt-1 text-gray-700 font-medium">Primavera</span>
       </div>
       <div class="flex flex-col items-center">
         <i class="estacion fa-solid fa-sun text-2xl text-yellow-500"></i>
@@ -51,18 +54,19 @@
       </div>
       <div class="flex flex-col items-center">
         <i class="estacion fa-solid fa-cannabis text-2xl text-yellow-900"></i>
-        <span class="text-xs mt-1 text-gray-700 font-medium">Primavera</span>
+        <span class="text-xs mt-1 text-gray-700 font-medium">Otoño</span>
       </div>
     </div>
     <div class="px-4 py-3 text-base mb-3 mt-auto self-center font-Alexandria  text-amber-600">${{ p.precio }}</div>
   </div>
   <!-- FIN DE CONSTRUCCIÓN DE CARD -->
   {% endfor %}
-  <!-- CONTROLES DE PAGINACIÓN -->
+</div>
+<!-- CONTROLES DE PAGINACIÓN -->
   <div class="mt-6 flex justify-center items-center gap-4">
     {% if perfumes.has_previous %}
     <a href="?page=1" class="px-3 py-1 border rounded">Primera</a>
-    <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 border rounded">Anterior</a>
+    <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 border rounded">< Anterior</a>
     {% endif %}
 
     <span class="px-3 py-1">
@@ -70,11 +74,10 @@
     </span>
 
     {% if perfumes.has_next %}
-    <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 border rounded">Siguiente</a>
+    <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 border rounded">Siguiente ></a>
     <a href="?page={{ perfumes.paginator.num_pages }}" class="px-3 py-1 border rounded">Última</a>
     {% endif %}
   </div>
-</div>
 {% else %}
 <p class="text-gray-600 mt-4">No hay perfumes en la base de datos.</p>
 {% endif %}

@@ -42,6 +42,17 @@ def scrapping_silk_perfumes():
             nombre = n.get_text(strip=True)
             card = n.find_parent(class_="card")
 
+            # ELIMINAR PERFUMES AGOTADOS DE LA BD (Y SU IMAGEN)
+            if card:
+                agotado_span = card.find("span", class_="product-label--sold-out")
+                if agotado_span and "agotado" in agotado_span.get_text(strip=True).lower():
+                    perfumes_agotados = Perfume.objects.filter(nombre=nombre, tienda="SILK")
+                    for perfume_agotado in perfumes_agotados:
+                        if perfume_agotado.imagen and default_storage.exists(perfume_agotado.imagen.name):
+                            default_storage.delete(perfume_agotado.imagen.name)
+                        perfume_agotado.delete()
+                    continue
+
             # MARCA
             marca = None
             if card:
@@ -142,7 +153,8 @@ def home(request):
     paginator = Paginator(perfumes_list, 24)
     page_number = request.GET.get("page")
     perfumes = paginator.get_page(page_number)
-    return render(request, "menu.html", {"perfumes": perfumes})
+    total_perfumes = perfumes_list.count()
+    return render(request, "menu.html", {"perfumes": perfumes, "total_perfumes": total_perfumes})
 
 def estadisticas(request):
     return render(request, 'estadistica.html')
