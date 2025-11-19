@@ -1,5 +1,6 @@
 import requests
 import re
+import urllib.parse
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.core.files.base import ContentFile
@@ -25,7 +26,7 @@ def scrapping_silk_perfumes():
 
     while True:
         url = f"https://silkperfumes.cl/collections/perfumes-de-hombre?page={page}"
-        print(f"Scrapeando pǭgina {page}: {url}")
+        print(f"Scrapeando página {page}: {url}")
 
         response = requests.get(url)
         if response.status_code != 200:
@@ -34,7 +35,7 @@ def scrapping_silk_perfumes():
         soup = BeautifulSoup(response.text, 'html.parser')
         name_perfume = soup.find_all('p', class_='card__title')
 
-        # Si ya no hay perfumes ��' no hay mǭs pǭginas
+        # Si ya no hay perfumes no hay más páginas
         if not name_perfume:
             break
 
@@ -65,6 +66,13 @@ def scrapping_silk_perfumes():
             price_el = card.find("strong", class_="price__current") if card else None
             precio = _parsear_clp(price_el.get_text(strip=True)) if price_el else 0
 
+            # PRECIO ANTERIOR (Si es que hay oferta o algo)
+            price_bef = card.find("s", class_="price__was") if card else None
+            if price_bef:
+                precio_ant = _parsear_clp(price_bef.get_text(strip=True))
+            else:
+                precio_ant = precio
+
             # URL PRODUCTO
             url_prod = None
             if card:
@@ -92,10 +100,10 @@ def scrapping_silk_perfumes():
                         if u.startswith("data:"):
                             continue
 
-                        # si empieza con // ��' agregar https:
+                        # si empieza con //' agregar https:
                         if u.startswith("//"):
                             u = "https:" + u
-                        # si empieza con / ��' hacerla absoluta
+                        # si empieza con / ' hacerla absoluta
                         elif u.startswith("/"):
                             u = "https://silkperfumes.cl" + u
 
@@ -108,6 +116,7 @@ def scrapping_silk_perfumes():
                 defaults={
                     "marca": marca_obj,
                     "precio": precio,
+                    "precio_ant": precio_ant,
                     "tienda": "SILK",
                     "url_producto": url_prod
                 }
@@ -116,9 +125,14 @@ def scrapping_silk_perfumes():
             if creado:
                 creados += 1
             else:
-                if perfume.precio != precio or perfume.marca != marca_obj:
+                if (
+                    perfume.precio != precio
+                    or perfume.marca != marca_obj
+                    or perfume.precio_ant != precio_ant
+                ):
                     perfume.precio = precio
                     perfume.marca = marca_obj
+                    perfume.precio_ant = precio_ant
                     perfume.save()
                     actualizados += 1
 
@@ -135,18 +149,51 @@ def scrapping_silk_perfumes():
 
             perfume.save()
 
-        page += 1  # ir a la siguiente pǭgina
+        page += 1  # ir a la siguiente página
 
     return {"creados": creados, "actualizados": actualizados, "errores": errores}
+
+def buscar_google_lucky(nombre_perfume):
+    query = nombre_perfume.replace(" ", "+")
+    
+    url = (
+        "https://www.google.com/search"
+        "?hl=en"
+        "&num=1"
+        "&btnI=I%27m+Feeling+Lucky"
+        f"&q={query}+fragrantica"
+    )
+
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    r = requests.get(url, headers=headers, allow_redirects=False)
+
+    # Google hace 302 y coloca la URL real en Location
+    location = r.headers.get("Location")
+
+    if not location:
+        return None
+
+    # Si Google devuelve algo como:
+    # https://www.google.com/url?q=https://www.fragrantica.com/...
+    # Entonces extraemos el valor real del parámetro "q"
+    if "google.com/url?q=" in location:
+        parsed = urllib.parse.urlparse(location)
+        params = urllib.parse.parse_qs(parsed.query)
+
+        if "q" in params:
+            return params["q"][0]  # la URL pura de Fragrantica
+
+    return location  # si ya es una URL directa
     
 def refrescar_perfumes(request):
     try:
         r = scrapping_silk_perfumes()
-        messages.sucess(
+        messages.success(
             f"Scraping OK. Nuevos: {r['creados']}, Actualizados: {r['actualizados']}, Errores: {r['errores']}."
         )
     except Exception as e:
-        messages.error(request, f"Ocurri�� un problema al scrapear los datos {e}")
+        messages.error(request, f"Ocurrió un problema al scrapear los datos {e}")
     return redirect(reverse("home"))
 
 # RENDER DE VISTAS

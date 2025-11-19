@@ -22,6 +22,16 @@
 
   <!-- CONSTRUCCIÓN DE CARD -->
   <div class="card">
+    <!-- DESCUENTO CARD -->
+    {% if p.descuento %}
+    <div class="absolute top-4 left-3">
+      <div class="flex">
+        <span class="bg-emerald-200 text-emerald-700 text-xs font-Lexend font-bold px-2 py-1 rounded">
+          -{{ p.descuento }}% Desc
+        </span>
+      </div>
+    </div>
+    {% endif %}
     <a href="{{ p.url_producto }}"
       class="inline-block self-center transition-transform duration-200 hover:scale-110 mt-3" target="_blank">
       {% if p.tienda == "SILK" %}
@@ -35,8 +45,11 @@
     {% if p.imagen %}
     <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
     {% endif %}
-    <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">{{ p.marca.marca }}</div>
-    <div class="px-4 py-1 mb-3 leading-4 text-base text-left font-bold text-gray-800 wrap-break-word">{{ p.nombre }}
+    <!-- MARCA DE CARD -->
+    <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">{{ p.marca.marca }}
+    </div>
+    <!-- NOMBRE DE CARD -->
+    <div class="px-4 py-1 mb-3 leading-4 text-base text-left font-Poppins uppercase font-bold text-gray-800 wrap-break-word">{{ p.nombre }}
     </div>
 
     <!-- BLOQUE DE ICONOS DE ESTACIONES -->
@@ -58,27 +71,40 @@
         <span class="text-xs mt-1 text-gray-700 font-medium">Otoño</span>
       </div>
     </div>
-    <div class="px-4 py-3 text-base mb-3 mt-auto self-center font-Alexandria  text-amber-600">${{ p.precio|clp }}</div>
+    <!-- PRECIO DEL PERFUME -->
+    <div class="px-4 mb-3 mt-2">
+      <div class="flex justify-center items-center gap-2">
+        <!-- Precio actual centrado -->
+        <span class="text-lg font-Alexandria text-amber-600">
+          ${{ p.precio|clp }}
+        </span>
+        <!-- Precio anterior más hacia la derecha -->
+        <span class="text-sm font-Alexandria font-light line-through text-gray-500 translate-x-2">
+          ${{ p.precio_ant|clp }}
+        </span>
+      </div>
+    </div>
   </div>
   <!-- FIN DE CONSTRUCCIÓN DE CARD -->
   {% endfor %}
 </div>
 <!-- CONTROLES DE PAGINACIÓN -->
-  <div class="mt-6 flex justify-center items-center gap-4">
-    {% if perfumes.has_previous %}
-    <a href="?page=1" class="px-3 py-1 border rounded">Primera</a>
-    <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 border rounded">< Anterior</a>
-    {% endif %}
+<div class="mt-6 flex justify-center items-center gap-4">
+  {% if perfumes.has_previous %}
+  <a href="?page=1" class="px-3 py-1 border rounded">Primera</a>
+  <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 border rounded">
+    < Anterior</a>
+      {% endif %}
 
-    <span class="px-3 py-1">
-      Página {{ perfumes.number }} de {{ perfumes.paginator.num_pages }}
-    </span>
+      <span class="px-3 py-1">
+        Página {{ perfumes.number }} de {{ perfumes.paginator.num_pages }}
+      </span>
 
-    {% if perfumes.has_next %}
-    <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 border rounded">Siguiente ></a>
-    <a href="?page={{ perfumes.paginator.num_pages }}" class="px-3 py-1 border rounded">Última</a>
-    {% endif %}
-  </div>
+      {% if perfumes.has_next %}
+      <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 border rounded">Siguiente ></a>
+      <a href="?page={{ perfumes.paginator.num_pages }}" class="px-3 py-1 border rounded">Última</a>
+      {% endif %}
+</div>
 {% else %}
 <p class="text-gray-600 mt-4">No hay perfumes en la base de datos.</p>
 {% endif %}

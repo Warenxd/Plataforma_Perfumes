@@ -46,6 +46,7 @@ class Perfume(models.Model):
 
     nombre = models.CharField(max_length=150, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
     precio = models.IntegerField(null=False, blank=False)
+    precio_ant = models.IntegerField(null=True, blank=True)
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
     genero = models.CharField(max_length=1, choices=GENERO_CHOICES, default='H')
@@ -58,6 +59,13 @@ class Perfume(models.Model):
     notas_corazon = models.ManyToManyField(Nota, related_name='perfumes_corazon', blank=True)
     notas_base = models.ManyToManyField(Nota, related_name='perfumes_base', blank=True)
     estaciones = models.ManyToManyField(Estacion, related_name='perfumes', blank=True) #related_name sirve para hacer consultas inversas, para hacer consultas desde la tabla relacionada hacia la original
+    fragrantica_url = models.URLField(blank=True, null=True)
+
+    @property
+    def descuento(self):
+        if self.precio_ant and self.precio_ant > 0 and self.precio < self.precio_ant:
+            return round(100 * (self.precio_ant - self.precio) / self.precio_ant)
+        return 0
 
     def __str__(self):
         return self.nombre
