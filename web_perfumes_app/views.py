@@ -312,6 +312,7 @@ def actualizar_urls_fragrantica():
 
 def refrescar_perfumes(request):
     try:
+        scrapping_silk_perfumes()
         actualizar_urls_fragrantica()
         total = actualizar_acordes_todos()
         messages.success(request, f"Acordes actualizados para {total} perfumes.")
