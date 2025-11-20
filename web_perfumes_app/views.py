@@ -9,14 +9,65 @@ from django.contrib import messages
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Q
 from .models import *
+import time
+import random
+from botasaurus.browser import browser, Driver, Wait
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 # Create your views here.
 def _parsear_clp(texto):
     dig = re.sub(r'[^\d]', '', texto or '')
     return int(dig) if dig else 0
+
+@browser(
+        headless=True, 
+        reuse_driver=True,
+        )
+def obtener_acordes(driver: Driver, url):
+    driver.get(url)
+    time.sleep(random.uniform(4,9))
+    
+    try:
+        driver.wait_for_element("div.accord-box", wait=Wait.LONG)
+        bars = driver.select_all("div.accord-box > div.accord-bar")
+        textos = [bar.text.strip() for bar in bars if bar.text.strip()]
+        return list(dict.fromkeys(textos))
+    except Exception:
+        return []  # si falla, sigue con el siguiente
+
+# En actualizar_acordes_todos(), cambia a:
+def actualizar_acordes_todos():
+    perfumes = Perfume.objects.filter(fragrantica_url__isnull=False).exclude(fragrantica_url="").order_by('id')
+    print(f"[Acordes] Perfumes con URL: {perfumes.count()}")
+    total = 0
+
+    for perfume in perfumes:
+        try:
+            print(f"→ {perfume.nombre}")
+            url_normalizada = convertir_a_fragrantica_es(perfume.fragrantica_url)
+            if url_normalizada != perfume.fragrantica_url:
+                perfume.fragrantica_url = url_normalizada
+                perfume.save(update_fields=["fragrantica_url"])
+            acordes = obtener_acordes(url_normalizada)
+            time.sleep(random.uniform(7, 14))
+            
+            if not acordes:
+                continue
+            objs = [Acorde.objects.get_or_create(nombre=a)[0] for a in acordes]
+            perfume.acordes.set(objs)
+            perfume.save()
+            total += 1
+            print(f"   {len(acordes)} acordes")
+        except Exception as e:
+            print(f"   Error: {e}")
+
+    print(f"¡Listo! {total} actualizados")
+    return total
+
 
 # FUNCIONES SCRAPPING
 def scrapping_silk_perfumes():
@@ -154,46 +205,118 @@ def scrapping_silk_perfumes():
     return {"creados": creados, "actualizados": actualizados, "errores": errores}
 
 def buscar_google_lucky(nombre_perfume):
-    query = nombre_perfume.replace(" ", "+")
-    
+    texto_busqueda = f"{nombre_perfume} fragrantica"
+    query = urllib.parse.quote_plus(texto_busqueda)
+
     url = (
         "https://www.google.com/search"
         "?hl=en"
         "&num=1"
         "&btnI=I%27m+Feeling+Lucky"
-        f"&q={query}+fragrantica"
+        f"&q={query}"
     )
 
     headers = {"User-Agent": "Mozilla/5.0"}
 
+    print(f"[Fragrantica] Buscando en Google: '{nombre_perfume}'")
+    print(f"[Fragrantica] URL de búsqueda: {url}")
+
+
     r = requests.get(url, headers=headers, allow_redirects=False)
 
-    # Google hace 302 y coloca la URL real en Location
     location = r.headers.get("Location")
 
     if not location:
+        print(f"[Fragrantica] NO se recibió redirección para '{nombre_perfume}'")
         return None
 
-    # Si Google devuelve algo como:
-    # https://www.google.com/url?q=https://www.fragrantica.com/...
-    # Entonces extraemos el valor real del parámetro "q"
     if "google.com/url?q=" in location:
         parsed = urllib.parse.urlparse(location)
         params = urllib.parse.parse_qs(parsed.query)
 
         if "q" in params:
-            return params["q"][0]  # la URL pura de Fragrantica
+            resultado = convertir_a_fragrantica_es(params["q"][0])  # la URL pura de Fragrantica
+            print(f"[Fragrantica] Resultado para '{nombre_perfume}': {resultado}")
+            return resultado
 
-    return location  # si ya es una URL directa
-    
+    return convertir_a_fragrantica_es(location)  # si ya es una URL directa
+
+
+def convertir_a_fragrantica_es(url):
+    """Normaliza cualquier URL de Fragrantica para usar el dominio fragrantica.es."""
+    if not url:
+        return url
+
+    url = url.strip()
+    if not url or "fragrantica" not in url.lower():
+        return url
+
+    parsed = urllib.parse.urlparse(url)
+    if not parsed.netloc:
+        parsed = urllib.parse.urlparse(f"https://{url.lstrip('/')}")
+
+    netloc = parsed.netloc.lower()
+    if "fragrantica" not in netloc:
+        return url
+
+    normalizado = parsed._replace(scheme="https", netloc="www.fragrantica.es")
+    return urllib.parse.urlunparse(normalizado)
+
+
+def normalizar_urls_fragrantica_existentes():
+    """
+    Convierte todas las URLs almacenadas en la base de datos al dominio fragrantica.es.
+    Devuelve la cantidad de registros actualizados.
+    """
+    perfumes = Perfume.objects.filter(fragrantica_url__icontains="fragrantica")
+    actualizados = 0
+
+    for perfume in perfumes:
+        url_normalizada = convertir_a_fragrantica_es(perfume.fragrantica_url)
+        if url_normalizada and url_normalizada != perfume.fragrantica_url:
+            perfume.fragrantica_url = url_normalizada
+            perfume.save(update_fields=["fragrantica_url"])
+            actualizados += 1
+
+    if actualizados:
+        print(f"[Fragrantica] {actualizados} URLs normalizadas a .es en la base de datos")
+    return actualizados
+
+
+@transaction.atomic
+def actualizar_urls_fragrantica():
+    normalizar_urls_fragrantica_existentes()
+    perfumes = Perfume.objects.filter(Q(fragrantica_url__isnull=True) | Q(fragrantica_url="")).order_by("id")
+    encontrados = 0
+
+    print(f"[Fragrantica] Buscando y guardando solo fragrantica.es para {perfumes.count()} perfumes...")
+
+    for perfume in perfumes:
+        print(f"→ {perfume.nombre}", end="")
+
+        url_raw = buscar_google_lucky(perfume.nombre)
+
+        if url_raw and "fragrantica." in url_raw:
+            # Forzamos fragrantica.es (aunque Google devuelva .com o .fr o lo que sea)
+            url_es = convertir_a_fragrantica_es(url_raw)
+
+            perfume.fragrantica_url = url_es
+            perfume.save(update_fields=["fragrantica_url"])
+            encontrados += 1
+            print(f" → {url_es}")
+        else:
+            print(" → No encontrado")
+
+    print(f"¡TERMINADO! {encontrados} perfumes ahora tienen URL en fragrantica.es")
+    return encontrados
+
 def refrescar_perfumes(request):
     try:
-        r = scrapping_silk_perfumes()
-        messages.success(
-            f"Scraping OK. Nuevos: {r['creados']}, Actualizados: {r['actualizados']}, Errores: {r['errores']}."
-        )
+        actualizar_urls_fragrantica()
+        total = actualizar_acordes_todos()
+        messages.success(request, f"Acordes actualizados para {total} perfumes.")
     except Exception as e:
-        messages.error(request, f"Ocurrió un problema al scrapear los datos {e}")
+        messages.error(request, f"Ocurrió un problema al actualizar los acordes: {e}")
     return redirect(reverse("home"))
 
 # RENDER DE VISTAS

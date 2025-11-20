@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\Users\waren\OneDrive\Escritorio\UniversidadPython\Scrapping\sistema_perfumes\venv\lib\site-packages\botasaurus\browser_decorator.py", line 201, in run_task
+    result = func(driver, data)
+  File "C:\Users\waren\OneDrive\Escritorio\UniversidadPython\Scrapping\sistema_perfumes\web_perfumes_app\views.py", line 29, in obtener_acordes
+    driver.wait_for_element("div.accord-box", wait=Wait.SHORT)
+  File "C:\Users\waren\OneDrive\Escritorio\UniversidadPython\Scrapping\sistema_perfumes\venv\lib\site-packages\botasaurus_driver\driver.py", line 1246, in wait_for_element
+    return self._make_element(self._tab.wait_for(selector, timeout=wait))
+  File "C:\Users\waren\OneDrive\Escritorio\UniversidadPython\Scrapping\sistema_perfumes\venv\lib\site-packages\botasaurus_driver\core\tab.py", line 1317, in wait_for
+    raise ElementWithSelectorNotFoundException(selector)
+botasaurus_driver.exceptions.ElementWithSelectorNotFoundException: Cannot find element with selector: 'div.accord-box'.
