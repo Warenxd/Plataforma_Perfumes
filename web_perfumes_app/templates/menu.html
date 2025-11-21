@@ -65,7 +65,7 @@
           <!-- PRECIO DEL PERFUME -->
           <div class="px-4 mt-2">
             <div class="flex justify-center items-center gap-2">
-              <span class="text-lg font-Alexandria text-amber-600">
+              <span class="text-xl font-Alexandria text-amber-600">
                 ${{ p.precio|clp }}
               </span>
               <span class="text-sm font-Alexandria font-light line-through text-gray-500 translate-x-2">
@@ -96,7 +96,14 @@
             <p class="acordes-title text-[10px] font-Lexend font-bold tracking-wide text-gray-800 mb-2 uppercase">Acordes principales</p>
             <div class="acordes-tags flex flex-wrap">
               {% for acorde in p.acordes.all %}
-              <span class="acorde-chip font-GoogleSansFlex font-semibold">{{ acorde.nombre }}</span>
+              <span
+                class="acorde-chip text-zinc-950 font-GoogleSansFlex font-semibold"
+                {% if acorde.background_rgb %}
+                  style="background-color: rgb({{ acorde.background_rgb }}); border-color: rgba({{ acorde.background_rgb }}, 0.35);"
+                {% endif %}
+              >
+                {{ acorde.nombre }}
+              </span>
               {% endfor %}
             </div>
           </div>
@@ -104,10 +111,15 @@
         </div>
 
         {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 %}
-        <div class="download-wrapper mt-6">
-          <button type="button" class="download-btn">Descargar detalles</button>
-        </div>
-        {% endif %}
+<div class="download-wrapper mt-6">
+    <form method="post" action="{% url 'descargar_acordes_individual' p.id %}">
+        {% csrf_token %}
+        <button type="submit" class="download-btn" onclick="this.innerHTML='Cargando...'; this.disabled=true; this.form.submit();">
+            Descargar detalles
+        </button>
+    </form>
+</div>
+{% endif %}
 
         <!-- BLOQUE DE ICONOS DE ESTACIONES -->
         <div class="back-icons grid grid-cols-2 gap-4  text-blue-600 w-full px-3">

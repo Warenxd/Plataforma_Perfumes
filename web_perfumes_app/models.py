@@ -6,6 +6,7 @@ from django.db import models
 # TABLA DE ACORDES PRINCIPALES DE LOS PERFUMES
 class Acorde(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
+    background_rgb = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
         return self.nombre

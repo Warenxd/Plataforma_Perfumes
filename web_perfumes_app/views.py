@@ -12,6 +12,8 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from .models import *
+from django.shortcuts import render, redirect, get_object_or_404   # ← AÑADE get_object_or_404
+from django.contrib import messages
 import time
 import random
 from botasaurus.browser import browser, Driver, Wait
@@ -26,18 +28,39 @@ def _parsear_clp(texto):
 @browser(
         headless=True, 
         reuse_driver=True,
+        block_images=True,
         )
 def obtener_acordes(driver: Driver, url):
     driver.get(url)
-    time.sleep(random.uniform(4,9))
+    time.sleep(random.uniform(1,2))
     
     try:
-        driver.wait_for_element("div.accord-box", wait=Wait.LONG)
-        bars = driver.select_all("div.accord-box > div.accord-bar")
-        textos = [bar.text.strip() for bar in bars if bar.text.strip()]
-        return list(dict.fromkeys(textos))
+        driver.wait_for_element("div.accord-box", wait=Wait.SHORT)
+        bars = driver.select_all("div.accord-bar")
+        resultado = []
+        
+        for bar in bars:
+            texto = bar.text.strip()
+            if not texto:
+                continue
+                
+            style = bar.get_attribute("style")
+            bg_match = re.search(r'background:\s*rgb\(([^\)]+)\)', style)
+            text_match = re.search(r'color:\s*rgb\(([^\)]+)\)', style)
+            
+            bg_color = tuple(map(int, bg_match.group(1).split(','))) if bg_match else None
+            text_color = tuple(map(int, text_match.group(1).split(','))) if text_match else None
+            
+            resultado.append({
+                'acorde': texto,
+                'background_rgb': bg_color,
+                'text_rgb': text_color
+            })
+        
+        return resultado
+        
     except Exception:
-        return []  # si falla, sigue con el siguiente
+        return []
 
 # En actualizar_acordes_todos(), cambia a:
 def actualizar_acordes_todos():
@@ -53,12 +76,26 @@ def actualizar_acordes_todos():
                 perfume.fragrantica_url = url_normalizada
                 perfume.save(update_fields=["fragrantica_url"])
             acordes = obtener_acordes(url_normalizada)
-            time.sleep(random.uniform(7, 14))
+            time.sleep(random.uniform(1, 3))
             
             if not acordes:
                 continue
-            objs = [Acorde.objects.get_or_create(nombre=a)[0] for a in acordes]
-            perfume.acordes.set(objs)
+
+            acorde_objs = []
+            for acorde_data in acordes:
+                acorde_obj, _ = Acorde.objects.get_or_create(nombre=acorde_data['acorde'])
+
+                bg_tuple = acorde_data.get('background_rgb')
+                if bg_tuple:
+                    r, g, b = bg_tuple
+                    new_color = f"{r},{g},{b}"
+                    if acorde_obj.background_rgb != new_color:
+                        acorde_obj.background_rgb = new_color
+                        acorde_obj.save(update_fields=["background_rgb"])
+
+                acorde_objs.append(acorde_obj)
+
+            perfume.acordes.set(acorde_objs)
             perfume.save()
             total += 1
             print(f"   {len(acordes)} acordes")
@@ -67,6 +104,42 @@ def actualizar_acordes_todos():
 
     print(f"¡Listo! {total} actualizados")
     return total
+
+
+@require_POST
+def descargar_acordes_individual(request, perfume_id):
+    perfume = get_object_or_404(Perfume, id=perfume_id)
+    
+    if not perfume.fragrantica_url:
+        messages.error(request, f"No hay URL de Fragrantica para {perfume.nombre}")
+        return redirect('home')
+    
+    try:
+        # Usa la función que ya tienes, pero la llamamos directamente
+        acordes_data = obtener_acordes(perfume.fragrantica_url)
+        
+        if acordes_data:
+            for item in acordes_data:
+                acorde, _ = Acorde.objects.get_or_create(nombre=item['acorde'])
+
+                bg_tuple = item.get('background_rgb')
+                if bg_tuple:
+                    r, g, b = bg_tuple
+                    new_color = f"{r},{g},{b}"
+                    if acorde.background_rgb != new_color:
+                        acorde.background_rgb = new_color
+                        acorde.save(update_fields=["background_rgb"])
+
+                perfume.acordes.add(acorde)
+
+            messages.success(request, f"¡Acordes cargados para {perfume.nombre}!")
+        else:
+            messages.info(request, f"No se encontraron acordes para {perfume.nombre}")
+            
+    except Exception as e:
+        messages.error(request, f"Error al cargar acordes: {e}")
+    
+    return redirect('home')  # o a la página del perfume si tienes detalle
 
 
 # FUNCIONES SCRAPPING

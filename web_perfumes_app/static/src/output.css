@@ -19,14 +19,17 @@
       "Courier New", monospace;
     --color-red-100: oklch(93.6% 0.032 17.717);
     --color-red-700: oklch(50.5% 0.213 27.518);
+    --color-amber-50: oklch(98.7% 0.022 95.277);
     --color-amber-600: oklch(66.6% 0.179 58.318);
     --color-yellow-500: oklch(79.5% 0.184 86.047);
     --color-yellow-900: oklch(42.1% 0.095 57.708);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-emerald-200: oklch(90.5% 0.093 164.15);
     --color-emerald-700: oklch(50.8% 0.118 165.612);
+    --color-emerald-800: oklch(43.2% 0.095 166.913);
     --color-cyan-500: oklch(71.5% 0.143 215.221);
     --color-blue-600: oklch(54.6% 0.245 262.881);
+    --color-purple-600: oklch(55.8% 0.288 302.321);
     --color-gray-50: oklch(98.5% 0.002 247.839);
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-400: oklch(70.7% 0.022 261.325);
@@ -35,6 +38,10 @@
     --color-gray-700: oklch(37.3% 0.034 259.733);
     --color-gray-800: oklch(27.8% 0.033 256.848);
     --color-gray-900: oklch(21% 0.034 264.665);
+    --color-zinc-500: oklch(55.2% 0.016 285.938);
+    --color-zinc-800: oklch(27.4% 0.006 286.033);
+    --color-zinc-900: oklch(21% 0.006 285.885);
+    --color-zinc-950: oklch(14.1% 0.005 285.823);
     --color-neutral-50: oklch(98.5% 0 0);
     --color-neutral-950: oklch(14.5% 0 0);
     --color-white: #fff;
@@ -45,8 +52,8 @@
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-base: 1rem;
     --text-base--line-height: calc(1.5 / 1);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
     --font-weight-light: 300;
@@ -61,14 +68,8 @@
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --font-Poppins: "Poppins", sans-serif;
-    --font-Josefin-Sans: "Josefin Sans", sans-serif;
     --font-Lexend: "Lexend", sans-serif;
     --font-Alexandria: "Alexandria", sans-serif;
-    --font-Inter: "Inter", sans-serif;
-    --font-Montserrat: "Montserrat", sans-serif;
-    --font-PlayFairDisplay: "Playfair Display", serif;
-    --font-Raleway: "Raleway", sans-serif;
-    --font-Lora: "Lora", serif;
     --font-GoogleSansFlex: "Google Sans Flex", sans-serif;
   }
 }
@@ -286,9 +287,6 @@
   .mt-6 {
     margin-top: calc(var(--spacing) * 6);
   }
-  .mb-1 {
-    margin-bottom: calc(var(--spacing) * 1);
-  }
   .mb-2 {
     margin-bottom: calc(var(--spacing) * 2);
   }
@@ -484,29 +482,11 @@
   .font-GoogleSansFlex {
     font-family: var(--font-GoogleSansFlex);
   }
-  .font-Inter {
-    font-family: var(--font-Inter);
-  }
-  .font-Josefin-Sans {
-    font-family: var(--font-Josefin-Sans);
-  }
   .font-Lexend {
     font-family: var(--font-Lexend);
   }
-  .font-Lora {
-    font-family: var(--font-Lora);
-  }
-  .font-Montserrat {
-    font-family: var(--font-Montserrat);
-  }
-  .font-PlayFairDisplay {
-    font-family: var(--font-PlayFairDisplay);
-  }
   .font-Poppins {
     font-family: var(--font-Poppins);
-  }
-  .font-Raleway {
-    font-family: var(--font-Raleway);
   }
   .text-2xl {
     font-size: var(--text-2xl);
@@ -516,13 +496,13 @@
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
   }
-  .text-lg {
-    font-size: var(--text-lg);
-    line-height: var(--tw-leading, var(--text-lg--line-height));
-  }
   .text-sm {
     font-size: var(--text-sm);
     line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
   }
   .text-xs {
     font-size: var(--text-xs);
@@ -562,6 +542,9 @@
   .wrap-break-word {
     overflow-wrap: break-word;
   }
+  .text-amber-50 {
+    color: var(--color-amber-50);
+  }
   .text-amber-600 {
     color: var(--color-amber-600);
   }
@@ -573,6 +556,9 @@
   }
   .text-emerald-700 {
     color: var(--color-emerald-700);
+  }
+  .text-emerald-800 {
+    color: var(--color-emerald-800);
   }
   .text-gray-500 {
     color: var(--color-gray-500);
@@ -595,6 +581,9 @@
   .text-neutral-50 {
     color: var(--color-neutral-50);
   }
+  .text-purple-600 {
+    color: var(--color-purple-600);
+  }
   .text-red-700 {
     color: var(--color-red-700);
   }
@@ -606,6 +595,18 @@
   }
   .text-yellow-900 {
     color: var(--color-yellow-900);
+  }
+  .text-zinc-500 {
+    color: var(--color-zinc-500);
+  }
+  .text-zinc-800 {
+    color: var(--color-zinc-800);
+  }
+  .text-zinc-900 {
+    color: var(--color-zinc-900);
+  }
+  .text-zinc-950 {
+    color: var(--color-zinc-950);
   }
   .uppercase {
     text-transform: uppercase;
@@ -818,7 +819,6 @@
     border: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 9999px;
     padding: 0.1rem 0.2rem;
-    color: #0f172a;
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
     font-size: 0.7rem;
     line-height: 1.2;
