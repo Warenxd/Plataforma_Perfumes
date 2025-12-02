@@ -1,11 +1,37 @@
 {
     "acordes": [
         {
-            "acorde": "fresco especiado",
+            "acorde": "cuero",
             "background_rgb": [
-                131,
+                120,
+                72,
+                58
+            ],
+            "text_rgb": [
+                255,
+                255,
+                255
+            ]
+        },
+        {
+            "acorde": "amaderado",
+            "background_rgb": [
+                119,
+                68,
+                20
+            ],
+            "text_rgb": [
+                255,
+                255,
+                255
+            ]
+        },
+        {
+            "acorde": "oz\u00f3nico",
+            "background_rgb": [
                 201,
-                40
+                253,
+                251
             ],
             "text_rgb": [
                 0,
@@ -14,11 +40,11 @@
             ]
         },
         {
-            "acorde": "c\u00edtrico",
+            "acorde": "fresco especiado",
             "background_rgb": [
-                249,
-                255,
-                82
+                131,
+                201,
+                40
             ],
             "text_rgb": [
                 0,
@@ -40,11 +66,11 @@
             ]
         },
         {
-            "acorde": "amaderado",
+            "acorde": "anim\u00e1lico",
             "background_rgb": [
-                119,
-                68,
-                20
+                142,
+                75,
+                19
             ],
             "text_rgb": [
                 255,
@@ -53,63 +79,50 @@
             ]
         },
         {
-            "acorde": "\u00e1mbar",
+            "acorde": "acu\u00e1tico",
             "background_rgb": [
-                188,
-                77,
-                16
-            ],
-            "text_rgb": [
-                255,
-                255,
-                255
-            ]
-        },
-        {
-            "acorde": "lavanda",
-            "background_rgb": [
-                231,
-                206,
-                236
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "almizclado",
-            "background_rgb": [
-                231,
-                216,
-                234
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "fresco",
-            "background_rgb": [
-                155,
-                229,
-                237
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "c\u00e1lido especiado",
-            "background_rgb": [
+                99,
                 204,
-                51,
+                226
+            ],
+            "text_rgb": [
+                0,
+                0,
                 0
+            ]
+        },
+        {
+            "acorde": "florales",
+            "background_rgb": [
+                255,
+                95,
+                141
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "c\u00edtrico",
+            "background_rgb": [
+                249,
+                255,
+                82
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "verde",
+            "background_rgb": [
+                14,
+                140,
+                29
             ],
             "text_rgb": [
                 255,
@@ -120,38 +133,50 @@
     ],
     "notas": {
         "salida": [
-            "toronja (pomelo)",
-            "c\u00edtricos"
+            "flor del moscadero",
+            "lavanda",
+            "cedro",
+            "mandarina",
+            "manzanilla",
+            "bergamota",
+            "flor del espino",
+            "lim\u00f3n (lima \u00e1cida)"
         ],
         "corazon": [
-            "pimienta",
-            "lavanda",
-            "geranio",
-            "elem\u00ed"
+            "hojas de violeta",
+            "nuez moscada",
+            "cedro",
+            "s\u00e1ndalo",
+            "clavel",
+            "madreselva",
+            "jazm\u00edn",
+            "lirio de los valles (muguete)"
         ],
         "base": [
-            "ambroxan",
-            "notas amaderadas",
+            "cuero",
             "vetiver",
-            "cedro"
+            "almizcle",
+            "\u00e1mbar",
+            "pachul\u00ed",
+            "haba tonka"
         ]
     },
     "estaciones": [
         {
             "nombre": "invierno",
-            "porcentaje": 30.0654
+            "porcentaje": 100.0
         },
         {
             "nombre": "Primavera",
-            "porcentaje": 100.0
+            "porcentaje": 54.7811
         },
         {
             "nombre": "verano",
-            "porcentaje": 100.0
+            "porcentaje": 27.8402
         },
         {
             "nombre": "Oto\u00f1o",
-            "porcentaje": 77.7778
+            "porcentaje": 99.1403
         }
     ]
 }

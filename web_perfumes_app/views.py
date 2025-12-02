@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
+from django.template.loader import render_to_string
 from .models import *
 from django.shortcuts import render, redirect, get_object_or_404   # ← AÑADE get_object_or_404
 from django.contrib import messages
@@ -627,8 +628,13 @@ def refrescar_perfumes(request):
 
 # RENDER DE VISTAS
 def home(request):
+    search_query = (request.GET.get("q") or "").strip()
     perfumes_list = Perfume.objects.order_by("nombre").prefetch_related("estaciones")
-    paginator = Paginator(perfumes_list, 24)
+    if search_query:
+        perfumes_list = perfumes_list.filter(
+            Q(nombre__icontains=search_query) | Q(marca__marca__icontains=search_query)
+        )
+    paginator = Paginator(perfumes_list, 15)
     page_number = request.GET.get("page")
     perfumes = paginator.get_page(page_number)
 
@@ -637,7 +643,27 @@ def home(request):
         print(f"[Home] {perfume.nombre}: {estaciones_info}")
 
     total_perfumes = perfumes_list.count()
-    return render(request, "menu.html", {"perfumes": perfumes, "total_perfumes": total_perfumes})
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        grid_html = render_to_string(
+            "components/perfumes_grid.html",
+            {"perfumes": perfumes, "search_query": search_query},
+            request=request,
+        )
+        return JsonResponse(
+            {
+                "html": grid_html,
+                "page": perfumes.number,
+                "total_pages": perfumes.paginator.num_pages,
+                "query": search_query,
+            }
+        )
+
+    return render(
+        request,
+        "menu.html",
+        {"perfumes": perfumes, "total_perfumes": total_perfumes, "search_query": search_query},
+    )
 
 def estadisticas(request):
     return render(request, 'estadistica.html')
