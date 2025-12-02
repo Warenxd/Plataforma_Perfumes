@@ -5,259 +5,447 @@
 {% block title %}Menu Principal{% endblock %}
 
 {% block content %}
-<h2 class="text-2xl">Bienvenido al sistema</h2>
-<p class="mb-4">Selecciona una opcion del menu.</p>
+<div class="flex min-h-screen">
 
-{% if error %}
-<div class="mb-4 p-3 rounded bg-red-100 text-red-700">{{ error }}</div>
-{% endif %}
+  <!-- SIDEBAR IZQUIERDO: ocupa toda la altura -->
+  <aside class="w-80 bg-slate-900 text-white flex-shrink-0">
+    <form class="flex h-full flex-col gap-6 p-6 text-white">
 
-<p class="mb-4 text-gray-700">Total de perfumes: {{ total_perfumes }}</p>
+      <!-- Logo / título -->
+      <div class="flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-800 text-lg font-semibold">
+          <span class="translate-y-0.5">🏝️</span>
+        </div>
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">TOQUE FRAGANTE</p>
+          <p class="text-lg font-semibold">TOQUE FRAGANTE</p>
+        </div>
+      </div>
 
-{% if perfumes %}
-
-<!-- COLUMNA Y FILA DE PERFUMES -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pl-24">
-  {% for p in perfumes %}
-  <!-- CONSTRUCCION DE CARD -->
-  <div class="flip-card" {% if p.imagen %}style="--card-image: url('{{ p.imagen.url }}');"{% endif %}>
-    <div class="flip-card-inner">
-      <!-- CARA FRONTAL -->
-      <div class="flip-card-front card relative">
-        <div class="card-body">
-          <!-- DESCUENTO CARD -->
-          {% if p.descuento %}
-          <div class="absolute top-4 left-3">
-            <div class="flex">
-              <span class="bg-emerald-200 text-emerald-700 text-xs font-Lexend font-bold px-2 py-1 rounded">
-                -{{ p.descuento }}% Desc
-              </span>
-            </div>
+      <div class="space-y-6 text-sm text-slate-100">
+        <!-- Bedrooms -->
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Bedrooms</p>
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">1</button>
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">2</button>
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">3</button>
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">4</button>
           </div>
-          {% endif %}
-          <!-- LOGO TIENDA -->
-          <a href="{{ p.url_producto }}"
-            class="inline-block self-center transition-transform duration-200 hover:scale-110 mt-3" target="_blank">
-            {% if p.tienda == "SILK" %}
-            <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center"
-              style="height: 2rem;">
-            {% elif p.tienda == "YAURAS" %}
-            <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-8">
-            {% endif %}
-          </a>
+        </div>
 
-          <!-- IMAGEN DE CARD -->
-          {% if p.imagen %}
-          <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="card-image">
-          {% endif %}
-
-          <!-- MARCA DE CARD -->
-          <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">
-            {{ p.marca.marca }}
+        <!-- Bathrooms -->
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Bathrooms</p>
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">1</button>
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">2</button>
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">3</button>
+            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">4</button>
           </div>
+        </div>
 
-          <!-- NOMBRE DE CARD -->
+        <!-- Price range -->
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Price range</p>
+          <div class="mt-2 rounded-2xl bg-slate-800/80 px-4 py-2.5 ring-1 ring-slate-700/60">
+            <select class="w-full bg-transparent text-sm text-slate-100 outline-none focus:ring-0">
+              <option class="text-slate-900">Up to $2,000 /wk</option>
+              <option class="text-slate-900">Up to $3,000 /wk</option>
+              <option class="text-slate-900">Up to $4,000 /wk</option>
+              <option class="text-slate-900">Up to $5,000 /wk</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Property type -->
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Property type</p>
+          <div class="mt-3 space-y-2">
+            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <span>House</span>
+              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+            </label>
+            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <span>Apartment</span>
+              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+            </label>
+            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <span>Loft</span>
+              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+            </label>
+            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <span>Townhouse</span>
+              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Amenities -->
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Amenities</p>
+          <div class="mt-3 space-y-2">
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Balcony</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Air conditioning</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Pool</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Beach</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Pet friendly</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Kid friendly</span>
+            </label>
+            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
+              <span>Parking</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón abajo -->
+      <div class="mt-auto">
+        <button
+          type="button"
+          class="w-full rounded-2xl bg-indigo-500 py-3 text-base font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+          Update results
+        </button>
+      </div>
+    </form>
+  </aside>
+
+    <!-- CONTENIDO DERECHO -->
+  <div class="flex-1 bg-slate-100">
+    <div class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <!-- Top bar -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <!-- Nav derecha -->
+        <nav class="flex items-center gap-6 text-sm font-bold text-slate-600">
+          <a href="#" class="hover:text-slate-900">Comparar</a>
+          <a href="#" class="hover:text-slate-900">Proyeccion de Precios</a
+        </nav>
+      </div>
+
+      <!-- Encabezado tipo "Los Angeles" / colección -->
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Colección principal</h1>
+          <p class="mt-1 text-sm text-slate-500">
+            Explora estas fragancias seleccionadas de nuestra base de datos.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
           <div
-            class="px-4 py-1 mb-2 leading-4 text-base text-left font-Poppins uppercase font-bold text-gray-800 wrap-break-word">
-            {{ p.nombre }}
+            class="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">
+            Total de perfumes: {{ total_perfumes }}
           </div>
-
-          <!-- PRECIO DEL PERFUME -->
-          <div class="px-4 mt-2">
-            <div class="flex justify-center items-center gap-2">
-              <span class="text-xl font-Alexandria text-amber-600">
-                ${{ p.precio|clp }}
-              </span>
-              <span class="text-sm font-Alexandria font-light line-through text-gray-500 translate-x-2">
-                ${{ p.precio_ant|clp }}
-              </span>
-            </div>
-          </div>
-
-        </div>
-        <!-- BOTON COMPARAR -->
-        <div class="compare-section">
-          <button type="button"
-            class="compare-btn text-xs bg-gray-400 cursor-pointer font-Lexend px-4 py-2 rounded-full">
-            Agregar para comparar +
-          </button>
+          <form action="{% url 'refrescar_perfumes' %}" method="post">
+            {% csrf_token %}
+            <button type="submit"
+              class="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-50 cursor-pointer transition hover:bg-neutral-800 active:scale-105">
+              Recargar perfumes
+            </button>
+          </form>
         </div>
       </div>
 
-      <!-- CARA TRASERA -->
-      <div class="flip-card-back card relative from-slate-50/80 via-white to-emerald-50/40 backdrop-blur">
-        <div class="text-center flex flex-col items-center gap-2 px-1 sm:px-2">
-          <div class="text-xs font-Lexend text-gray-500 tracking-wide">{{ p.marca.marca }}</div>
-          <div class="text-lg font-Poppins uppercase font-bold text-slate-800 leading-tight">
-            {{ p.nombre }}
-          </div>
-          <!-- ACORDES -->
-          {% if p.acordes.count > 0 %}
-          <div class="acordes-wrapper mt-2 w-full">
-            <p class="acordes-title text-[11px] font-Lexend font-semibold mb-2 tracking-[0.2em] text-gray-800 uppercase">Acordes principales</p>
-            <div class="acordes-tags flex flex-wrap justify-center gap-2">
-              {% for acorde in p.acordes.all %}
-              <span
-                class="acorde-chip inline-flex items-center justify-center text-[10px] font-Lexend font-semibold px-3 py-0.5 rounded-full border shadow-sm text-gray-900"
-                {% if acorde.background_rgb %}
-                  style="background-color: rgba({{ acorde.background_rgb }}, 0.4); border-color: rgba({{ acorde.background_rgb }}, 3);"
-                {% endif %}>
-                {{ acorde.nombre }}
-              </span>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-          <!-- NOTAS OLFATIVAS -->
-          {% if p.notas_salida.count > 0 or p.notas_corazon.count > 0 or p.notas_base.count > 0 %}
-          <div class="notas-piramide w-full -mx-2 sm:-mx-3 px-1 sm:px-2 py-2 border border-white/30 rounded-2xl bg-transparent max-h-60 overflow-y-auto pr-1">
-            <p class="text-[11px] font-Lexend font-semibold tracking-[0.3em] text-gray-900 uppercase mb-1">Piramide olfativa</p>
-            {% if p.notas_salida.count > 0 %}
-            <div class="nota-section">
-              <span class="nota-title text-amber-600">Notas de Salida</span>
-              <div class="nota-tags">
-                {% for nota in p.notas_salida.all %}
-                <span class="nota-chip nota-chip-salida">{{ nota.nombre }}</span>
-                {% endfor %}
+      {% if error %}
+      <div class="rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-700">
+        {{ error }}
+      </div>
+      {% endif %}
+
+
+      <!-- Barra de búsqueda (Search by keywords) -->
+      <div class="relative">
+        <label for="search" class="sr-only">Buscar</label>
+        <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </span>
+        <input id="search" type="search" name="q" placeholder="Busca tu perfume"
+          class="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+      </div>
+
+      {% if perfumes %}
+      <!-- GRID DE CARDS (tus perfumes en vez de hoteles) -->
+      <div class="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-3 justify-items-center">
+        {% for p in perfumes %}
+        <!-- CONSTRUCCION DE CARD -->
+        <div class="flip-card w-full max-w-lg sm:max-w-md" {% if p.imagen %}style="--card-image: url('{{ p.imagen.url }}');"{% endif %}>
+          <div class="flip-card-inner">
+
+            <!-- CARA FRONTAL -->
+            <div class="flip-card-front card relative">
+              <div class="card-body">
+                <!-- DESCUENTO CARD -->
+                {% if p.descuento %}
+                <div class="absolute top-4 left-3">
+                  <div class="flex">
+                    <span class="bg-emerald-200 text-emerald-700 text-xs font-Lexend font-bold px-2 py-1 rounded">
+                      -{{ p.descuento }}% Desc
+                    </span>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- LOGO TIENDA -->
+                <a href="{{ p.url_producto }}"
+                  class="inline-block self-center transition-transform duration-200 hover:scale-110 mt-3"
+                  target="_blank">
+                  {% if p.tienda == "SILK" %}
+                  <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center" style="height: 2rem;">
+                  {% elif p.tienda == "YAURAS" %}
+                  <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-8">
+                  {% endif %}
+                </a>
+
+                <!-- IMAGEN DE CARD -->
+                {% if p.imagen %}
+                <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="card-image">
+                {% endif %}
+
+                <!-- MARCA DE CARD -->
+                <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">
+                  {{ p.marca.marca }}
+                </div>
+
+                <!-- NOMBRE DE CARD -->
+                <div class="px-4 py-1 mb-2 leading-4 text-base text-left font-Poppins uppercase font-bold text-gray-800 wrap-break-word">
+                  {{ p.nombre }}
+                </div>
+
+                <!-- PRECIO DEL PERFUME -->
+                <div class="px-4 mt-2">
+                  <div class="flex justify-center items-center gap-2">
+                    <span class="text-xl font-Alexandria text-amber-600">
+                      ${{ p.precio|clp }}
+                    </span>
+                    <span class="text-sm font-Alexandria font-light line-through text-gray-500 translate-x-2">
+                      ${{ p.precio_ant|clp }}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-            {% endif %}
-            {% if p.notas_corazon.count > 0 %}
-            <div class="nota-section">
-              <span class="nota-title mt-1 text-rose-500">Notas de Corazón</span>
-              <div class="nota-tags">
-                {% for nota in p.notas_corazon.all %}
-                <span class="nota-chip nota-chip-corazon">{{ nota.nombre }}</span>
-                {% endfor %}
-              </div>
-            </div>
-            {% endif %}
-            {% if p.notas_base.count > 0 %}
-            <div class="nota-section">
-              <span class="nota-title mt-1 text-emerald-600">Notas Base</span>
-              <div class="nota-tags">
-                {% for nota in p.notas_base.all %}
-                <span class="nota-chip nota-chip-base">{{ nota.nombre }}</span>
-                {% endfor %}
-              </div>
-            </div>
-            {% endif %}
-          </div>
-          {% endif %}
-        </div>
-        {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 %}
-        <div class="download-wrapper mt-6">
-            <form method="post" action="{% url 'descargar_acordes_individual' p.id %}">
-                {% csrf_token %}
-                <button type="submit" class="download-btn" onclick="this.innerHTML='Cargando...'; this.disabled=true; this.form.submit();">
-                    Descargar detalles
+
+              <!-- BOTON COMPARAR -->
+              <div class="compare-section">
+                <button type="button"
+                  class="compare-btn text-xs bg-gray-400 cursor-pointer font-Lexend px-4 py-2 rounded-full">
+                  Agregar para comparar +
                 </button>
-            </form>
-        </div>
-        {% endif %}
-        <!-- BLOQUE DE ICONOS DE ESTACIONES -->
-        <div class="w-full text-center">
-          <p class="mb-2 text-[11px] font-Lexend font-bold text-gray-800 uppercase">Estaciones</p>
-          {% if p.estaciones.count %}
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {% for estacion in p.estaciones.all %}
-            {% with nombre=estacion.nombre|default_if_none:"" slug=estacion.nombre|default_if_none:""|slugify percent=estacion.porcentaje|default_if_none:0 %}
-            {% if "invierno" in slug %}
-              {% with icon="fa-snowflake" color="#4fb7e9" label="Invierno" %}
-              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
-                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
-                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
-                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
-                    style="color: {{ color }};">
-                    <i class="fa-solid {{ icon }}"></i>
-                  </div>
-                </div>
-                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
-                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
               </div>
-              {% endwith %}
-            {% elif "primavera" in slug %}
-              {% with icon="fa-leaf" color="#5fc873" label="Primavera" %}
-              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
-                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
-                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
-                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
-                    style="color: {{ color }};">
-                    <i class="fa-solid {{ icon }}"></i>
-                  </div>
-                </div>
-                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
-                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
-              </div>
-              {% endwith %}
-            {% elif "verano" in slug %}
-              {% with icon="fa-sun" color="#f5c04a" label="Verano" %}
-              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
-                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
-                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
-                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
-                    style="color: {{ color }};">
-                    <i class="fa-solid {{ icon }}"></i>
-                  </div>
-                </div>
-                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
-                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
-              </div>
-              {% endwith %}
-            {% elif "otono" in slug %}
-              {% with icon="fa-cannabis" color="#d39b4e" label="Otoño" %}
-              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
-                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
-                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
-                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
-                    style="color: {{ color }};">
-                    <i class="fa-solid {{ icon }}"></i>
-                  </div>
-                </div>
-                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
-                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
-              </div>
-              {% endwith %}
-            {% endif %}
-            {% endwith %}
-            {% endfor %}
-          </div>
-          {% else %}
-          <p class="text-xs text-gray-500">Sin datos disponibles</p>
-          {% endif %}
-        </div>
+            </div>
 
-        <!-- BOTON COMPARAR REVERSO -->
-        <div class="compare-section">
-          <button type="button"
-            class="compare-btn text-xs bg-gray-400 cursor-pointer font-Lexend px-4 py-2 rounded-full">
-            Agregar para comparar +
-          </button>
+            <!-- CARA TRASERA -->
+            <div class="flip-card-back card relative from-slate-50/80 via-white to-emerald-50/40 backdrop-blur">
+              <div class="text-center flex flex-col items-center gap-2 px-1 sm:px-2">
+                <div class="text-xs font-Lexend text-gray-500 tracking-wide">{{ p.marca.marca }}</div>
+                <div class="text-lg font-Poppins uppercase font-bold text-slate-800 leading-tight">
+                  {{ p.nombre }}
+                </div>
+
+                <!-- ACORDES -->
+                {% if p.acordes.count > 0 %}
+                <div class="acordes-wrapper mt-2 w-full">
+                  <p class="acordes-title text-[11px] font-Lexend font-semibold mb-2 tracking-[0.2em] text-gray-800 uppercase">
+                    Acordes principales
+                  </p>
+                  <div class="acordes-tags flex flex-wrap justify-center gap-2">
+                    {% for acorde in p.acordes.all %}
+                    <span
+                      class="acorde-chip inline-flex items-center justify-center text-[10px] font-Lexend font-semibold px-3 py-0.5 rounded-full border shadow-sm text-gray-900"
+                      {% if acorde.background_rgb %}
+                        style="background-color: rgba({{ acorde.background_rgb }}, 0.4); border-color: rgba({{ acorde.background_rgb }}, 3);"
+                      {% endif %}>
+                      {{ acorde.nombre }}
+                    </span>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- NOTAS OLFATIVAS -->
+                {% if p.notas_salida.count > 0 or p.notas_corazon.count > 0 or p.notas_base.count > 0 %}
+                <div
+                  class="notas-piramide w-full -mx-2 sm:-mx-3 px-1 sm:px-2 py-2 border border-white/30 rounded-2xl bg-transparent max-h-60 overflow-y-auto pr-1">
+                  <p class="text-[11px] font-Lexend font-semibold tracking-[0.3em] text-gray-900 uppercase mb-1">
+                    Piramide olfativa
+                  </p>
+                  {% if p.notas_salida.count > 0 %}
+                  <div class="nota-section">
+                    <span class="nota-title text-amber-600">Notas de Salida</span>
+                    <div class="nota-tags">
+                      {% for nota in p.notas_salida.all %}
+                      <span class="nota-chip nota-chip-salida">{{ nota.nombre }}</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% if p.notas_corazon.count > 0 %}
+                  <div class="nota-section">
+                    <span class="nota-title mt-1 text-rose-500">Notas de Corazón</span>
+                    <div class="nota-tags">
+                      {% for nota in p.notas_corazon.all %}
+                      <span class="nota-chip nota-chip-corazon">{{ nota.nombre }}</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% if p.notas_base.count > 0 %}
+                  <div class="nota-section">
+                    <span class="nota-title mt-1 text-emerald-600">Notas Base</span>
+                    <div class="nota-tags">
+                      {% for nota in p.notas_base.all %}
+                      <span class="nota-chip nota-chip-base">{{ nota.nombre }}</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+
+              {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 %}
+              <div class="download-wrapper mt-6">
+                <form method="post" action="{% url 'descargar_acordes_individual' p.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="download-btn"
+                    onclick="this.innerHTML='Cargando...'; this.disabled=true; this.form.submit();">
+                    Descargar detalles
+                  </button>
+                </form>
+              </div>
+              {% endif %}
+
+              <!-- ESTACIONES -->
+              <div class="w-full text-center">
+                <p class="mb-2 text-[11px] font-Lexend font-bold text-gray-800 uppercase">Estaciones</p>
+                {% if p.estaciones.count %}
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {% for estacion in p.estaciones.all %}
+                  {% with nombre=estacion.nombre|default_if_none:"" slug=estacion.nombre|default_if_none:""|slugify percent=estacion.porcentaje|default_if_none:0 %}
+                  {% if "invierno" in slug %}
+                  {% with icon="fa-snowflake" color="#4fb7e9" label="Invierno" %}
+                  <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                    <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                      style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                      <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                        style="color: {{ color }};">
+                        <i class="fa-solid {{ icon }}"></i>
+                      </div>
+                    </div>
+                    <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                    <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+                  </div>
+                  {% endwith %}
+                  {% elif "primavera" in slug %}
+                  {% with icon="fa-leaf" color="#5fc873" label="Primavera" %}
+                  <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                    <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                      style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                      <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                        style="color: {{ color }};">
+                        <i class="fa-solid {{ icon }}"></i>
+                      </div>
+                    </div>
+                    <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                    <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+                  </div>
+                  {% endwith %}
+                  {% elif "verano" in slug %}
+                  {% with icon="fa-sun" color="#f5c04a" label="Verano" %}
+                  <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                    <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                      style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                      <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                        style="color: {{ color }};">
+                        <i class="fa-solid {{ icon }}"></i>
+                      </div>
+                    </div>
+                    <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                    <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+                  </div>
+                  {% endwith %}
+                  {% elif "otono" in slug %}
+                  {% with icon="fa-cannabis" color="#d39b4e" label="Otoño" %}
+                  <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                    <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                      style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                      <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                        style="color: {{ color }};">
+                        <i class="fa-solid {{ icon }}"></i>
+                      </div>
+                    </div>
+                    <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                    <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+                  </div>
+                  {% endwith %}
+                  {% endif %}
+                  {% endwith %}
+                  {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-gray-500">Sin datos disponibles</p>
+                {% endif %}
+              </div>
+
+              <!-- BOTON COMPARAR REVERSO -->
+              <div class="compare-section">
+                <button type="button"
+                  class="compare-btn text-xs bg-gray-400 cursor-pointer font-Lexend px-4 py-2 rounded-full">
+                  Agregar para comparar +
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+        <!-- FIN DE CONSTRUCCION DE CARD -->
+        {% endfor %}
       </div>
+
+      <!-- PAGINACIÓN -->
+      <div class="mt-6 flex justify-center items-center gap-4 text-sm">
+        {% if perfumes.has_previous %}
+        <a href="?page=1" class="px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400">
+          Primera
+        </a>
+        <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400">
+          &lt; Anterior
+        </a>
+        {% endif %}
+
+        <span class="px-3 py-1 text-slate-600">
+          Página {{ perfumes.number }} de {{ perfumes.paginator.num_pages }}
+        </span>
+
+        {% if perfumes.has_next %}
+        <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400">
+          Siguiente &gt;
+        </a>
+        <a href="?page={{ perfumes.paginator.num_pages }}" class="px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400">
+          Última
+        </a>
+        {% endif %}
+      </div>
+
+      {% else %}
+      <p class="mt-4 text-gray-600">No hay perfumes en la base de datos.</p>
+      {% endif %}
     </div>
   </div>
-  <!-- FIN DE CONSTRUCCION DE CARD -->
-  {% endfor %}
 </div>
-
-<!-- CONTROLES DE PAGINACION -->
-<div class="mt-6 flex justify-center items-center gap-4">
-  {% if perfumes.has_previous %}
-  <a href="?page=1" class="px-3 py-1 border rounded">Primera</a>
-  <a href="?page={{ perfumes.previous_page_number }}" class="px-3 py-1 border rounded">&lt; Anterior</a>
-  {% endif %}
-
-  <span class="px-3 py-1">
-    Pagina {{ perfumes.number }} de {{ perfumes.paginator.num_pages }}
-  </span>
-
-  {% if perfumes.has_next %}
-  <a href="?page={{ perfumes.next_page_number }}" class="px-3 py-1 border rounded">Siguiente &gt;</a>
-  <a href="?page={{ perfumes.paginator.num_pages }}" class="px-3 py-1 border rounded">Ultima</a>
-  {% endif %}
-</div>
-{% else %}
-<p class="text-gray-600 mt-4">No hay perfumes en la base de datos.</p>
-{% endif %}
 {% endblock %}
