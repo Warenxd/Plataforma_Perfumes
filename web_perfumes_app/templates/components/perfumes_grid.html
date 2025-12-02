@@ -25,7 +25,7 @@
 
           <!-- LOGO TIENDA -->
           <a href="{{ p.url_producto }}"
-            class="inline-block self-center transition-transform duration-200 hover:scale-110 mt-3"
+            class="inline-block self-center transition-transform duration-200 hover:scale-110"
             target="_blank">
             {% if p.tienda == "SILK" %}
             <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center" style="height: 2rem;">
@@ -40,22 +40,22 @@
           {% endif %}
 
           <!-- MARCA DE CARD -->
-          <div class="mt-2 px-4 leading-2 text-xs text-left font-Lexend text-gray-600 wrap-break-word">
+          <div class="mt-2 px-4 leading-2 text-sm text-left font-Lexend text-gray-600 wrap-break-word">
             {{ p.marca.marca }}
           </div>
 
           <!-- NOMBRE DE CARD -->
-          <div class="px-4 py-1 mb-2 leading-4 text-base text-left font-Poppins uppercase font-bold text-gray-800 wrap-break-word">
+          <div class="px-4 py-1 mb-2 leading-5 text-xl text-left font-Poppins uppercase font-bold text-gray-800 wrap-break-word">
             {{ p.nombre }}
           </div>
 
           <!-- PRECIO DEL PERFUME -->
           <div class="px-4 mt-2">
             <div class="flex justify-center items-center gap-2">
-              <span class="text-xl font-Alexandria text-amber-600">
+              <span class="text-2xl font-Alexandria  text-amber-600">
                 ${{ p.precio|clp }}
               </span>
-              <span class="text-sm font-Alexandria font-light line-through text-gray-500 translate-x-2">
+              <span class="text-lg font-Alexandria font-light line-through text-gray-500 translate-x-2">
                 ${{ p.precio_ant|clp }}
               </span>
             </div>

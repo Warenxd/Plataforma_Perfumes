@@ -93,8 +93,10 @@
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --font-Poppins: "Poppins", sans-serif;
+    --font-Josefin-Sans: "Josefin Sans", sans-serif;
     --font-Lexend: "Lexend", sans-serif;
     --font-Alexandria: "Alexandria", sans-serif;
+    --font-Inter: "Inter", sans-serif;
     --font-GoogleSansFlex: "Google Sans Flex", sans-serif;
   }
 }
@@ -279,6 +281,9 @@
   .inset-1 {
     inset: calc(var(--spacing) * 1);
   }
+  .inset-x-4 {
+    inset-inline: calc(var(--spacing) * 4);
+  }
   .inset-y-0 {
     inset-block: calc(var(--spacing) * 0);
   }
@@ -399,6 +404,9 @@
   }
   .max-h-60 {
     max-height: calc(var(--spacing) * 60);
+  }
+  .min-h-6 {
+    min-height: calc(var(--spacing) * 6);
   }
   .min-h-\[calc\(100vh-5rem\)\] {
     min-height: calc(100vh - 5rem);
@@ -596,6 +604,9 @@
   }
   .border-slate-500 {
     border-color: var(--color-slate-500);
+  }
+  .border-slate-700 {
+    border-color: var(--color-slate-700);
   }
   .border-slate-700\/70 {
     border-color: color-mix(in srgb, oklch(37.2% 0.044 257.287) 70%, transparent);
@@ -859,6 +870,15 @@
   .font-Alexandria {
     font-family: var(--font-Alexandria);
   }
+  .font-GoogleSansFlex {
+    font-family: var(--font-GoogleSansFlex);
+  }
+  .font-Inter {
+    font-family: var(--font-Inter);
+  }
+  .font-Josefin-Sans {
+    font-family: var(--font-Josefin-Sans);
+  }
   .font-Lexend {
     font-family: var(--font-Lexend);
   }
@@ -906,6 +926,14 @@
   .leading-4 {
     --tw-leading: calc(var(--spacing) * 4);
     line-height: calc(var(--spacing) * 4);
+  }
+  .leading-5 {
+    --tw-leading: calc(var(--spacing) * 5);
+    line-height: calc(var(--spacing) * 5);
+  }
+  .leading-6 {
+    --tw-leading: calc(var(--spacing) * 6);
+    line-height: calc(var(--spacing) * 6);
   }
   .leading-tight {
     --tw-leading: var(--leading-tight);
