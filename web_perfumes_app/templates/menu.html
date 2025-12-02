@@ -85,60 +85,146 @@
       </div>
 
       <!-- CARA TRASERA -->
-      <div class="flip-card-back card relative">
-        <div class="text-center flex flex-col items-center gap-1">
-          <div class="text-xs font-Lexend text-gray-500">{{ p.marca.marca }}</div>
-          <div class="text-base font-Poppins uppercase font-bold text-gray-800">
+      <div class="flip-card-back card relative from-slate-50/80 via-white to-emerald-50/40 backdrop-blur">
+        <div class="text-center flex flex-col items-center gap-2 px-1 sm:px-2">
+          <div class="text-xs font-Lexend text-gray-500 tracking-wide">{{ p.marca.marca }}</div>
+          <div class="text-lg font-Poppins uppercase font-bold text-slate-800 leading-tight">
             {{ p.nombre }}
           </div>
+          <!-- ACORDES -->
           {% if p.acordes.count > 0 %}
-          <div class="acordes-wrapper mt-1">
-            <p class="acordes-title text-[10px] font-Lexend font-bold tracking-wide text-gray-800 mb-2 uppercase">Acordes principales</p>
-            <div class="acordes-tags flex flex-wrap">
+          <div class="acordes-wrapper mt-2 w-full">
+            <p class="acordes-title text-[11px] font-Lexend font-semibold mb-2 tracking-[0.2em] text-gray-800 uppercase">Acordes principales</p>
+            <div class="acordes-tags flex flex-wrap justify-center gap-2">
               {% for acorde in p.acordes.all %}
               <span
-                class="acorde-chip text-zinc-950 font-GoogleSansFlex font-semibold"
+                class="acorde-chip inline-flex items-center justify-center text-[10px] font-Lexend font-semibold px-3 py-0.5 rounded-full border shadow-sm text-gray-900"
                 {% if acorde.background_rgb %}
-                  style="background-color: rgb({{ acorde.background_rgb }}); border-color: rgba({{ acorde.background_rgb }}, 0.35);"
-                {% endif %}
-              >
+                  style="background-color: rgba({{ acorde.background_rgb }}, 0.4); border-color: rgba({{ acorde.background_rgb }}, 3);"
+                {% endif %}>
                 {{ acorde.nombre }}
               </span>
               {% endfor %}
             </div>
           </div>
           {% endif %}
+          <!-- NOTAS OLFATIVAS -->
+          {% if p.notas_salida.count > 0 or p.notas_corazon.count > 0 or p.notas_base.count > 0 %}
+          <div class="notas-piramide w-full -mx-2 sm:-mx-3 px-1 sm:px-2 py-2 border border-white/30 rounded-2xl bg-transparent max-h-60 overflow-y-auto pr-1">
+            <p class="text-[11px] font-Lexend font-semibold tracking-[0.3em] text-gray-900 uppercase mb-1">Piramide olfativa</p>
+            {% if p.notas_salida.count > 0 %}
+            <div class="nota-section">
+              <span class="nota-title text-amber-600">Notas de Salida</span>
+              <div class="nota-tags">
+                {% for nota in p.notas_salida.all %}
+                <span class="nota-chip nota-chip-salida">{{ nota.nombre }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            {% if p.notas_corazon.count > 0 %}
+            <div class="nota-section">
+              <span class="nota-title mt-1 text-rose-500">Notas de Corazón</span>
+              <div class="nota-tags">
+                {% for nota in p.notas_corazon.all %}
+                <span class="nota-chip nota-chip-corazon">{{ nota.nombre }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            {% if p.notas_base.count > 0 %}
+            <div class="nota-section">
+              <span class="nota-title mt-1 text-emerald-600">Notas Base</span>
+              <div class="nota-tags">
+                {% for nota in p.notas_base.all %}
+                <span class="nota-chip nota-chip-base">{{ nota.nombre }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
-
         {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 %}
-<div class="download-wrapper mt-6">
-    <form method="post" action="{% url 'descargar_acordes_individual' p.id %}">
-        {% csrf_token %}
-        <button type="submit" class="download-btn" onclick="this.innerHTML='Cargando...'; this.disabled=true; this.form.submit();">
-            Descargar detalles
-        </button>
-    </form>
-</div>
-{% endif %}
-
+        <div class="download-wrapper mt-6">
+            <form method="post" action="{% url 'descargar_acordes_individual' p.id %}">
+                {% csrf_token %}
+                <button type="submit" class="download-btn" onclick="this.innerHTML='Cargando...'; this.disabled=true; this.form.submit();">
+                    Descargar detalles
+                </button>
+            </form>
+        </div>
+        {% endif %}
         <!-- BLOQUE DE ICONOS DE ESTACIONES -->
-        <div class="back-icons grid grid-cols-2 gap-4  text-blue-600 w-full px-3">
-          <div class="flex flex-col items-center bg-white/70 rounded-xl py-2">
-            <i class="estacion fa-solid fa-snowflake text-2xl text-cyan-500"></i>
-            <span class="text-xs mt-1 text-gray-700 font-medium">Invierno</span>
+        <div class="w-full text-center">
+          <p class="mb-2 text-[11px] font-Lexend font-bold text-gray-800 uppercase">Estaciones</p>
+          {% if p.estaciones.count %}
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {% for estacion in p.estaciones.all %}
+            {% with nombre=estacion.nombre|default_if_none:"" slug=estacion.nombre|default_if_none:""|slugify percent=estacion.porcentaje|default_if_none:0 %}
+            {% if "invierno" in slug %}
+              {% with icon="fa-snowflake" color="#4fb7e9" label="Invierno" %}
+              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                    style="color: {{ color }};">
+                    <i class="fa-solid {{ icon }}"></i>
+                  </div>
+                </div>
+                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+              </div>
+              {% endwith %}
+            {% elif "primavera" in slug %}
+              {% with icon="fa-leaf" color="#5fc873" label="Primavera" %}
+              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                    style="color: {{ color }};">
+                    <i class="fa-solid {{ icon }}"></i>
+                  </div>
+                </div>
+                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+              </div>
+              {% endwith %}
+            {% elif "verano" in slug %}
+              {% with icon="fa-sun" color="#f5c04a" label="Verano" %}
+              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                    style="color: {{ color }};">
+                    <i class="fa-solid {{ icon }}"></i>
+                  </div>
+                </div>
+                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+              </div>
+              {% endwith %}
+            {% elif "otono" in slug %}
+              {% with icon="fa-cannabis" color="#d39b4e" label="Otoño" %}
+              <div class="flex flex-col items-center gap-1 font-Lexend text-slate-800">
+                <div class="relative flex h-16 w-16 items-center justify-center rounded-full p-1 shadow-[0_4px_12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/70"
+                  style="background: conic-gradient({{ color }} {{ percent }}%, rgba(148,163,184,0.25) 0);">
+                  <div class="absolute inset-1 flex items-center justify-center rounded-full bg-white text-lg"
+                    style="color: {{ color }};">
+                    <i class="fa-solid {{ icon }}"></i>
+                  </div>
+                </div>
+                <span class="text-[10px] uppercase font-semibold text-slate-700">{{ label }}</span>
+                <span class="text-xs font-semibold text-slate-500">{{ percent|floatformat:0 }}%</span>
+              </div>
+              {% endwith %}
+            {% endif %}
+            {% endwith %}
+            {% endfor %}
           </div>
-          <div class="flex flex-col items-center bg-white/70 rounded-xl py-2">
-            <i class="estacion fa-solid fa-leaf text-2xl text-green-500"></i>
-            <span class="text-xs mt-1 text-gray-700 font-medium">Primavera</span>
-          </div>
-          <div class="flex flex-col items-center bg-white/70 rounded-xl py-2">
-            <i class="estacion fa-solid fa-sun text-2xl text-yellow-500"></i>
-            <span class="text-xs mt-1 text-gray-700 font-medium">Verano</span>
-          </div>
-          <div class="flex flex-col items-center bg-white/70 rounded-xl py-2">
-            <i class="estacion fa-solid fa-cannabis text-2xl text-yellow-900"></i>
-            <span class="text-xs mt-1 text-gray-700 font-medium">Otono</span>
-          </div>
+          {% else %}
+          <p class="text-xs text-gray-500">Sin datos disponibles</p>
+          {% endif %}
         </div>
 
         <!-- BOTON COMPARAR REVERSO -->

@@ -89,19 +89,10 @@
         color: white;
     }
 
-    .estacion {
-        transition: transform 0.3s ease, filter 0.3s ease;
-    }
-    .estacion:hover{
-        transform: scale(1.25) rotate(5deg);
-        filter: brightness(1.2);
-        cursor: pointer;
-    }
-
     .flip-card {
         background-color: transparent;
-        width: 270px;
-        height: 530px;
+        width: 320px;
+        height: 620px;
         perspective: 1000px;
         font-family: inherit;
         position: relative;
@@ -156,10 +147,10 @@
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center 80px;
-        opacity: 0.4;
+        opacity: 0.3;
         filter: blur(8px);
         z-index: -1;
-        transform: scale(1.05);
+        transform: scale(1.0);
     }
 
     .acordes-wrapper {
@@ -186,6 +177,61 @@
         box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
         font-size: 0.7rem;
         line-height: 1.2;
+    }
+    .nota-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        margin-bottom: 0.4  5rem;
+    }
+
+    .nota-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .nota-title {
+        font-family: var(--font-Lexend);
+        font-size: 0.65rem;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .nota-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem;
+        row-gap: 0.2rem;
+        padding: 0 0.25rem;
+    }
+
+    .nota-chip {
+        font-family: var(--font-GoogleSansFlex);
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 0.15rem 0.55rem;
+        border-radius: 9999px;
+        line-height: 1.1;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+        white-space: nowrap;
+    }
+
+    .nota-chip-salida {
+        background: rgba(251, 191, 36, 0.25);
+        border-color: rgba(217, 119, 6, 0.35);
+    }
+
+    .nota-chip-corazon {
+        background: rgba(244, 114, 182, 0.2);
+        border-color: rgba(219, 39, 119, 0.35);
+    }
+
+    .nota-chip-base {
+        background: rgba(52, 211, 153, 0.2);
+        border-color: rgba(5, 150, 105, 0.35);
     }
 
     .back-icons {
