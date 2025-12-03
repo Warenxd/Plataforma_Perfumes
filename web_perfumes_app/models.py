@@ -32,6 +32,12 @@ class Marca(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+class Genero(models.Model):
+    nombre = models.CharField(max_length=20, unique=True, blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
 
 # TABLA DE PERFUMES
 class Perfume(models.Model):
@@ -51,7 +57,7 @@ class Perfume(models.Model):
     precio_ant = models.IntegerField(null=True, blank=True)
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
-    genero = models.CharField(max_length=1, choices=GENERO_CHOICES, default='H')
+    generos = models.ManyToManyField(Genero, related_name="perfumes", blank=True, null=True)
     tienda = models.CharField(max_length=20, choices=TIENDA_CHOICES, default='SILK')
     url_producto = models.URLField(blank=True, null=True)
     # --------------------------------------------------------------------------

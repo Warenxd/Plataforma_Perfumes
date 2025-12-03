@@ -12,6 +12,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.template.loader import render_to_string
+from django.utils.text import slugify
 from .models import *
 from django.shortcuts import render, redirect, get_object_or_404   # ← AÑADE get_object_or_404
 from django.contrib import messages
@@ -35,6 +36,7 @@ def _normalizar_texto(valor):
     return texto.strip().lower()
 
 ESTACIONES_VALIDAS = {"invierno", "primavera", "verano", "otono"}
+ESTACION_MIN_PORCENTAJE = 60
 
 @browser(
         headless=True, 
@@ -378,135 +380,145 @@ def descargar_acordes_individual(request, perfume_id):
 # FUNCIONES SCRAPPING
 def scrapping_silk_perfumes():
 
+    categorias = [
+        ("perfumes-de-hombre", "https://silkperfumes.cl/collections/perfumes-de-hombre?page={page}"),
+        ("perfumes-arabes-hombre", "https://silkperfumes.cl/collections/perfumes-arabes-hombre?page={page}"),
+    ]
     creados, actualizados, errores = 0, 0, 0
-    page = 1
 
-    while True:
-        url = f"https://silkperfumes.cl/collections/perfumes-de-hombre?page={page}"
-        print(f"Scrapeando página {page}: {url}")
+    for nombre_categoria, url_template in categorias:
+        page = 1
 
-        response = requests.get(url)
-        if response.status_code != 200:
-            break
+        while True:
+            url = url_template.format(page=page)
+            print(f"Scrapeando {nombre_categoria} página {page}: {url}")
 
-        soup = BeautifulSoup(response.text, 'html.parser')
-        name_perfume = soup.find_all('p', class_='card__title')
+            response = requests.get(url)
+            if response.status_code != 200:
+                break
 
-        # Si ya no hay perfumes no hay más páginas
-        if not name_perfume:
-            break
+            soup = BeautifulSoup(response.text, 'html.parser')
+            name_perfume = soup.find_all('p', class_='card__title')
 
-        for n in name_perfume:
-            nombre = n.get_text(strip=True)
-            card = n.find_parent(class_="card")
+            # Si ya no hay perfumes no hay más páginas
+            if not name_perfume:
+                break
 
-            # ELIMINAR PERFUMES AGOTADOS DE LA BD (Y SU IMAGEN)
-            if card:
-                agotado_span = card.find("span", class_="product-label--sold-out")
-                if agotado_span and "agotado" in agotado_span.get_text(strip=True).lower():
-                    perfumes_agotados = Perfume.objects.filter(nombre=nombre, tienda="SILK")
-                    for perfume_agotado in perfumes_agotados:
-                        if perfume_agotado.imagen and default_storage.exists(perfume_agotado.imagen.name):
-                            default_storage.delete(perfume_agotado.imagen.name)
-                        perfume_agotado.delete()
-                    continue
+            for n in name_perfume:
+                nombre = n.get_text(strip=True)
+                card = n.find_parent(class_="card")
 
-            # MARCA (como objeto relacionado)
-            marca_obj = None
-            if card:
-                marca_el = card.find("p", class_="card__vendor")
-                marca_nombre = marca_el.get_text(strip=True) if marca_el else "Desconocida"
-                from .models import Marca
-                marca_obj, _ = Marca.objects.get_or_create(marca=marca_nombre)
+                # ELIMINAR PERFUMES AGOTADOS DE LA BD (Y SU IMAGEN)
+                if card:
+                    agotado_span = card.find("span", class_="product-label--sold-out")
+                    if agotado_span and "agotado" in agotado_span.get_text(strip=True).lower():
+                        perfumes_agotados = Perfume.objects.filter(nombre=nombre, tienda="SILK")
+                        for perfume_agotado in perfumes_agotados:
+                            if perfume_agotado.imagen and default_storage.exists(perfume_agotado.imagen.name):
+                                default_storage.delete(perfume_agotado.imagen.name)
+                            perfume_agotado.delete()
+                        continue
 
-            # PRECIO
-            price_el = card.find("strong", class_="price__current") if card else None
-            precio = _parsear_clp(price_el.get_text(strip=True)) if price_el else 0
+                # MARCA (como objeto relacionado)
+                marca_obj = None
+                if card:
+                    marca_el = card.find("p", class_="card__vendor")
+                    marca_nombre = marca_el.get_text(strip=True) if marca_el else "Desconocida"
+                    from .models import Marca
+                    marca_obj, _ = Marca.objects.get_or_create(marca=marca_nombre)
 
-            # PRECIO ANTERIOR (Si es que hay oferta o algo)
-            price_bef = card.find("s", class_="price__was") if card else None
-            if price_bef:
-                precio_ant = _parsear_clp(price_bef.get_text(strip=True))
-            else:
-                precio_ant = precio
+                # PRECIO
+                price_el = card.find("strong", class_="price__current") if card else None
+                precio = _parsear_clp(price_el.get_text(strip=True)) if price_el else 0
 
-            # URL PRODUCTO
-            url_prod = None
-            if card:
-                a = card.find("a", class_="js-prod-link")
-                if a and a.get("href"):
-                    url_prod = "https://silkperfumes.cl" + a["href"]
+                # PRECIO ANTERIOR (Si es que hay oferta o algo)
+                price_bef = card.find("s", class_="price__was") if card else None
+                if price_bef:
+                    precio_ant = _parsear_clp(price_bef.get_text(strip=True))
+                else:
+                    precio_ant = precio
 
-            # IMAGEN
-            img_url = None
-            if card:
-                img = card.find("img")
-                if img:
-                    candidates = [
-                        img.get("data-src"),
-                        img.get("data-srcset", "").split(",")[0].split()[0] if img.get("data-srcset") else None,
-                        img.get("src"),
-                    ]
+                # URL PRODUCTO
+                url_prod = None
+                if card:
+                    a = card.find("a", class_="js-prod-link")
+                    if a and a.get("href"):
+                        url_prod = "https://silkperfumes.cl" + a["href"]
 
-                    for u in candidates:
-                        if not u:
-                            continue
-                        u = u.strip()
+                # IMAGEN
+                img_url = None
+                if card:
+                    img = card.find("img")
+                    if img:
+                        candidates = [
+                            img.get("data-src"),
+                            img.get("data-srcset", "").split(",")[0].split()[0] if img.get("data-srcset") else None,
+                            img.get("src"),
+                        ]
 
-                        # ignorar svg falso
-                        if u.startswith("data:"):
-                            continue
+                        for u in candidates:
+                            if not u:
+                                continue
+                            u = u.strip()
 
-                        # si empieza con //' agregar https:
-                        if u.startswith("//"):
-                            u = "https:" + u
-                        # si empieza con / ' hacerla absoluta
-                        elif u.startswith("/"):
-                            u = "https://silkperfumes.cl" + u
+                            # ignorar svg falso
+                            if u.startswith("data:"):
+                                continue
 
-                        img_url = u
-                        break
+                            # si empieza con //' agregar https:
+                            if u.startswith("//"):
+                                u = "https:" + u
+                            # si empieza con / ' hacerla absoluta
+                            elif u.startswith("/"):
+                                u = "https://silkperfumes.cl" + u
 
-            # GUARDAR O ACTUALIZAR
-            perfume, creado = Perfume.objects.get_or_create(
-                nombre=nombre,
-                defaults={
-                    "marca": marca_obj,
-                    "precio": precio,
-                    "precio_ant": precio_ant,
-                    "tienda": "SILK",
-                    "url_producto": url_prod
-                }
-            )
+                            img_url = u
+                            break
 
-            if creado:
-                creados += 1
-            else:
-                if (
-                    perfume.precio != precio
-                    or perfume.marca != marca_obj
-                    or perfume.precio_ant != precio_ant
-                ):
-                    perfume.precio = precio
-                    perfume.marca = marca_obj
-                    perfume.precio_ant = precio_ant
-                    perfume.save()
-                    actualizados += 1
+                # GUARDAR O ACTUALIZAR
+                perfume, creado = Perfume.objects.get_or_create(
+                    nombre=nombre,
+                    defaults={
+                        "marca": marca_obj,
+                        "precio": precio,
+                        "precio_ant": precio_ant,
+                        "tienda": "SILK",
+                        "url_producto": url_prod
+                    }
+                )
 
-            # GUARDAR IMAGEN
-            if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
-                try:
-                    img_bytes = requests.get(img_url, timeout=10).content
-                    perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
-                except:
-                    errores += 1
+                if creado:
+                    creados += 1
+                else:
+                    if (
+                        perfume.precio != precio
+                        or perfume.marca != marca_obj
+                        or perfume.precio_ant != precio_ant
+                    ):
+                        perfume.precio = precio
+                        perfume.marca = marca_obj
+                        perfume.precio_ant = precio_ant
+                        perfume.save()
+                        actualizados += 1
 
-            if url_prod and not perfume.url_producto:
-                perfume.url_producto = url_prod
+                # GUARDAR IMAGEN
+                if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
+                    try:
+                        img_bytes = requests.get(img_url, timeout=10).content
+                        perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                    except:
+                        errores += 1
 
-            perfume.save()
+                if url_prod and not perfume.url_producto:
+                    perfume.url_producto = url_prod
 
-        page += 1  # ir a la siguiente página
+                perfume.save()
+
+            # No incrementamos la página dentro del loop de perfumes
+
+            # y continuamos con el siguiente perfume de esta página
+
+            page += 1  # ir a la siguiente página cuando ya procesamos toda la lista
 
     return {"creados": creados, "actualizados": actualizados, "errores": errores}
 
@@ -618,12 +630,16 @@ def actualizar_urls_fragrantica():
 
 def refrescar_perfumes(request):
     try:
-        
-        actualizar_urls_fragrantica()
-        total = actualizar_acordes_todos()
-        messages.success(request, f"Acordes actualizados para {total} perfumes.")
+        scrapping_resultados = scrapping_silk_perfumes()
+        urls_actualizadas = actualizar_urls_fragrantica()
+        mensajes_extra = (
+            f" | Scraping - Creados: {scrapping_resultados['creados']}, "
+            f"Actualizados: {scrapping_resultados['actualizados']}, "
+            f"Errores: {scrapping_resultados['errores']} | URLs Fragrantica actualizadas: {urls_actualizadas}"
+        )
+        messages.success(request, f"Scraping completado y URLs actualizadas.{mensajes_extra}")
     except Exception as e:
-        messages.error(request, f"Ocurrió un problema al actualizar los acordes: {e}")
+        messages.error(request, f"Ocurrió un problema al refrescar los perfumes: {e}")
     return redirect(reverse("home"))
 
 # RENDER DE VISTAS
@@ -637,6 +653,33 @@ def home(request):
         except (TypeError, ValueError):
             continue
 
+    estacion_slugs_raw = request.GET.getlist("estacion")
+    selected_estacion_slugs = []
+    for valor in estacion_slugs_raw:
+        slug = slugify(valor or "")
+        if slug:
+            selected_estacion_slugs.append(slug)
+
+    estaciones_qs = (
+        Estacion.objects.filter(perfumes__isnull=False, porcentaje__gte=ESTACION_MIN_PORCENTAJE)
+        .order_by("nombre")
+        .distinct()
+    )
+    estaciones_slug_map = {}
+    for estacion in estaciones_qs:
+        slug = slugify(estacion.nombre or "")
+        if not slug:
+            continue
+        data = estaciones_slug_map.setdefault(
+            slug,
+            {"slug": slug, "label": estacion.nombre, "ids": set()},
+        )
+        data["ids"].add(estacion.id)
+        if not data["label"]:
+            data["label"] = estacion.nombre
+
+    selected_estacion_slugs = [slug for slug in selected_estacion_slugs if slug in estaciones_slug_map]
+
     perfumes_list = Perfume.objects.order_by("nombre").prefetch_related("estaciones").select_related("marca")
     if search_query:
         perfumes_list = perfumes_list.filter(
@@ -644,6 +687,16 @@ def home(request):
         )
     if marca_ids:
         perfumes_list = perfumes_list.filter(marca_id__in=marca_ids)
+    for slug in selected_estacion_slugs:
+        estacion_ids = estaciones_slug_map.get(slug, {}).get("ids")
+        if not estacion_ids:
+            continue
+        perfumes_list = perfumes_list.filter(
+            estaciones__in=estacion_ids,
+            estaciones__porcentaje__gte=ESTACION_MIN_PORCENTAJE,
+        )
+    if selected_estacion_slugs:
+        perfumes_list = perfumes_list.distinct()
     paginator = Paginator(perfumes_list, 15)
     page_number = request.GET.get("page")
     perfumes = paginator.get_page(page_number)
@@ -654,6 +707,10 @@ def home(request):
 
     total_perfumes = perfumes_list.count()
     marcas = Marca.objects.filter(perfumes__isnull=False).order_by("marca").distinct()
+    estaciones_filtro = [
+        {"slug": data["slug"], "label": data["label"]}
+        for data in estaciones_slug_map.values()
+    ]
     selected_marca_ids = [str(pk) for pk in marca_ids]
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -663,6 +720,8 @@ def home(request):
                 "perfumes": perfumes,
                 "search_query": search_query,
                 "selected_marca_ids": selected_marca_ids,
+                "selected_estacion_slugs": selected_estacion_slugs,
+                "estacion_min_porcentaje": ESTACION_MIN_PORCENTAJE,
             },
             request=request,
         )
@@ -684,6 +743,9 @@ def home(request):
             "search_query": search_query,
             "marcas": marcas,
             "selected_marca_ids": selected_marca_ids,
+            "estaciones_filtro": estaciones_filtro,
+            "selected_estacion_slugs": selected_estacion_slugs,
+            "estacion_min_porcentaje": ESTACION_MIN_PORCENTAJE,
         },
     )
 

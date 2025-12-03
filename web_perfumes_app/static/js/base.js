@@ -2,8 +2,18 @@
   const grid = document.getElementById("perfumes-grid");
   const searchInput = document.getElementById("search");
   const filtersForm = document.getElementById("filters-form");
-  const clearFiltersBtn = document.getElementById("clear-brand-filters");
-  const brandInputSelector = 'input[name="marca"]';
+  const filterConfigs = [
+    {
+      name: "marca",
+      selector: 'input[name="marca"]',
+      clearButton: document.getElementById("clear-brand-filters"),
+    },
+    {
+      name: "estacion",
+      selector: 'input[name="estacion"]',
+      clearButton: document.getElementById("clear-season-filters"),
+    },
+  ];
   if (!grid || typeof window.fetch !== "function") {
     return;
   }
@@ -33,18 +43,26 @@
     }
   };
 
-  const syncBrandFiltersFromUrl = (url) => {
+  const syncFiltersFromUrl = (url) => {
     if (!filtersForm) {
       return;
     }
     try {
       const parsed = new URL(url, window.location.origin);
-      const marcas = parsed.searchParams.getAll("marca");
-      filtersForm.querySelectorAll(brandInputSelector).forEach((input) => {
-        input.checked = marcas.includes(input.value);
+      filterConfigs.forEach(({ name, selector }) => {
+        const values = parsed.searchParams.getAll(name);
+        if (values.length === 0) {
+          filtersForm.querySelectorAll(selector).forEach((input) => {
+            input.checked = false;
+          });
+          return;
+        }
+        filtersForm.querySelectorAll(selector).forEach((input) => {
+          input.checked = values.includes(input.value);
+        });
       });
     } catch (error) {
-      console.warn("No se pudo sincronizar los filtros de marcas", error);
+      console.warn("No se pudieron sincronizar los filtros", error);
     }
   };
 
@@ -75,7 +93,7 @@
       }
       replaceContent(data.html);
       syncSearchInputFromUrl(url);
-      syncBrandFiltersFromUrl(url);
+      syncFiltersFromUrl(url);
       if (push) {
         pushState(url, data.html, replaceState);
       }
@@ -132,12 +150,14 @@
       return;
     }
     const url = new URL(window.location.href);
-    url.searchParams.delete("marca");
-    filtersForm
-      .querySelectorAll(`${brandInputSelector}:checked`)
-      .forEach((input) => {
-        url.searchParams.append("marca", input.value);
-      });
+    filterConfigs.forEach(({ name, selector }) => {
+      url.searchParams.delete(name);
+      filtersForm
+        .querySelectorAll(`${selector}:checked`)
+        .forEach((input) => {
+          url.searchParams.append(name, input.value);
+        });
+    });
     if (searchInput) {
       const trimmed = searchInput.value.trim();
       if (trimmed) {
@@ -150,9 +170,16 @@
     fetchPage(url.toString());
   };
 
+  const isFilterInput = (element) => {
+    if (!element) {
+      return false;
+    }
+    return filterConfigs.some(({ selector }) => element.matches(selector));
+  };
+
   if (filtersForm) {
     filtersForm.addEventListener("change", (event) => {
-      if (event.target.matches(brandInputSelector)) {
+      if (isFilterInput(event.target)) {
         event.preventDefault();
         applyFiltersFromSidebar();
       }
@@ -164,21 +191,23 @@
     });
   }
 
-  if (clearFiltersBtn && filtersForm) {
-    clearFiltersBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      filtersForm
-        .querySelectorAll(brandInputSelector)
-        .forEach((input) => (input.checked = false));
-      applyFiltersFromSidebar();
-    });
-  }
+  filterConfigs.forEach(({ selector, clearButton }) => {
+    if (clearButton && filtersForm) {
+      clearButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        filtersForm
+          .querySelectorAll(selector)
+          .forEach((input) => (input.checked = false));
+        applyFiltersFromSidebar();
+      });
+    }
+  });
 
   window.addEventListener("popstate", (event) => {
     if (event.state && typeof event.state.html === "string") {
       replaceContent(event.state.html);
       syncSearchInputFromUrl(window.location.href);
-      syncBrandFiltersFromUrl(window.location.href);
+      syncFiltersFromUrl(window.location.href);
     } else {
       window.location.reload();
     }
@@ -186,5 +215,5 @@
 
   pushState(window.location.href, grid.innerHTML, true);
   syncSearchInputFromUrl(window.location.href);
-  syncBrandFiltersFromUrl(window.location.href);
+  syncFiltersFromUrl(window.location.href);
 })();
