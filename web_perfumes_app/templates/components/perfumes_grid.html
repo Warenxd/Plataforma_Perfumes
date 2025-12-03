@@ -241,12 +241,12 @@
 <!-- PAGINACIÇ"N -->
 <div class="mt-6 flex justify-center items-center gap-4 text-sm">
   {% if perfumes.has_previous %}
-  <a href="?page=1{% if current_query %}&q={{ current_query|urlencode }}{% endif %}"
+  <a href="?page=1{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="1">
     Primera
   </a>
-  <a href="?page={{ perfumes.previous_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}"
+  <a href="?page={{ perfumes.previous_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="{{ perfumes.previous_page_number }}">
     &lt; Anterior
@@ -258,12 +258,12 @@
   </span>
 
   {% if perfumes.has_next %}
-  <a href="?page={{ perfumes.next_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}"
+  <a href="?page={{ perfumes.next_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="{{ perfumes.next_page_number }}">
     Siguiente &gt;
   </a>
-  <a href="?page={{ perfumes.paginator.num_pages }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}"
+  <a href="?page={{ perfumes.paginator.num_pages }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="{{ perfumes.paginator.num_pages }}">
     Última

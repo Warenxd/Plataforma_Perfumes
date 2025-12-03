@@ -1,6 +1,9 @@
 (() => {
   const grid = document.getElementById("perfumes-grid");
   const searchInput = document.getElementById("search");
+  const filtersForm = document.getElementById("filters-form");
+  const clearFiltersBtn = document.getElementById("clear-brand-filters");
+  const brandInputSelector = 'input[name="marca"]';
   if (!grid || typeof window.fetch !== "function") {
     return;
   }
@@ -27,6 +30,21 @@
       searchInput.value = parsed.searchParams.get("q") || "";
     } catch (error) {
       console.warn("No se pudo sincronizar la barra de busqueda", error);
+    }
+  };
+
+  const syncBrandFiltersFromUrl = (url) => {
+    if (!filtersForm) {
+      return;
+    }
+    try {
+      const parsed = new URL(url, window.location.origin);
+      const marcas = parsed.searchParams.getAll("marca");
+      filtersForm.querySelectorAll(brandInputSelector).forEach((input) => {
+        input.checked = marcas.includes(input.value);
+      });
+    } catch (error) {
+      console.warn("No se pudo sincronizar los filtros de marcas", error);
     }
   };
 
@@ -57,6 +75,7 @@
       }
       replaceContent(data.html);
       syncSearchInputFromUrl(url);
+      syncBrandFiltersFromUrl(url);
       if (push) {
         pushState(url, data.html, replaceState);
       }
@@ -108,10 +127,58 @@
     });
   }
 
+  const applyFiltersFromSidebar = () => {
+    if (!filtersForm) {
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("marca");
+    filtersForm
+      .querySelectorAll(`${brandInputSelector}:checked`)
+      .forEach((input) => {
+        url.searchParams.append("marca", input.value);
+      });
+    if (searchInput) {
+      const trimmed = searchInput.value.trim();
+      if (trimmed) {
+        url.searchParams.set("q", trimmed);
+      } else {
+        url.searchParams.delete("q");
+      }
+    }
+    url.searchParams.delete("page");
+    fetchPage(url.toString());
+  };
+
+  if (filtersForm) {
+    filtersForm.addEventListener("change", (event) => {
+      if (event.target.matches(brandInputSelector)) {
+        event.preventDefault();
+        applyFiltersFromSidebar();
+      }
+    });
+
+    filtersForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyFiltersFromSidebar();
+    });
+  }
+
+  if (clearFiltersBtn && filtersForm) {
+    clearFiltersBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      filtersForm
+        .querySelectorAll(brandInputSelector)
+        .forEach((input) => (input.checked = false));
+      applyFiltersFromSidebar();
+    });
+  }
+
   window.addEventListener("popstate", (event) => {
     if (event.state && typeof event.state.html === "string") {
       replaceContent(event.state.html);
       syncSearchInputFromUrl(window.location.href);
+      syncBrandFiltersFromUrl(window.location.href);
     } else {
       window.location.reload();
     }
@@ -119,4 +186,5 @@
 
   pushState(window.location.href, grid.innerHTML, true);
   syncSearchInputFromUrl(window.location.href);
+  syncBrandFiltersFromUrl(window.location.href);
 })();

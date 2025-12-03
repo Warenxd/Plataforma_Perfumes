@@ -9,7 +9,7 @@
 
   <!-- SIDEBAR IZQUIERDO: ocupa toda la altura -->
   <aside class="w-80 bg-slate-900 text-white flex-shrink-0">
-    <form class="flex h-full flex-col gap-6 p-6 text-white">
+    <form id="filters-form" method="get" class="flex h-full flex-col gap-6 p-6 text-white">
 
       <!-- Logo / título -->
       <div class="flex items-center gap-3">
@@ -22,109 +22,51 @@
         </div>
       </div>
 
-      <div class="space-y-6 text-sm text-slate-100">
-        <!-- Bedrooms -->
+      <div class="space-y-6 text-sm text-slate-100 flex-1 overflow-y-auto">
         <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Bedrooms</p>
-          <div class="mt-3 grid grid-cols-2 gap-3">
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">1</button>
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">2</button>
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">3</button>
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">4</button>
-          </div>
-        </div>
-
-        <!-- Bathrooms -->
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Bathrooms</p>
-          <div class="mt-3 grid grid-cols-2 gap-3">
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">1</button>
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">2</button>
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">3</button>
-            <button type="button" class="rounded-2xl bg-slate-800/80 py-2 font-semibold hover:bg-slate-700">4</button>
-          </div>
-        </div>
-
-        <!-- Price range -->
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Price range</p>
-          <div class="mt-2 rounded-2xl bg-slate-800/80 px-4 py-2.5 ring-1 ring-slate-700/60">
-            <select class="w-full bg-transparent text-sm text-slate-100 outline-none focus:ring-0">
-              <option class="text-slate-900">Up to $2,000 /wk</option>
-              <option class="text-slate-900">Up to $3,000 /wk</option>
-              <option class="text-slate-900">Up to $4,000 /wk</option>
-              <option class="text-slate-900">Up to $5,000 /wk</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Property type -->
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Property type</p>
-          <div class="mt-3 space-y-2">
-            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <span>House</span>
-              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-            </label>
-            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <span>Apartment</span>
-              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-            </label>
-            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <span>Loft</span>
-              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-            </label>
-            <label class="flex items-center justify-between rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <span>Townhouse</span>
-              <input type="radio" name="property_type" class="h-4 w-4 rounded-full border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-            </label>
-          </div>
-        </div>
-
-        <!-- Amenities -->
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Amenities</p>
-          <div class="mt-3 space-y-2">
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Balcony</span>
-            </label>
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Air conditioning</span>
-            </label>
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Pool</span>
-            </label>
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Beach</span>
-            </label>
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Pet friendly</span>
-            </label>
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Kid friendly</span>
-            </label>
-            <label class="flex items-center gap-3 rounded-2xl bg-slate-800/80 px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-700/80">
-              <input type="checkbox" class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0" />
-              <span>Parking</span>
-            </label>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Marcas</p>
+          <p class="mt-1 text-xs text-slate-400">Selecciona una o varias marcas para acotar los resultados.</p>
+          <div class="mt-3 rounded-2xl bg-slate-800/80 px-3 py-3 ring-1 ring-slate-700/60 max-h-[65vh] overflow-y-auto">
+            {% if marcas %}
+              <div class="space-y-2">
+                {% for marca in marcas %}
+                {% with marca_id=marca.id|stringformat:"s" %}
+                <label class="flex items-center justify-between gap-2 rounded-xl bg-slate-900/30 px-3 py-2 text-sm font-medium cursor-pointer hover:bg-slate-800/70">
+                  <span class="text-slate-100">{{ marca.marca }}</span>
+                  <input
+                    type="checkbox"
+                    name="marca"
+                    value="{{ marca.id }}"
+                    class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                    {% if marca_id in selected_marca_ids %}checked{% endif %}
+                  />
+                </label>
+                {% endwith %}
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-xs text-slate-400">Todavía no hay marcas disponibles.</p>
+            {% endif %}
           </div>
         </div>
       </div>
 
       <!-- Botón abajo -->
-      <div class="mt-auto">
+      <div class="mt-auto space-y-3">
+        <button
+          type="submit"
+          class="w-full rounded-2xl bg-indigo-500 py-3 text-base font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+          Aplicar filtros
+        </button>
         <button
           type="button"
-          class="w-full rounded-2xl bg-indigo-500 py-3 text-base font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-          Update results
+          id="clear-brand-filters"
+          class="w-full rounded-2xl border border-slate-600 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400/40">
+          Limpiar marcas
         </button>
       </div>
+
+
     </form>
   </aside>
 
@@ -181,7 +123,7 @@
       </div>
 
       <div id="perfumes-grid" class="transition-all duration-150">
-        {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query %}
+        {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query selected_marca_ids=selected_marca_ids %}
       </div>
 
 

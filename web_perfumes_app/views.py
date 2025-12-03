@@ -629,11 +629,21 @@ def refrescar_perfumes(request):
 # RENDER DE VISTAS
 def home(request):
     search_query = (request.GET.get("q") or "").strip()
-    perfumes_list = Perfume.objects.order_by("nombre").prefetch_related("estaciones")
+    marca_ids_raw = request.GET.getlist("marca")
+    marca_ids = []
+    for valor in marca_ids_raw:
+        try:
+            marca_ids.append(int(valor))
+        except (TypeError, ValueError):
+            continue
+
+    perfumes_list = Perfume.objects.order_by("nombre").prefetch_related("estaciones").select_related("marca")
     if search_query:
         perfumes_list = perfumes_list.filter(
             Q(nombre__icontains=search_query) | Q(marca__marca__icontains=search_query)
         )
+    if marca_ids:
+        perfumes_list = perfumes_list.filter(marca_id__in=marca_ids)
     paginator = Paginator(perfumes_list, 15)
     page_number = request.GET.get("page")
     perfumes = paginator.get_page(page_number)
@@ -643,11 +653,17 @@ def home(request):
         print(f"[Home] {perfume.nombre}: {estaciones_info}")
 
     total_perfumes = perfumes_list.count()
+    marcas = Marca.objects.filter(perfumes__isnull=False).order_by("marca").distinct()
+    selected_marca_ids = [str(pk) for pk in marca_ids]
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         grid_html = render_to_string(
             "components/perfumes_grid.html",
-            {"perfumes": perfumes, "search_query": search_query},
+            {
+                "perfumes": perfumes,
+                "search_query": search_query,
+                "selected_marca_ids": selected_marca_ids,
+            },
             request=request,
         )
         return JsonResponse(
@@ -662,7 +678,13 @@ def home(request):
     return render(
         request,
         "menu.html",
-        {"perfumes": perfumes, "total_perfumes": total_perfumes, "search_query": search_query},
+        {
+            "perfumes": perfumes,
+            "total_perfumes": total_perfumes,
+            "search_query": search_query,
+            "marcas": marcas,
+            "selected_marca_ids": selected_marca_ids,
+        },
     )
 
 def estadisticas(request):
