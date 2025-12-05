@@ -41,11 +41,7 @@ class Genero(models.Model):
 
 # TABLA DE PERFUMES
 class Perfume(models.Model):
-
-    GENERO_CHOICES = [
-        ('H', 'Hombre'),
-        ('U', 'Unisex'),
-    ]
+    
     TIENDA_CHOICES = [
         ('SILK', 'Silk Perfumes'),
         ('YAURAS', 'Yauras Perfumes'),

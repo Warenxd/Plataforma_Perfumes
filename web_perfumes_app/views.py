@@ -12,6 +12,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.text import slugify
 from .models import *
 from django.shortcuts import render, redirect, get_object_or_404   # ← AÑADE get_object_or_404
@@ -37,6 +38,23 @@ def _normalizar_texto(valor):
 
 ESTACIONES_VALIDAS = {"invierno", "primavera", "verano", "otono"}
 ESTACION_MIN_PORCENTAJE = 60
+
+REFRESH_STATUS = {
+    "scraping": {"state": "idle", "updated_at": None},
+    "urls": {"state": "idle", "updated_at": None},
+}
+
+
+def _set_refresh_status(stage, **kwargs):
+    stage = stage or "scraping"
+    data = REFRESH_STATUS.setdefault(stage, {})
+    data.update(kwargs)
+    data["updated_at"] = timezone.now().isoformat()
+    REFRESH_STATUS[stage] = data
+
+
+def _reset_refresh_status(stage):
+    REFRESH_STATUS[stage] = {"state": "idle", "updated_at": timezone.now().isoformat()}
 
 @browser(
         headless=True, 
@@ -383,14 +401,59 @@ def scrapping_silk_perfumes():
     categorias = [
         ("perfumes-de-hombre", "https://silkperfumes.cl/collections/perfumes-de-hombre?page={page}"),
         ("perfumes-arabes-hombre", "https://silkperfumes.cl/collections/perfumes-arabes-hombre?page={page}"),
+        ("perfumes-unisex", "https://silkperfumes.cl/collections/perfumes-unisex?page={page}"),
+        ("perfumes-arabes-unisex", "https://silkperfumes.cl/collections/perfumes-arabes-unisex?page={page}"),
     ]
+    categoria_labels = {
+        "perfumes-de-hombre": "Perfumes de hombre",
+        "perfumes-arabes-hombre": "Perfumes árabes hombre",
+        "perfumes-unisex": "Perfumes unisex",
+        "perfumes-arabes-unisex": "Perfumes árabes unisex",
+    }
+    generos_por_categoria = {
+        "perfumes-de-hombre": {"Hombre"},
+        "perfumes-arabes-hombre": {"Hombre"},
+        "perfumes-unisex": {"Unisex"},
+        "perfumes-arabes-unisex": {"Unisex"},
+    }
+    genero_cache = {}
+
+    def obtener_genero(nombre_genero):
+        clave = (nombre_genero or "").strip().lower()
+        if not clave:
+            return None
+        if clave not in genero_cache:
+            normalizado = nombre_genero.strip().title()
+            genero_cache[clave], _ = Genero.objects.get_or_create(nombre=normalizado)
+        return genero_cache[clave]
+
     creados, actualizados, errores = 0, 0, 0
+    _set_refresh_status(
+        "scraping",
+        state="running",
+        category=None,
+        category_label=None,
+        page=0,
+        url=None,
+    )
 
     for nombre_categoria, url_template in categorias:
+        categoria_es_unisex = "unisex" in url_template.lower()
         page = 1
 
         while True:
             url = url_template.format(page=page)
+            _set_refresh_status(
+                "scraping",
+                state="running",
+                category=nombre_categoria,
+                category_label=categoria_labels.get(
+                    nombre_categoria,
+                    nombre_categoria.replace("-", " " ).title(),
+                ),
+                page=page,
+                url=url,
+            )
             print(f"Scrapeando {nombre_categoria} página {page}: {url}")
 
             response = requests.get(url)
@@ -407,6 +470,9 @@ def scrapping_silk_perfumes():
             for n in name_perfume:
                 nombre = n.get_text(strip=True)
                 card = n.find_parent(class_="card")
+                generos_a_asignar = set(generos_por_categoria.get(nombre_categoria, set()))
+                if categoria_es_unisex or "unisex" in url.lower():
+                    generos_a_asignar.add("Unisex")
 
                 # ELIMINAR PERFUMES AGOTADOS DE LA BD (Y SU IMAGEN)
                 if card:
@@ -443,7 +509,13 @@ def scrapping_silk_perfumes():
                 if card:
                     a = card.find("a", class_="js-prod-link")
                     if a and a.get("href"):
-                        url_prod = "https://silkperfumes.cl" + a["href"]
+                        href = a["href"]
+                        if href.startswith("http"):
+                            url_prod = href
+                        else:
+                            url_prod = "https://silkperfumes.cl" + href
+                        if "unisex" in href.lower():
+                            generos_a_asignar.add("Unisex")
 
                 # IMAGEN
                 img_url = None
@@ -514,12 +586,24 @@ def scrapping_silk_perfumes():
 
                 perfume.save()
 
-            # No incrementamos la página dentro del loop de perfumes
+                if generos_a_asignar:
+                    genero_objs = [
+                        obtener_genero(nombre_genero)
+                        for nombre_genero in generos_a_asignar
+                    ]
+                    genero_objs = [genero for genero in genero_objs if genero]
+                    if genero_objs:
+                        perfume.generos.add(*genero_objs)
+            page += 1
 
-            # y continuamos con el siguiente perfume de esta página
-
-            page += 1  # ir a la siguiente página cuando ya procesamos toda la lista
-
+    _set_refresh_status(
+        "scraping",
+        state="done",
+        category=None,
+        category_label=None,
+        page=0,
+        url=None,
+    )
     return {"creados": creados, "actualizados": actualizados, "errores": errores}
 
 def buscar_google_lucky(nombre_perfume):
@@ -606,11 +690,27 @@ def actualizar_urls_fragrantica():
     normalizar_urls_fragrantica_existentes()
     perfumes = Perfume.objects.filter(Q(fragrantica_url__isnull=True) | Q(fragrantica_url="")).order_by("id")
     encontrados = 0
+    total = perfumes.count()
+    _set_refresh_status(
+        "urls",
+        state="running",
+        total=total,
+        current=0,
+        perfume=None,
+    )
 
-    print(f"[Fragrantica] Buscando y guardando solo fragrantica.es para {perfumes.count()} perfumes...")
 
-    for perfume in perfumes:
+    print(f"[Fragrantica] Buscando y guardando solo fragrantica.es para {total} perfumes...")
+
+    for indice, perfume in enumerate(perfumes, start=1):
         print(f"→ {perfume.nombre}", end="")
+        _set_refresh_status(
+            "urls",
+            state="running",
+            total=total,
+            current=indice,
+            perfume=perfume.nombre,
+        )
 
         url_raw = buscar_google_lucky(perfume.nombre)
 
@@ -625,10 +725,48 @@ def actualizar_urls_fragrantica():
         else:
             print(" → No encontrado")
 
+    _set_refresh_status(
+        "urls",
+        state="done",
+        total=total,
+        current=total,
+        perfume=None,
+    )
     print(f"¡TERMINADO! {encontrados} perfumes ahora tienen URL en fragrantica.es")
     return encontrados
 
 def refrescar_perfumes(request):
+    es_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+    etapa = (request.POST.get("stage") or "").strip().lower()
+    if es_ajax:
+        try:
+            if etapa == "scraping":
+                scrapping_resultados = scrapping_silk_perfumes()
+                return JsonResponse(
+                    {
+                        "ok": True,
+                        "stage": "scraping",
+                        "creados": scrapping_resultados.get("creados", 0),
+                        "actualizados": scrapping_resultados.get("actualizados", 0),
+                        "errores": scrapping_resultados.get("errores", 0),
+                    }
+                )
+            elif etapa == "urls":
+                urls_actualizadas = actualizar_urls_fragrantica()
+                return JsonResponse(
+                    {
+                        "ok": True,
+                        "stage": "urls",
+                        "urls_actualizadas": urls_actualizadas,
+                    }
+                )
+            else:
+                return JsonResponse({"ok": False, "error": "Etapa desconocida"}, status=400)
+        except Exception as e:
+            if etapa:
+                _set_refresh_status(etapa, state="error", error=str(e))
+            return JsonResponse({"ok": False, "error": str(e)}, status=500)
+
     try:
         scrapping_resultados = scrapping_silk_perfumes()
         urls_actualizadas = actualizar_urls_fragrantica()
@@ -639,8 +777,19 @@ def refrescar_perfumes(request):
         )
         messages.success(request, f"Scraping completado y URLs actualizadas.{mensajes_extra}")
     except Exception as e:
+        _set_refresh_status("scraping", state="error", error=str(e))
+        _set_refresh_status("urls", state="error", error=str(e))
         messages.error(request, f"Ocurrió un problema al refrescar los perfumes: {e}")
     return redirect(reverse("home"))
+
+
+def estado_refresco(request):
+    etapa = (request.GET.get("stage") or "").strip().lower()
+    if etapa:
+        data = REFRESH_STATUS.get(etapa, {})
+    else:
+        data = REFRESH_STATUS
+    return JsonResponse({"ok": True, "status": data})
 
 # RENDER DE VISTAS
 def home(request):
@@ -650,6 +799,14 @@ def home(request):
     for valor in marca_ids_raw:
         try:
             marca_ids.append(int(valor))
+        except (TypeError, ValueError):
+            continue
+
+    genero_ids_raw = request.GET.getlist("genero")
+    genero_ids = []
+    for valor in genero_ids_raw:
+        try:
+            genero_ids.append(int(valor))
         except (TypeError, ValueError):
             continue
 
@@ -680,13 +837,19 @@ def home(request):
 
     selected_estacion_slugs = [slug for slug in selected_estacion_slugs if slug in estaciones_slug_map]
 
-    perfumes_list = Perfume.objects.order_by("nombre").prefetch_related("estaciones").select_related("marca")
+    perfumes_list = (
+        Perfume.objects.order_by("nombre")
+        .prefetch_related("estaciones", "generos")
+        .select_related("marca")
+    )
     if search_query:
         perfumes_list = perfumes_list.filter(
             Q(nombre__icontains=search_query) | Q(marca__marca__icontains=search_query)
         )
     if marca_ids:
         perfumes_list = perfumes_list.filter(marca_id__in=marca_ids)
+    if genero_ids:
+        perfumes_list = perfumes_list.filter(generos__id__in=genero_ids)
     for slug in selected_estacion_slugs:
         estacion_ids = estaciones_slug_map.get(slug, {}).get("ids")
         if not estacion_ids:
@@ -707,11 +870,13 @@ def home(request):
 
     total_perfumes = perfumes_list.count()
     marcas = Marca.objects.filter(perfumes__isnull=False).order_by("marca").distinct()
+    generos = Genero.objects.filter(perfumes__isnull=False).order_by("nombre").distinct()
     estaciones_filtro = [
         {"slug": data["slug"], "label": data["label"]}
         for data in estaciones_slug_map.values()
     ]
     selected_marca_ids = [str(pk) for pk in marca_ids]
+    selected_genero_ids = [str(pk) for pk in genero_ids]
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         grid_html = render_to_string(
@@ -721,6 +886,7 @@ def home(request):
                 "search_query": search_query,
                 "selected_marca_ids": selected_marca_ids,
                 "selected_estacion_slugs": selected_estacion_slugs,
+                "selected_genero_ids": selected_genero_ids,
                 "estacion_min_porcentaje": ESTACION_MIN_PORCENTAJE,
             },
             request=request,
@@ -742,7 +908,9 @@ def home(request):
             "total_perfumes": total_perfumes,
             "search_query": search_query,
             "marcas": marcas,
+            "generos": generos,
             "selected_marca_ids": selected_marca_ids,
+            "selected_genero_ids": selected_genero_ids,
             "estaciones_filtro": estaciones_filtro,
             "selected_estacion_slugs": selected_estacion_slugs,
             "estacion_min_porcentaje": ESTACION_MIN_PORCENTAJE,

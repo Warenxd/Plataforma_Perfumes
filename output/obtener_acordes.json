@@ -14,11 +14,102 @@
             ]
         },
         {
-            "acorde": "iris",
+            "acorde": "dulce",
             "background_rgb": [
-                183,
-                167,
-                215
+                238,
+                54,
+                59
+            ],
+            "text_rgb": [
+                255,
+                255,
+                255
+            ]
+        },
+        {
+            "acorde": "amielado",
+            "background_rgb": [
+                250,
+                169,
+                7
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "arom\u00e1tico",
+            "background_rgb": [
+                55,
+                160,
+                137
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "\u00e1mbar",
+            "background_rgb": [
+                188,
+                77,
+                16
+            ],
+            "text_rgb": [
+                255,
+                255,
+                255
+            ]
+        },
+        {
+            "acorde": "lavanda",
+            "background_rgb": [
+                231,
+                206,
+                236
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "tabaco",
+            "background_rgb": [
+                173,
+                119,
+                39
+            ],
+            "text_rgb": [
+                255,
+                255,
+                255
+            ]
+        },
+        {
+            "acorde": "verde",
+            "background_rgb": [
+                14,
+                140,
+                29
+            ],
+            "text_rgb": [
+                255,
+                255,
+                255
+            ]
+        },
+        {
+            "acorde": "fresco especiado",
+            "background_rgb": [
+                131,
+                201,
+                40
             ],
             "text_rgb": [
                 0,
@@ -38,130 +129,39 @@
                 0,
                 0
             ]
-        },
-        {
-            "acorde": "fresco especiado",
-            "background_rgb": [
-                131,
-                201,
-                40
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "lavanda",
-            "background_rgb": [
-                231,
-                206,
-                236
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "salado",
-            "background_rgb": [
-                233,
-                255,
-                249
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "violeta",
-            "background_rgb": [
-                156,
-                29,
-                255
-            ],
-            "text_rgb": [
-                255,
-                255,
-                255
-            ]
-        },
-        {
-            "acorde": "\u00e1mbar",
-            "background_rgb": [
-                188,
-                77,
-                16
-            ],
-            "text_rgb": [
-                255,
-                255,
-                255
-            ]
-        },
-        {
-            "acorde": "c\u00e1lido especiado",
-            "background_rgb": [
-                204,
-                51,
-                0
-            ],
-            "text_rgb": [
-                255,
-                255,
-                255
-            ]
-        },
-        {
-            "acorde": "bals\u00e1mico",
-            "background_rgb": [
-                173,
-                131,
-                89
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
         }
     ],
     "notas": {
         "salida": [
             "lavanda",
-            "pimienta negra"
+            "menta"
         ],
         "corazon": [
-            "Agua de coco",
-            "iris",
-            "sal"
+            "vainilla",
+            "benju\u00ed"
         ],
         "base": [
-            "vainilla",
-            "incienso"
+            "miel",
+            "haba tonka",
+            "tabaco"
         ]
     },
     "estaciones": [
         {
             "nombre": "invierno",
-            "porcentaje": 39.1149
-        },
-        {
-            "nombre": "Primavera",
-            "porcentaje": 98.0728
-        },
-        {
-            "nombre": "verano",
             "porcentaje": 100.0
         },
         {
+            "nombre": "Primavera",
+            "porcentaje": 28.7805
+        },
+        {
+            "nombre": "verano",
+            "porcentaje": 13.4322
+        },
+        {
             "nombre": "Oto\u00f1o",
-            "porcentaje": 67.0949
+            "porcentaje": 78.3565
         }
     ]
 }
