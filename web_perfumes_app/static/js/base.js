@@ -21,6 +21,269 @@
     },
   ];
 
+  const COMPARISON_STORAGE_KEY = "perfumes_comparar";
+  const comparisonTableBody = document.getElementById("comparison-table-body");
+  const comparisonCount = document.getElementById("comparison-count");
+  const comparisonClearButton = document.getElementById("comparison-clear");
+  const comparisonSection = document.getElementById("comparison-section");
+  const comparisonPanel = document.getElementById("comparison-panel");
+  const comparisonToggle = document.getElementById("comparison-toggle");
+  const comparisonClose = document.getElementById("comparison-close");
+  const comparisonToggleCount = document.getElementById("comparison-toggle-count");
+  const formatPriceCLP = (value) => {
+    const number = Number(value) || 0;
+    try {
+      return new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      }).format(number);
+    } catch (error) {
+      return `$${number.toLocaleString("es-CL")}`;
+    }
+  };
+  const comparisonItems = (() => {
+    try {
+      const stored = localStorage.getItem(COMPARISON_STORAGE_KEY);
+      const parsed = stored ? JSON.parse(stored) : [];
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item) => item && item.id);
+      }
+    } catch (error) {
+      console.warn("No se pudo leer la lista de comparación", error);
+    }
+    return [];
+  })();
+
+  const saveComparison = () => {
+    try {
+      localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(comparisonItems));
+    } catch (error) {
+      console.warn("No se pudo guardar la lista de comparación", error);
+    }
+  };
+
+  const syncCompareButtons = () => {
+    if (!grid) {
+      return;
+    }
+    const ids = new Set(comparisonItems.map((item) => String(item.id)));
+    grid.querySelectorAll(".compare-btn").forEach((button) => {
+      const card = button.closest(".flip-card");
+      if (!card) {
+        return;
+      }
+      const id = card.dataset.perfumeId;
+      const isAdded = id && ids.has(String(id));
+      button.classList.toggle("is-added", Boolean(isAdded));
+      button.disabled = Boolean(isAdded);
+      button.textContent = isAdded ? "Agregado" : "Agregar para comparar +";
+    });
+  };
+
+  const updateComparisonCounters = () => {
+    const total = comparisonItems.length;
+    if (comparisonCount) {
+      comparisonCount.textContent = total;
+    }
+    if (comparisonToggleCount) {
+      comparisonToggleCount.textContent = total;
+    }
+  };
+
+  const renderComparisonTable = () => {
+    updateComparisonCounters();
+    if (!comparisonTableBody) {
+      return;
+    }
+    comparisonTableBody.innerHTML = "";
+    if (comparisonItems.length === 0) {
+      comparisonTableBody.innerHTML =
+        '<tr class="comparison-row"><td colspan="3" class="text-center text-slate-500 py-4 text-sm">Aún no agregas perfumes para comparar.</td></tr>';
+    } else {
+      comparisonItems.forEach((item) => {
+        const row = document.createElement("tr");
+        row.className = "comparison-row";
+        const perfumeCell = document.createElement("td");
+        const perfumeWrapper = document.createElement("div");
+        perfumeWrapper.className = "flex items-center gap-3";
+
+        const thumbHolder = document.createElement("div");
+        thumbHolder.className = "flex h-12 w-12 items-center justify-center";
+
+        if (item.imagen) {
+          const img = document.createElement("img");
+          img.src = item.imagen;
+          img.alt = item.nombre || "";
+          img.className = "comparison-thumb";
+          thumbHolder.appendChild(img);
+        } else {
+          const fallback = document.createElement("div");
+          fallback.className = "comparison-thumb flex items-center justify-center text-xs text-slate-500";
+          fallback.textContent = "N/A";
+          thumbHolder.appendChild(fallback);
+        }
+
+        const perfumeInfo = document.createElement("div");
+        perfumeInfo.className = "leading-tight";
+        const nameEl = document.createElement("p");
+        nameEl.className = "text-sm font-semibold text-slate-800";
+        nameEl.textContent = item.nombre || "Perfume";
+        const brandEl = document.createElement("p");
+        brandEl.className = "text-xs text-slate-500";
+        brandEl.textContent = item.marca || "";
+        perfumeInfo.append(nameEl, brandEl);
+
+        perfumeWrapper.append(thumbHolder, perfumeInfo);
+        perfumeCell.appendChild(perfumeWrapper);
+
+        const priceCell = document.createElement("td");
+        priceCell.className = "text-sm font-semibold text-slate-800 whitespace-nowrap align-middle";
+        priceCell.textContent = formatPriceCLP(item.precio);
+
+        const actionsCell = document.createElement("td");
+        actionsCell.className = "text-right align-middle";
+        const actionsWrapper = document.createElement("div");
+        actionsWrapper.className = "flex justify-end gap-2";
+
+        if (item.url) {
+          const viewLink = document.createElement("a");
+          viewLink.href = item.url;
+          viewLink.target = "_blank";
+          viewLink.rel = "noopener";
+          viewLink.className = "text-xs font-semibold text-indigo-600 hover:text-indigo-500";
+          viewLink.textContent = "Ver";
+          actionsWrapper.appendChild(viewLink);
+        }
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "text-xs font-semibold text-rose-600 hover:text-rose-500";
+        removeButton.dataset.removeId = item.id;
+        removeButton.textContent = "Quitar";
+        actionsWrapper.appendChild(removeButton);
+
+        actionsCell.appendChild(actionsWrapper);
+
+        const tiendaLine = document.createElement("p");
+        tiendaLine.className = "text-xs text-slate-500";
+        tiendaLine.textContent = item.tienda ? `Tienda: ${item.tienda}` : "Tienda: -";
+        perfumeInfo.appendChild(tiendaLine);
+
+        row.append(perfumeCell, priceCell, actionsCell);
+        comparisonTableBody.appendChild(row);
+      });
+    }
+    syncCompareButtons();
+  };
+
+  const addToComparison = (payload) => {
+    if (!payload || !payload.id) {
+      return;
+    }
+    const exists = comparisonItems.some((item) => String(item.id) === String(payload.id));
+    if (exists) {
+      syncCompareButtons();
+      return;
+    }
+    const wasEmpty = comparisonItems.length === 0;
+    comparisonItems.push({
+      id: String(payload.id),
+      nombre: payload.nombre || "",
+      marca: payload.marca || "",
+      precio: payload.precio || 0,
+      tienda: payload.tienda || "",
+      url: payload.url || "",
+      imagen: payload.imagen || "",
+    });
+    saveComparison();
+    renderComparisonTable();
+    if (wasEmpty) {
+      if (comparisonPanel) {
+        comparisonPanel.classList.remove("hidden");
+      } else if (comparisonSection) {
+        comparisonSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
+  const removeFromComparison = (id) => {
+    const initialLength = comparisonItems.length;
+    for (let i = comparisonItems.length - 1; i >= 0; i -= 1) {
+      if (String(comparisonItems[i].id) === String(id)) {
+        comparisonItems.splice(i, 1);
+      }
+    }
+    if (comparisonItems.length !== initialLength) {
+      saveComparison();
+      renderComparisonTable();
+    }
+  };
+
+  const handleCompareButton = (button) => {
+    const card = button.closest(".flip-card");
+    if (!card) {
+      return;
+    }
+    const id = card.dataset.perfumeId;
+    const nombre = card.dataset.perfumeNombre;
+    const marca = card.dataset.perfumeMarca;
+    const tienda = card.dataset.perfumeTienda;
+    const url = card.dataset.perfumeUrl;
+    const imagen = card.dataset.perfumeImagen;
+    const precio = Number(card.dataset.perfumePrecio || 0);
+    addToComparison({
+      id,
+      nombre,
+      marca,
+      tienda,
+      url,
+      imagen,
+      precio,
+    });
+  };
+
+  if (comparisonClearButton) {
+    comparisonClearButton.addEventListener("click", () => {
+      if (comparisonItems.length === 0) {
+        return;
+      }
+      comparisonItems.splice(0, comparisonItems.length);
+      saveComparison();
+      renderComparisonTable();
+    });
+  }
+
+  if (comparisonToggle && comparisonPanel) {
+    comparisonToggle.addEventListener("click", () => {
+      const isHidden = comparisonPanel.classList.contains("hidden");
+      if (isHidden) {
+        comparisonPanel.classList.remove("hidden");
+      } else {
+        comparisonPanel.classList.add("hidden");
+      }
+    });
+  }
+
+  if (comparisonClose && comparisonPanel) {
+    comparisonClose.addEventListener("click", () => {
+      comparisonPanel.classList.add("hidden");
+    });
+  }
+
+  if (comparisonTableBody) {
+    comparisonTableBody.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-id]");
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      removeFromComparison(button.dataset.removeId);
+    });
+  }
+
+  renderComparisonTable();
+
   if (grid && supportsFetch) {
     let isFetching = false;
     let searchDebounce = null;
@@ -33,6 +296,7 @@
 
     const replaceContent = (html) => {
       grid.innerHTML = html;
+      syncCompareButtons();
     };
 
     const syncSearchInputFromUrl = (url) => {
@@ -110,6 +374,13 @@
     };
 
     grid.addEventListener("click", (event) => {
+      const compareButton = event.target.closest(".compare-btn");
+      if (compareButton) {
+        event.preventDefault();
+        handleCompareButton(compareButton);
+        return;
+      }
+
       const link = event.target.closest(".pagination-link");
       if (!link || event.defaultPrevented || isFetching) {
         return;
@@ -220,6 +491,17 @@
     pushState(window.location.href, grid.innerHTML, true);
     syncSearchInputFromUrl(window.location.href);
     syncFiltersFromUrl(window.location.href);
+  }
+
+  if (grid && !supportsFetch) {
+    grid.addEventListener("click", (event) => {
+      const compareButton = event.target.closest(".compare-btn");
+      if (!compareButton) {
+        return;
+      }
+      event.preventDefault();
+      handleCompareButton(compareButton);
+    });
   }
 
   const refreshForm = document.getElementById("refresh-perfumes-form");

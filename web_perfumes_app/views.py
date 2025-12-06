@@ -791,6 +791,13 @@ def estado_refresco(request):
         data = REFRESH_STATUS
     return JsonResponse({"ok": True, "status": data})
 
+
+def comparar(request):
+    """
+    Renderiza la página de comparación; los perfumes se cargan desde localStorage en el front.
+    """
+    return render(request, "comparar.html")
+
 # RENDER DE VISTAS
 def home(request):
     search_query = (request.GET.get("q") or "").strip()

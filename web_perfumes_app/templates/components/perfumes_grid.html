@@ -6,7 +6,16 @@
 <div class="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-3 justify-items-center">
   {% for p in perfumes %}
   <!-- CONSTRUCCION DE CARD -->
-  <div class="flip-card w-full max-w-lg sm:max-w-md" {% if p.imagen %}style="--card-image: url('{{ p.imagen.url }}');"{% endif %}>
+  <div
+    class="flip-card w-full max-w-lg sm:max-w-lg"
+    {% if p.imagen %}style="--card-image: url('{{ p.imagen.url }}');"{% endif %}
+    data-perfume-id="{{ p.id }}"
+    data-perfume-nombre="{{ p.nombre }}"
+    data-perfume-marca="{{ p.marca.marca }}"
+    data-perfume-precio="{{ p.precio|default_if_none:0 }}"
+    data-perfume-tienda="{{ p.tienda }}"
+    data-perfume-url="{{ p.url_producto }}"
+    {% if p.imagen %}data-perfume-imagen="{{ p.imagen.url }}"{% endif %}>
     <div class="flip-card-inner">
 
       <!-- CARA FRONTAL -->

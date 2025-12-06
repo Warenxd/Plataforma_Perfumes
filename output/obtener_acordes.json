@@ -1,24 +1,11 @@
 {
     "acordes": [
         {
-            "acorde": "avainillado",
+            "acorde": "c\u00e1lido especiado",
             "background_rgb": [
-                255,
-                254,
-                192
-            ],
-            "text_rgb": [
-                0,
-                0,
+                204,
+                51,
                 0
-            ]
-        },
-        {
-            "acorde": "dulce",
-            "background_rgb": [
-                238,
-                54,
-                59
             ],
             "text_rgb": [
                 255,
@@ -27,29 +14,16 @@
             ]
         },
         {
-            "acorde": "amielado",
+            "acorde": "caf\u00e9",
             "background_rgb": [
-                250,
-                169,
-                7
+                80,
+                59,
+                29
             ],
             "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "arom\u00e1tico",
-            "background_rgb": [
-                55,
-                160,
-                137
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
+                255,
+                255,
+                255
             ]
         },
         {
@@ -66,11 +40,11 @@
             ]
         },
         {
-            "acorde": "lavanda",
+            "acorde": "arom\u00e1tico",
             "background_rgb": [
-                231,
-                206,
-                236
+                55,
+                160,
+                137
             ],
             "text_rgb": [
                 0,
@@ -79,71 +53,62 @@
             ]
         },
         {
-            "acorde": "tabaco",
+            "acorde": "Whisky",
             "background_rgb": [
-                173,
-                119,
-                39
+                216,
+                158,
+                54
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "avainillado",
+            "background_rgb": [
+                255,
+                254,
+                192
+            ],
+            "text_rgb": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "acorde": "canela",
+            "background_rgb": [
+                210,
+                105,
+                30
             ],
             "text_rgb": [
                 255,
                 255,
                 255
-            ]
-        },
-        {
-            "acorde": "verde",
-            "background_rgb": [
-                14,
-                140,
-                29
-            ],
-            "text_rgb": [
-                255,
-                255,
-                255
-            ]
-        },
-        {
-            "acorde": "fresco especiado",
-            "background_rgb": [
-                131,
-                201,
-                40
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
-            ]
-        },
-        {
-            "acorde": "atalcado",
-            "background_rgb": [
-                238,
-                221,
-                204
-            ],
-            "text_rgb": [
-                0,
-                0,
-                0
             ]
         }
     ],
     "notas": {
         "salida": [
+            "cardamomo",
             "lavanda",
-            "menta"
+            "lim\u00f3n (lima \u00e1cida)"
         ],
         "corazon": [
-            "vainilla",
-            "benju\u00ed"
+            "caf\u00e9",
+            "whisky",
+            "canela",
+            "cuero",
+            "Notas minerales"
         ],
         "base": [
-            "miel",
             "haba tonka",
-            "tabaco"
+            "\u00e1mbar",
+            "incienso"
         ]
     },
     "estaciones": [
@@ -153,15 +118,15 @@
         },
         {
             "nombre": "Primavera",
-            "porcentaje": 28.7805
+            "porcentaje": 32.8215
         },
         {
             "nombre": "verano",
-            "porcentaje": 13.4322
+            "porcentaje": 11.4341
         },
         {
             "nombre": "Oto\u00f1o",
-            "porcentaje": 78.3565
+            "porcentaje": 93.5838
         }
     ]
 }

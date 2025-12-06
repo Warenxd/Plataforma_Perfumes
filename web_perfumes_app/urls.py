@@ -9,4 +9,5 @@ urlpatterns = [
     path('perfumes/refresh/', views.refrescar_perfumes, name="refrescar_perfumes"),
     path('perfumes/refresh/status/', views.estado_refresco, name="estado_refresco"),
     path('descargar-acordes/<int:perfume_id>/', views.descargar_acordes_individual, name='descargar_acordes_individual'),
+    path('comparar/', views.comparar, name='comparar'),
 ]
