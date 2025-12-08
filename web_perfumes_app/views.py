@@ -1383,59 +1383,104 @@ def scrapping_joy_perfumes():
 def scrapping_tiendas_perfumes():
     resultados_silk = scrapping_silk_perfumes()
     resultados_yauras = scrapping_yauras_perfumes()
-    return {
-        "creados": resultados_silk.get("creados", 0) + resultados_yauras.get("creados", 0),
-        "actualizados": resultados_silk.get("actualizados", 0) + resultados_yauras.get("actualizados", 0),
-        "errores": resultados_silk.get("errores", 0) + resultados_yauras.get("errores", 0),
-        "detalle": {"silk": resultados_silk, "yauras": resultados_yauras},
-    }
-
-def scrapping_yauras_joy_perfumes():
-    resultados_yauras = scrapping_yauras_perfumes()
     resultados_joy = scrapping_joy_perfumes()
     return {
-        "creados": resultados_yauras.get("creados", 0) + resultados_joy.get("creados", 0),
-        "actualizados": resultados_yauras.get("actualizados", 0) + resultados_joy.get("actualizados", 0),
-        "errores": resultados_yauras.get("errores", 0) + resultados_joy.get("errores", 0),
-        "detalle": {"yauras": resultados_yauras, "joy": resultados_joy},
+        "creados": resultados_silk.get("creados", 0) + resultados_yauras.get("creados", 0) + resultados_joy.get("creados", 0),
+        "actualizados": resultados_silk.get("actualizados", 0) + resultados_yauras.get("actualizados", 0) + resultados_joy.get("actualizados", 0),
+        "errores": resultados_silk.get("errores", 0) + resultados_yauras.get("errores", 0) + resultados_joy.get("errores", 0),
+        "detalle": {"silk": resultados_silk, "yauras": resultados_yauras, "joy": resultados_joy},
     }
 
 def buscar_google_lucky(nombre_perfume):
-    texto_busqueda = f"{nombre_perfume} fragrantica"
-    query = urllib.parse.quote_plus(texto_busqueda)
+    headers = {"User-Agent": "Mozilla/5.0", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"}
 
-    url = (
-        "https://www.google.com/search"
-        "?hl=en"
-        "&num=1"
-        "&btnI=I%27m+Feeling+Lucky"
-        f"&q={query}"
-    )
-
-    headers = {"User-Agent": "Mozilla/5.0"}
-
-    print(f"[Fragrantica] Buscando en Google: '{nombre_perfume}'")
-    print(f"[Fragrantica] URL de búsqueda: {url}")
-
-
-    r = requests.get(url, headers=headers, allow_redirects=False)
-
-    location = r.headers.get("Location")
-
-    if not location:
-        print(f"[Fragrantica] NO se recibió redirección para '{nombre_perfume}'")
+    def _extraer_fragrantica_de_html(html):
+        if not html:
+            return None
+        soup = BeautifulSoup(html, "html.parser")
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if "fragrantica" in href.lower():
+                return convertir_a_fragrantica_es(href)
         return None
 
-    if "google.com/url?q=" in location:
-        parsed = urllib.parse.urlparse(location)
-        params = urllib.parse.parse_qs(parsed.query)
+    def _buscar(query_texto, with_site=False):
+        query = urllib.parse.quote_plus(query_texto)
+        url = (
+            "https://www.google.com/search"
+            "?hl=en"
+            "&num=1"
+            "&btnI=I%27m+Feeling+Lucky"
+            f"&q={query}"
+        )
 
-        if "q" in params:
-            resultado = convertir_a_fragrantica_es(params["q"][0])  # la URL pura de Fragrantica
-            print(f"[Fragrantica] Resultado para '{nombre_perfume}': {resultado}")
+        if with_site:
+            url = (
+                "https://www.google.com/search"
+                "?hl=en"
+                "&num=1"
+                f"&q={query}+site%3Afragrantica.es"
+            )
+
+        print(f"[Fragrantica] Buscando en Google: '{query_texto}'{' (site:fragrantica.es)' if with_site else ''}")
+        print(f"[Fragrantica] URL de búsqueda: {url}")
+
+        r = requests.get(url, headers=headers, allow_redirects=False)
+        location = r.headers.get("Location")
+
+        if location:
+            if "google.com/url?q=" in location:
+                parsed = urllib.parse.urlparse(location)
+                params = urllib.parse.parse_qs(parsed.query)
+
+                if "q" in params:
+                    resultado = convertir_a_fragrantica_es(params["q"][0])
+                    print(f"[Fragrantica] Resultado para '{query_texto}': {resultado}")
+                    return resultado
+
+            return convertir_a_fragrantica_es(location)
+
+        # Fallback: Google muestra página de aviso (200) con enlace a fragrantica
+        try:
+            r_follow = requests.get(url, headers=headers, allow_redirects=True, timeout=10)
+            if r_follow.history and "fragrantica" in r_follow.url.lower():
+                resultado = convertir_a_fragrantica_es(r_follow.url)
+                print(f"[Fragrantica] Resultado (follow) para '{query_texto}': {resultado}")
+                return resultado
+            if r_follow.text:
+                resultado_html = _extraer_fragrantica_de_html(r_follow.text)
+                if resultado_html:
+                    print(f"[Fragrantica] Resultado (html) para '{query_texto}': {resultado_html}")
+                    return resultado_html
+        except Exception as e:
+            print(f"[Fragrantica] Error en fallback para '{query_texto}': {e}")
+
+        return None
+
+    # Intento 1: texto completo
+    resultado = _buscar(f"{nombre_perfume} fragrantica")
+    if resultado:
+        return resultado
+
+    # Intento 2: nombre base (sin ml, concentración, género) + marca
+    nombre_base = _normalizar_nombre_perfume_base(nombre_perfume)
+    if nombre_base and nombre_base.lower() != (nombre_perfume or "").strip().lower():
+        resultado = _buscar(f"{nombre_base} fragrantica")
+        if resultado:
             return resultado
 
-    return convertir_a_fragrantica_es(location)  # si ya es una URL directa
+    # Intento 3: con site:fragrantica.es
+    resultado = _buscar(f"{nombre_perfume}", with_site=True)
+    if resultado:
+        return resultado
+
+    if nombre_base:
+        resultado = _buscar(f"{nombre_base}", with_site=True)
+        if resultado:
+            return resultado
+
+    print(f"[Fragrantica] NO se recibió redirección para '{nombre_perfume}'")
+    return None
 
 
 def convertir_a_fragrantica_es(url):
@@ -1535,7 +1580,7 @@ def refrescar_perfumes(request):
     if es_ajax:
         try:
             if etapa == "scraping":
-                scrapping_resultados = scrapping_joy_perfumes()
+                scrapping_resultados = scrapping_tiendas_perfumes()
                 return JsonResponse(
                     {
                         "ok": True,
@@ -1562,10 +1607,10 @@ def refrescar_perfumes(request):
             return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
     try:
-        scrapping_resultados = scrapping_joy_perfumes()
+        scrapping_resultados = scrapping_tiendas_perfumes()
         urls_actualizadas = actualizar_urls_fragrantica()
         mensajes_extra = (
-            f" | Scraping (Joy) - Creados: {scrapping_resultados['creados']}, "
+            f" | Scraping (Silk/Yauras/Joy) - Creados: {scrapping_resultados['creados']}, "
             f"Actualizados: {scrapping_resultados['actualizados']}, "
             f"Errores: {scrapping_resultados['errores']} | URLs Fragrantica actualizadas: {urls_actualizadas}"
         )

@@ -294,6 +294,7 @@
     let isFetching = false;
     let searchDebounce = null;
     const loaderClasses = ["opacity-50", "pointer-events-none"];
+    const progressMap = new WeakMap();
     const setDownloadStatus = (form, message, isError) => {
       if (!form) return;
       const statusEl = form.querySelector(".js-download-status");
@@ -301,6 +302,41 @@
       statusEl.textContent = message || "";
       statusEl.classList.remove("hidden");
       statusEl.style.color = isError ? "#ef4444" : "#0f172a";
+    };
+
+    const startDownloadProgress = (form) => {
+      const container = form?.querySelector(".js-download-progress");
+      const bar = form?.querySelector(".js-download-progress-bar");
+      if (!container || !bar) return;
+      setDownloadStatus(form, "Descargando acordes, notas y estaciones...", false);
+      container.classList.remove("hidden");
+      bar.style.width = "5%";
+      if (progressMap.has(form)) {
+        clearInterval(progressMap.get(form));
+      }
+      const interval = setInterval(() => {
+        const current = parseFloat(bar.style.width) || 0;
+        if (current < 85) {
+          bar.style.width = Math.min(current + 5, 85) + "%";
+        }
+      }, 180);
+      progressMap.set(form, interval);
+    };
+
+    const stopDownloadProgress = (form) => {
+      const container = form?.querySelector(".js-download-progress");
+      const bar = form?.querySelector(".js-download-progress-bar");
+      const interval = progressMap.get(form);
+      if (interval) {
+        clearInterval(interval);
+        progressMap.delete(form);
+      }
+      if (bar) {
+        bar.style.width = "0%";
+      }
+      if (container) {
+        container.classList.add("hidden");
+      }
     };
 
     const setLoading = (state) => {
@@ -428,6 +464,7 @@
         btn.textContent = "Cargando...";
       }
       setDownloadStatus(form, "", false);
+      startDownloadProgress(form);
 
       try {
         const formData = new FormData(form);
@@ -491,6 +528,8 @@
         }
         setDownloadStatus(form, "Error de red al descargar", true);
         showDownloadToast("Error de red al descargar", true);
+      } finally {
+        stopDownloadProgress(form);
       }
     });
 
@@ -812,7 +851,7 @@
     {
       key: "scraping",
       title: "Recolectando perfumes...",
-      detail: "Conectando con Joy Perfumes.",
+      detail: "Conectando con Silk, Yauras y Joy.",
       progress: 45,
       statusKey: "scraping",
       formatter: (data) =>

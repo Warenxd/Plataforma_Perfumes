@@ -32,11 +32,11 @@
           class="inline-block self-center transition-transform duration-200 hover:scale-110"
           target="_blank">
           {% if p.tienda == "SILK" %}
-          <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center" style="height: 2rem;">
+          <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center" style="height: 2.5rem;">
           {% elif p.tienda == "YAURAS" %}
-          <img src="{% static 'assets/yauras_perfumes.png' %}" alt="Yauras Perfumes" class="h-6 w-auto" style="height: 3rem;">
+          <img src="{% static 'assets/yauras_perfumes.png' %}" alt="Yauras Perfumes" class="h-6 w-auto" style="height: 3.5rem;">
           {% elif p.tienda == "JOY" %}
-          <img src="{% static 'assets/joy_perfumes.png' %}" alt="Joy Perfumes" class="h-6 w-auto" style="height: 2rem;">
+          <img src="{% static 'assets/joy_perfumes.png' %}" alt="Joy Perfumes" class="h-6 w-auto" style="height: 2.5rem;">
           {% endif %}
         </a>
 
@@ -155,6 +155,9 @@
           <button type="submit" class="download-btn js-download-btn">
             Descargar detalles
           </button>
+          <div class="js-download-progress hidden mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-200">
+            <div class="js-download-progress-bar h-full w-0 bg-emerald-500 transition-[width] duration-200 ease-linear"></div>
+          </div>
           <p class="mt-2 text-xs text-slate-500 js-download-status hidden"></p>
         </form>
       </div>
