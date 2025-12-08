@@ -222,6 +222,39 @@
             Limpiar estaciones
           </button>
         </div>
+
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Tiendas</p>
+          <p class="mt-1 text-xs text-slate-400">Filtra por tienda de origen.</p>
+          <div class="mt-3 rounded-2xl bg-slate-800/80 px-3 py-3 ring-1 ring-slate-700/60">
+            {% if tiendas %}
+              <div class="space-y-2">
+                {% for tienda in tiendas %}
+                {% with code=tienda.code|stringformat:"s" %}
+                <label class="flex items-center justify-between gap-2 rounded-xl bg-slate-900/30 px-3 py-2 text-sm font-medium cursor-pointer hover:bg-slate-800/70">
+                  <span class="text-slate-100">{{ tienda.label }}</span>
+                  <input
+                    type="checkbox"
+                    name="tienda"
+                    value="{{ tienda.code }}"
+                    class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                    {% if code in selected_tienda_codes %}checked{% endif %}
+                  />
+                </label>
+                {% endwith %}
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-xs text-slate-400">No hay tiendas registradas.</p>
+            {% endif %}
+          </div>
+          <button
+            type="button"
+            id="clear-store-filters"
+            class="mt-3 w-full rounded-2xl border border-slate-600 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400/40">
+            Limpiar tiendas
+          </button>
+        </div>
       </div>
 
       <!-- Botón abajo -->
@@ -268,7 +301,7 @@
             <div class="flex items-center gap-3">
               <div
                 class="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">
-                Total de perfumes: {{ total_perfumes }}
+                Total de perfumes: <span id="total-perfumes-count">{{ total_perfumes }}</span>
               </div>
               <form action="{% url 'refrescar_perfumes' %}" method="post" id="refresh-perfumes-form" data-status-url="{% url 'estado_refresco' %}">
                 {% csrf_token %}
@@ -307,13 +340,20 @@
           </div>
 
           <div id="perfumes-grid" class="transition-all duration-150">
-            {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query selected_marca_ids=selected_marca_ids selected_estacion_slugs=selected_estacion_slugs selected_genero_ids=selected_genero_ids %}
+            {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query selected_marca_ids=selected_marca_ids selected_estacion_slugs=selected_estacion_slugs selected_genero_ids=selected_genero_ids selected_tienda_codes=selected_tienda_codes %}
           </div>
         </div>
 
       </div>
     </div>
-  </div>
+</div>
+</div>
+</div>
+
+<!-- Toast descargas -->
+<div
+  id="download-toast"
+  class="hidden fixed bottom-4 right-4 z-50 rounded-full px-4 py-2 shadow-lg ring-1 ring-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-900">
 </div>
 
 <!-- Panel flotante de perfumes escogidos -->

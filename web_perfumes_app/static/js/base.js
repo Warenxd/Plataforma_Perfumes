@@ -2,6 +2,7 @@
   const grid = document.getElementById("perfumes-grid");
   const searchInput = document.getElementById("search");
   const filtersForm = document.getElementById("filters-form");
+  const totalPerfumesCount = document.getElementById("total-perfumes-count");
   const supportsFetch = typeof window.fetch === "function";
   const filterConfigs = [
     {
@@ -18,6 +19,11 @@
       name: "estacion",
       selector: 'input[name="estacion"]',
       clearButton: document.getElementById("clear-season-filters"),
+    },
+    {
+      name: "tienda",
+      selector: 'input[name="tienda"]',
+      clearButton: document.getElementById("clear-store-filters"),
     },
   ];
 
@@ -288,6 +294,14 @@
     let isFetching = false;
     let searchDebounce = null;
     const loaderClasses = ["opacity-50", "pointer-events-none"];
+    const setDownloadStatus = (form, message, isError) => {
+      if (!form) return;
+      const statusEl = form.querySelector(".js-download-status");
+      if (!statusEl) return;
+      statusEl.textContent = message || "";
+      statusEl.classList.remove("hidden");
+      statusEl.style.color = isError ? "#ef4444" : "#0f172a";
+    };
 
     const setLoading = (state) => {
       isFetching = state;
@@ -297,6 +311,12 @@
     const replaceContent = (html) => {
       grid.innerHTML = html;
       syncCompareButtons();
+    };
+
+    const updateTotalPerfumes = (value) => {
+      if (!totalPerfumesCount) return;
+      const num = Number(value);
+      totalPerfumesCount.textContent = Number.isFinite(num) ? num : 0;
     };
 
     const syncSearchInputFromUrl = (url) => {
@@ -334,8 +354,8 @@
       }
     };
 
-    const pushState = (url, html, replace = false) => {
-      const state = { html };
+    const pushState = (url, html, totalPerfumes, replace = false) => {
+      const state = { html, total_perfumes: totalPerfumes };
       if (replace) {
         window.history.replaceState(state, "", url);
       } else {
@@ -360,10 +380,11 @@
           throw new Error("Respuesta invalida del servidor");
         }
         replaceContent(data.html);
+        updateTotalPerfumes(data.total_perfumes);
         syncSearchInputFromUrl(url);
         syncFiltersFromUrl(url);
         if (push) {
-          pushState(url, data.html, replaceState);
+          pushState(url, data.html, data.total_perfumes, replaceState);
         }
       } catch (error) {
         console.error(error);
@@ -393,6 +414,84 @@
 
       event.preventDefault();
       fetchPage(link.href);
+    });
+
+    grid.addEventListener("submit", async (event) => {
+      const form = event.target.closest(".js-download-form");
+      if (!form) {
+        return;
+      }
+      event.preventDefault();
+      const btn = form.querySelector(".js-download-btn");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Cargando...";
+      }
+      setDownloadStatus(form, "", false);
+
+      try {
+        const formData = new FormData(form);
+        const resp = await fetch(form.action, {
+          method: "POST",
+          body: formData,
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        });
+        const json = await resp.json();
+        if (json?.ok) {
+          if (json.html) {
+            const cardEl = form.closest(".flip-card");
+            if (cardEl) {
+              const wrapper = document.createElement("div");
+              wrapper.innerHTML = json.html.trim();
+              const newCard = wrapper.firstElementChild;
+              if (newCard) {
+                cardEl.replaceWith(newCard);
+                syncCompareButtons();
+              }
+            }
+            if (Array.isArray(json.updated_cards) && json.updated_cards.length) {
+              json.updated_cards.forEach((item) => {
+                if (!item || !item.id || !item.html) {
+                  return;
+                }
+                const target = document.querySelector(`.flip-card[data-perfume-id="${item.id}"]`);
+                if (!target) {
+                  return;
+                }
+                const wrap = document.createElement("div");
+                wrap.innerHTML = item.html.trim();
+                const newCard = wrap.firstElementChild;
+                if (newCard) {
+                  target.replaceWith(newCard);
+                }
+              });
+              syncCompareButtons();
+            }
+            showDownloadToast(json.message || `Descargado ${json.nombre || ""}`);
+          } else {
+            if (btn) btn.textContent = "Descargado";
+            setDownloadStatus(form, json.message || "Listo", false);
+            showDownloadToast(json.message || `Descargado ${json.nombre || ""}`);
+          }
+        } else {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Descargar detalles";
+          }
+          setDownloadStatus(form, json?.message || "No se pudo descargar", true);
+          showDownloadToast(json?.message || "No se pudo descargar", true);
+        }
+      } catch (error) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Descargar detalles";
+        }
+        setDownloadStatus(form, "Error de red al descargar", true);
+        showDownloadToast("Error de red al descargar", true);
+      }
     });
 
     if (searchInput) {
@@ -481,6 +580,7 @@
     window.addEventListener("popstate", (event) => {
       if (event.state && typeof event.state.html === "string") {
         replaceContent(event.state.html);
+        updateTotalPerfumes(event.state.total_perfumes);
         syncSearchInputFromUrl(window.location.href);
         syncFiltersFromUrl(window.location.href);
       } else {
@@ -488,7 +588,12 @@
       }
     });
 
-    pushState(window.location.href, grid.innerHTML, true);
+    pushState(
+      window.location.href,
+      grid.innerHTML,
+      totalPerfumesCount ? totalPerfumesCount.textContent : null,
+      true
+    );
     syncSearchInputFromUrl(window.location.href);
     syncFiltersFromUrl(window.location.href);
   }
@@ -516,6 +621,20 @@
   let currentProgressValue = 0;
   let refreshStatusInterval = null;
   let activeStatusKey = null;
+  const downloadToast = document.getElementById("download-toast");
+
+  const showDownloadToast = (message, isError = false) => {
+    if (!downloadToast) return;
+    downloadToast.textContent = message || "";
+    downloadToast.classList.remove("hidden");
+    downloadToast.style.backgroundColor = isError ? "#fee2e2" : "#bbf7d0"; // verde más claro
+    downloadToast.style.color = "#0f172a"; // negro/azul oscuro
+    downloadToast.style.borderColor = isError ? "#fecdd3" : "#86efac";
+    downloadToast.textContent = `${isError ? "✖" : "✔"} ${message || ""}`;
+    setTimeout(() => {
+      downloadToast.classList.add("hidden");
+    }, 2800);
+  };
 
   const showOverlay = () => {
     if (!refreshOverlay) {
@@ -693,7 +812,7 @@
     {
       key: "scraping",
       title: "Recolectando perfumes...",
-      detail: "Conectando con Silk Perfumes.",
+      detail: "Conectando con Joy Perfumes.",
       progress: 45,
       statusKey: "scraping",
       formatter: (data) =>
