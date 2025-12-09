@@ -849,18 +849,9 @@
 
   const refreshStages = [
     {
-      key: "scraping",
-      title: "Recolectando perfumes...",
-      detail: "Conectando con Silk, Yauras y Joy.",
-      progress: 45,
-      statusKey: "scraping",
-      formatter: (data) =>
-        `Creados ${data.creados || 0}, actualizados ${data.actualizados || 0}, errores ${data.errores || 0}.`,
-    },
-    {
       key: "urls",
-      title: "Recolectando URLs de Fragrantica...",
-      detail: "Buscando coincidencias en Fragrantica.",
+      title: "Actualizando URLs de Fragrantica...",
+      detail: "Buscando coincidencias y normalizando URLs.",
       progress: 85,
       statusKey: "urls",
       formatter: (data) => `${data.urls_actualizadas || 0} URLs normalizadas.`,

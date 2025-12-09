@@ -141,6 +141,39 @@ def _inferir_marca_por_nombre(nombre):
         return _obtener_marca_normalizada(primera)
     return None
 
+
+def _slugify_fragrantica_path(texto):
+    """
+    Fragrantica usa palabras con inicial mayúscula separadas por guiones.
+    """
+    slug = slugify(texto or "", allow_unicode=False)
+    partes = [p.capitalize() for p in slug.split("-") if p]
+    return "-".join(partes)
+
+
+def _probar_slug_fragrantica(nombre_perfume):
+    """
+    Intenta construir directamente la URL /perfume/<Marca>/<Nombre>.html y la valida con HEAD.
+    """
+    marca_obj = _inferir_marca_por_nombre(nombre_perfume)
+    marca_nombre = marca_obj.marca if marca_obj else None
+    base = _normalizar_nombre_perfume_base(nombre_perfume, marca_nombre)
+    if not base or not marca_nombre:
+        return None
+    brand_slug = _slugify_fragrantica_path(marca_nombre)
+    perfume_slug = _slugify_fragrantica_path(base)
+    if not brand_slug or not perfume_slug:
+        return None
+    url = f"https://www.fragrantica.es/perfume/{brand_slug}/{perfume_slug}.html"
+    try:
+        r = requests.head(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=6, allow_redirects=True)
+        if r.status_code == 200:
+            print(f"[Fragrantica] URL válida por slug: {url}")
+            return url
+    except Exception as e:
+        print(f"[Fragrantica] HEAD fallo para slug {url}: {e}")
+    return None
+
 ESTACIONES_VALIDAS = {"invierno", "primavera", "verano", "otono"}
 ESTACION_MIN_PORCENTAJE = 60
 
@@ -656,8 +689,14 @@ def descargar_acordes_individual(request, perfume_id):
     perfume = get_object_or_404(Perfume, id=perfume_id)
     
     if not perfume.fragrantica_url:
-        messages.error(request, f"No hay URL de Fragrantica para {perfume.nombre}")
-        return redirect('home')
+        encontrada = _buscar_fragrantica_con_driver(perfume.nombre)
+        if encontrada:
+            perfume.fragrantica_url = encontrada
+            perfume.save(update_fields=["fragrantica_url"])
+            print(f"[Fragrantica] URL encontrada y guardada: {encontrada}")
+        else:
+            messages.error(request, f"No se pudo encontrar URL de Fragrantica para {perfume.nombre}")
+            return redirect('home')
     
     try:
         data = obtener_acordes(perfume.fragrantica_url)
@@ -1392,94 +1431,220 @@ def scrapping_tiendas_perfumes():
     }
 
 def buscar_google_lucky(nombre_perfume):
-    headers = {"User-Agent": "Mozilla/5.0", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"}
+    print(f"\n[DEBUG] Buscando URL para: '{nombre_perfume}'")
 
-    def _extraer_fragrantica_de_html(html):
-        if not html:
-            return None
-        soup = BeautifulSoup(html, "html.parser")
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            if "fragrantica" in href.lower():
-                return convertir_a_fragrantica_es(href)
-        return None
+    def _puntaje_tokens(query, texto):
+        q_norm = _normalizar_texto(query)
+        t_norm = _normalizar_texto(texto)
+        if not q_norm or not t_norm:
+            return 0.0
+        tokens = q_norm.split()
+        if not tokens:
+            return 0.0
+        aciertos = sum(1 for tk in tokens if tk in t_norm)
+        return aciertos / len(tokens)
 
-    def _buscar(query_texto, with_site=False):
-        query = urllib.parse.quote_plus(query_texto)
-        url = (
-            "https://www.google.com/search"
-            "?hl=en"
-            "&num=1"
-            "&btnI=I%27m+Feeling+Lucky"
-            f"&q={query}"
-        )
-
-        if with_site:
-            url = (
-                "https://www.google.com/search"
-                "?hl=en"
-                "&num=1"
-                f"&q={query}+site%3Afragrantica.es"
-            )
-
-        print(f"[Fragrantica] Buscando en Google: '{query_texto}'{' (site:fragrantica.es)' if with_site else ''}")
-        print(f"[Fragrantica] URL de búsqueda: {url}")
-
-        r = requests.get(url, headers=headers, allow_redirects=False)
-        location = r.headers.get("Location")
-
-        if location:
-            if "google.com/url?q=" in location:
-                parsed = urllib.parse.urlparse(location)
-                params = urllib.parse.parse_qs(parsed.query)
-
-                if "q" in params:
-                    resultado = convertir_a_fragrantica_es(params["q"][0])
-                    print(f"[Fragrantica] Resultado para '{query_texto}': {resultado}")
-                    return resultado
-
-            return convertir_a_fragrantica_es(location)
-
-        # Fallback: Google muestra página de aviso (200) con enlace a fragrantica
+    def _buscar_duckduckgo(query):
+        endpoints = [
+            ("https://html.duckduckgo.com/html/", "html"),  # HTML antigua
+            ("https://duckduckgo.com/lite/", "lite"),       # HTML lite
+        ]
+        params = {"q": f"{query} fragrantica"}
+        UA_LIST = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        ]
         try:
-            r_follow = requests.get(url, headers=headers, allow_redirects=True, timeout=10)
-            if r_follow.history and "fragrantica" in r_follow.url.lower():
-                resultado = convertir_a_fragrantica_es(r_follow.url)
-                print(f"[Fragrantica] Resultado (follow) para '{query_texto}': {resultado}")
-                return resultado
-            if r_follow.text:
-                resultado_html = _extraer_fragrantica_de_html(r_follow.text)
-                if resultado_html:
-                    print(f"[Fragrantica] Resultado (html) para '{query_texto}': {resultado_html}")
-                    return resultado_html
-        except Exception as e:
-            print(f"[Fragrantica] Error en fallback para '{query_texto}': {e}")
+            mejor_global = None
+            mejor_score_global = 0
+            for endpoint, modo in endpoints:
+                for intento in range(2):  # reintenta si 202/429
+                    headers = {
+                        "User-Agent": random.choice(UA_LIST),
+                        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                    }
+                    r = requests.get(endpoint, params=params, headers=headers, timeout=10)
+                    print(f"[DEBUG] DuckDuckGo {modo} status: {r.status_code} (intento {intento+1})")
+                    if r.status_code == 202:
+                        time.sleep(random.uniform(1, 2))
+                        continue
+                    if r.status_code != 200:
+                        break
+                    # Suaviza la tasa de consultas
+                    time.sleep(random.uniform(0.4, 0.8))
 
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    candidatos = []
+
+                    # Selectores según modo
+                    if modo == "html":
+                        anchors = soup.select("a.result__a")
+                    else:
+                        anchors = soup.select("a")
+
+                    candidatos = []
+                    for a in anchors:
+                        href = a.get("href")
+                        if not href:
+                            continue
+                        if href.startswith("/l/?"):
+                            qs = urllib.parse.parse_qs(urllib.parse.urlparse(href).query)
+                            href = qs.get("uddg", [href])[0]
+                        if "fragrantica" not in href.lower() or "/perfume/" not in href.lower():
+                            continue
+                        href = convertir_a_fragrantica_es(href)
+                        texto = a.get_text(strip=True)
+                        candidatos.append((href, texto))
+
+                    if not candidatos:
+                        break
+
+                    mejor = None
+                    mejor_score = 0
+                    for full, texto in candidatos:
+                        score = max(_puntaje_tokens(query, texto), _puntaje_tokens(nombre_perfume, texto))
+                        if score > mejor_score:
+                            mejor = (full, texto, score)
+                            mejor_score = score
+
+                    if mejor and mejor_score > mejor_score_global:
+                        mejor_global = mejor
+                        mejor_score_global = mejor_score
+                # sigue al siguiente endpoint si no hay resultado aceptable
+
+            # Pide coincidencia alta: al menos 0.7 tokens (marca+nombre)
+            if mejor_global and mejor_score_global >= 0.7:
+                full, texto, score = mejor_global
+                print(f"[DEBUG] DuckDuckGo match (score {score:.2f}): {full} (texto='{texto}')")
+                print(f"[INFO] Buscado: '{query}' → Encontrado: {full}")
+                return full
+        except Exception as e:
+            print(f"[ERROR] DuckDuckGo: {e}")
+        return None
+    
+    queries = [
+        f"{nombre_perfume} fragrantica",
+        f"{_normalizar_nombre_perfume_base(nombre_perfume)} fragrantica",
+    ]
+
+    for q in queries:
+        if not q:
+            continue
+        print(f"[DEBUG] DuckDuckGo query: '{q}'")
+        res = _buscar_duckduckgo(q)
+        if res:
+            return res
+
+    print("NO ENCONTRADO después de todos los intentos")
+    return None
+
+
+def _buscar_fragrantica_con_driver(nombre_perfume):
+    """
+    Usa el driver compartido para buscar en Google "<nombre> fragrantica"
+    y devuelve el primer enlace de fragrantica encontrado.
+    """
+    slug_url = _probar_slug_fragrantica(nombre_perfume)
+    if slug_url:
+        return slug_url
+
+    # Primero, intentar con petición directa (sin navegador) a DuckDuckGo HTML
+    def _buscar_ddg_requests(query):
+        url = "https://html.duckduckgo.com/html/"
+        try:
+            r = requests.get(
+                url,
+                params={"q": query},
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Safari/537.36"},
+                timeout=8,
+            )
+            if r.status_code != 200:
+                print(f"[Fragrantica] DDG HTML status {r.status_code}")
+                return None
+            soup = BeautifulSoup(r.text, "html.parser")
+            for a in soup.find_all("a", href=True):
+                href = a["href"]
+                if href.startswith("/l/?"):
+                    qs = urllib.parse.parse_qs(urllib.parse.urlparse(href).query)
+                    href = qs.get("uddg", [href])[0]
+                if "fragrantica" not in href.lower():
+                    continue
+                href = convertir_a_fragrantica_es(href)
+                texto = a.get_text(strip=True)
+                print(f"[Fragrantica] DDG HTML match: {href} (texto='{texto}')")
+                return href
+        except Exception as e:
+            print(f"[Fragrantica] DDG HTML error: {e}")
         return None
 
-    # Intento 1: texto completo
-    resultado = _buscar(f"{nombre_perfume} fragrantica")
-    if resultado:
-        return resultado
+    query = f"{nombre_perfume} fragrantica"
+    res_ddg = _buscar_ddg_requests(query)
+    if res_ddg:
+        return res_ddg
 
-    # Intento 2: nombre base (sin ml, concentración, género) + marca
-    nombre_base = _normalizar_nombre_perfume_base(nombre_perfume)
-    if nombre_base and nombre_base.lower() != (nombre_perfume or "").strip().lower():
-        resultado = _buscar(f"{nombre_base} fragrantica")
-        if resultado:
-            return resultado
+    query = f"{nombre_perfume} fragrantica"
+    urls_busqueda = [
+        f"https://www.google.com/search?q={urllib.parse.quote_plus(query)}&hl=es",
+        f"https://www.google.es/search?q={urllib.parse.quote_plus(query)}&hl=es",
+    ]
+    driver = _get_shared_driver()
+    _schedule_driver_close(delay_seconds=0)
+    acquired = _driver_use_lock.acquire(timeout=120)
+    if not acquired:
+        print("[Botasaurus] No se pudo obtener el lock del navegador para buscar URL.")
+        return None
+    try:
+        for url in urls_busqueda:
+            print(f"[Botasaurus] Buscando en navegador: '{query}' -> {url}")
+            driver.get(url)
+            time.sleep(random.uniform(1.2, 2.2))
 
-    # Intento 3: con site:fragrantica.es
-    resultado = _buscar(f"{nombre_perfume}", with_site=True)
-    if resultado:
-        return resultado
+            # Obtener HTML de la página
+            html = getattr(driver, "page_source", None)
+            if callable(html):
+                html = html()
+            if not html and hasattr(driver, "get_page_source"):
+                try:
+                    html = driver.get_page_source()
+                except Exception:
+                    html = None
+            if not html:
+                print("[Botasaurus] page_source vacío")
+                continue
 
-    if nombre_base:
-        resultado = _buscar(f"{nombre_base}", with_site=True)
-        if resultado:
-            return resultado
+            soup = BeautifulSoup(html, "html.parser")
+            candidatos = []
+            hrefs_debug = []
+            for a in soup.find_all("a", href=True):
+                href = a["href"]
+                # Google usa /url?q=<destino>
+                if href.startswith("/url?"):
+                    qs = urllib.parse.parse_qs(urllib.parse.urlparse(href).query)
+                    href = qs.get("q", [href])[0]
+                if "fragrantica" not in href.lower():
+                    hrefs_debug.append(href)
+                    continue
+                texto = a.get_text(strip=True)
+                candidatos.append((href, texto))
 
-    print(f"[Fragrantica] NO se recibió redirección para '{nombre_perfume}'")
+            print(f"[Botasaurus] Enlaces totales en página: {len(hrefs_debug) + len(candidatos)} | Enlaces fragrantica: {len(candidatos)}")
+            if hrefs_debug:
+                print("[Botasaurus] Primeros href no-fragrantica:", hrefs_debug[:5])
+
+            if candidatos:
+                href, texto = candidatos[0]
+                href = convertir_a_fragrantica_es(href)
+                print(f"[Botasaurus] Match navegador: {href} (texto='{texto}')")
+                return href
+
+        print("[Botasaurus] Sin enlaces de fragrantica en resultados tras intentar todas las variantes.")
+    except Exception as e:
+        print(f"[Botasaurus] Error buscando URL en navegador: {e}")
+    finally:
+        _driver_use_lock.release()
+        _schedule_driver_close(delay_seconds=30)
     return None
 
 
@@ -1580,14 +1745,13 @@ def refrescar_perfumes(request):
     if es_ajax:
         try:
             if etapa == "scraping":
-                scrapping_resultados = scrapping_tiendas_perfumes()
+                _set_refresh_status("scraping", state="skipped")
                 return JsonResponse(
                     {
                         "ok": True,
                         "stage": "scraping",
-                        "creados": scrapping_resultados.get("creados", 0),
-                        "actualizados": scrapping_resultados.get("actualizados", 0),
-                        "errores": scrapping_resultados.get("errores", 0),
+                        "skipped": True,
+                        "message": "Scraping de tiendas omitido en esta recarga.",
                     }
                 )
             elif etapa == "urls":
@@ -1607,16 +1771,12 @@ def refrescar_perfumes(request):
             return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
     try:
-        scrapping_resultados = scrapping_tiendas_perfumes()
         urls_actualizadas = actualizar_urls_fragrantica()
         mensajes_extra = (
-            f" | Scraping (Silk/Yauras/Joy) - Creados: {scrapping_resultados['creados']}, "
-            f"Actualizados: {scrapping_resultados['actualizados']}, "
-            f"Errores: {scrapping_resultados['errores']} | URLs Fragrantica actualizadas: {urls_actualizadas}"
+            f"URLs Fragrantica actualizadas: {urls_actualizadas}"
         )
-        messages.success(request, f"Scraping completado y URLs actualizadas.{mensajes_extra}")
+        messages.success(request, f"Recarga completada. {mensajes_extra}")
     except Exception as e:
-        _set_refresh_status("scraping", state="error", error=str(e))
         _set_refresh_status("urls", state="error", error=str(e))
         messages.error(request, f"Ocurrió un problema al refrescar los perfumes: {e}")
     return redirect(reverse("home"))
