@@ -384,6 +384,7 @@ def obtener_acordes(url):
         return None
     print("[Botasaurus] Navegador bloqueado para esta descarga.")
     try:
+        print(f"[Fragrantica] Solicitando URL: {url}")
         driver.get(url)
         time.sleep(random.uniform(1,2))
         # Asegura que el bloque principal de notas se haya cargado antes de parsear
