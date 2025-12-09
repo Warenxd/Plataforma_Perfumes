@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Avg, Sum, Count, Min
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -25,6 +25,7 @@ import atexit
 from botasaurus.browser import Driver, Wait
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from collections import defaultdict
 
 # Create your views here.
 def _parsear_clp(texto):
@@ -1800,13 +1801,31 @@ def estado_refresco(request):
     return JsonResponse({"ok": True, "status": data})
 
 
-def comparar(request):
+def analizar(request):
     """
-    Renderiza la página de comparación; los perfumes se cargan desde localStorage en el front.
+    Renderiza la vista de análisis/gestión de perfumes seleccionados (ex comparar).
     """
     if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
         return render(request, "comparar_partial.html")
     return render(request, "comparar.html")
+
+
+def comparar_compras(request):
+    """
+    Vista placeholder para comparación de compras entre tiendas/distribuidoras.
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
+        return render(request, "comparar_compras_partial.html")
+    return render(request, "comparar_compras.html")
+
+
+def proyeccion(request):
+    """
+    Proyección de precios/ingresos con escenarios interactivos en front.
+    """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
+        return render(request, "proyeccion_partial.html")
+    return render(request, "proyeccion.html")
 
 # RENDER DE VISTAS
 def home(request):
@@ -1951,4 +1970,300 @@ def home(request):
     )
 
 def estadisticas(request):
-    return render(request, 'estadistica.html')
+    perfumes = Perfume.objects.all().select_related("marca").prefetch_related("estaciones", "acordes")
+    stats = perfumes.aggregate(
+        total_perfumes=Count("id"),
+        promedio_precio=Avg("precio"),
+        total_valor=Sum("precio"),
+    )
+    stats_extra = {
+        "total_marcas": Marca.objects.count(),
+        "total_acordes": Acorde.objects.count(),
+        "total_notas": Nota.objects.count(),
+    }
+
+    tienda_map = dict(Perfume.TIENDA_CHOICES)
+    tiendas_raw = (
+        perfumes.values("tienda")
+        .annotate(total=Count("id"), avg=Avg("precio"))
+        .order_by("tienda")
+    )
+    max_total_tienda = max([t["total"] or 0 for t in tiendas_raw], default=1) or 1
+    tiendas = []
+    for t in tiendas_raw:
+        code = t["tienda"] or "N/D"
+        total = t["total"] or 0
+        tiendas.append(
+            {
+                "codigo": code,
+                "nombre": tienda_map.get(code, code),
+                "total": total,
+                "avg": t["avg"] or 0,
+                "percent": int((total / max_total_tienda) * 100) if max_total_tienda else 0,
+            }
+        )
+
+    # Comparativo de precios por tienda (promedio y mínimo)
+    tiendas_precio = (
+        perfumes.values("tienda")
+        .annotate(avg=Avg("precio"), min=Min("precio"))
+        .order_by("tienda")
+    )
+
+    top_marcas_raw = (
+        perfumes.values("marca__marca")
+        .annotate(total=Count("id"), avg=Avg("precio"))
+        .order_by("-total")[:5]
+    )
+    max_total_marca = max([m["total"] or 0 for m in top_marcas_raw], default=1) or 1
+    top_marcas = []
+    for m in top_marcas_raw:
+        nombre = m["marca__marca"] or "Sin marca"
+        total = m["total"] or 0
+        top_marcas.append(
+            {
+                "nombre": nombre,
+                "total": total,
+                "avg": m["avg"] or 0,
+                "percent": int((total / max_total_marca) * 100) if max_total_marca else 0,
+            }
+        )
+
+    # Todos los conteos de marcas (para listado extendido)
+    marcas_all_raw = (
+        perfumes.values("marca__marca")
+        .annotate(total=Count("id"))
+        .order_by("-total", "marca__marca")
+    )
+    marcas_all = [
+        {"nombre": m["marca__marca"] or "Sin marca", "total": m["total"] or 0}
+        for m in marcas_all_raw
+    ]
+
+    # Perfumes por género
+    generos_raw = (
+        Genero.objects.filter(nombre__in=["Hombre", "Unisex"])
+        .annotate(total=Count("perfumes"))
+        .values("nombre", "total")
+        .order_by("-total")
+    )
+    max_genero = max([g["total"] or 0 for g in generos_raw], default=1) or 1
+    generos_data = [
+        {
+            "nombre": g["nombre"] or "Sin género",
+            "total": g["total"] or 0,
+            "percent": int(((g["total"] or 0) / max_genero) * 100) if max_genero else 0,
+        }
+        for g in generos_raw
+    ]
+
+    # Tienda con mejor precio promedio por marca (top 10 marcas con más perfumes)
+    marca_tienda_sum = {}
+    for p in perfumes:
+        nombre = p.marca.marca if p.marca else "Sin marca"
+        tienda = p.tienda or "N/D"
+        if nombre not in marca_tienda_sum:
+            marca_tienda_sum[nombre] = {}
+        if tienda not in marca_tienda_sum[nombre]:
+            marca_tienda_sum[nombre][tienda] = {"suma": 0, "count": 0}
+        marca_tienda_sum[nombre][tienda]["suma"] += p.precio or 0
+        marca_tienda_sum[nombre][tienda]["count"] += 1
+
+    mejor_por_marca = []
+    for nombre, tiendas_dict in marca_tienda_sum.items():
+        mejor = None
+        for tienda_code, data in tiendas_dict.items():
+            if data["count"] == 0:
+                continue
+            promedio = data["suma"] / data["count"]
+            if mejor is None or promedio < mejor["promedio"]:
+                mejor = {
+                    "marca": nombre,
+                    "tienda": tienda_map.get(tienda_code, tienda_code),
+                    "promedio": promedio,
+                    "count": data["count"],
+                }
+        if mejor:
+            mejor_por_marca.append(mejor)
+    mejor_por_marca = sorted(mejor_por_marca, key=lambda x: (-x["count"], x["promedio"]))[:10]
+
+    # Top acordes y notas (por cantidad de perfumes asociados)
+    top_acordes = (
+        Acorde.objects.annotate(total=Count("perfumes"))
+        .order_by("-total", "nombre")
+        .values("nombre", "total")[:10]
+    )
+    acordes_all = (
+        Acorde.objects.annotate(total=Count("perfumes"))
+        .order_by("-total", "nombre")
+        .values("nombre", "total")
+    )
+    top_notas = (
+        Nota.objects.annotate(total=Count("perfumes_base") + Count("perfumes_corazon") + Count("perfumes_salida"))
+        .order_by("-total", "nombre")
+        .values("nombre", "total")[:10]
+    )
+    notas_all = (
+        Nota.objects.annotate(total=Count("perfumes_base") + Count("perfumes_corazon") + Count("perfumes_salida"))
+        .order_by("-total", "nombre")
+        .values("nombre", "total")
+    )
+
+    # Distribución por estación
+    estaciones_contador = {}
+    for p in perfumes:
+        estaciones_perfume = sorted(
+            p.estaciones.all(),
+            key=lambda est: (est.porcentaje or 0),
+            reverse=True,
+        )
+        if not estaciones_perfume:
+            continue
+        dominante = estaciones_perfume[0]
+        nombre = dominante.nombre or "Sin estación"
+        estaciones_contador[nombre] = estaciones_contador.get(nombre, 0) + 1
+
+    if not estaciones_contador:
+        estaciones_dist = []
+    else:
+        max_estacion = max(estaciones_contador.values()) or 1
+        estaciones_dist = [
+            {
+                "nombre": nombre,
+                "total": total,
+                "percent": int((total / max_estacion) * 100) if max_estacion else 0,
+            }
+            for nombre, total in sorted(estaciones_contador.items(), key=lambda x: -x[1])
+        ]
+
+    # Estación más frecuente por marca
+    marca_estacion_count = {}
+    for p in perfumes:
+        marca_nombre = p.marca.marca if p.marca else "Sin marca"
+        if marca_nombre not in marca_estacion_count:
+            marca_estacion_count[marca_nombre] = {}
+        for est in p.estaciones.all():
+            marca_estacion_count[marca_nombre][est.nombre] = marca_estacion_count[marca_nombre].get(est.nombre, 0) + 1
+
+    marca_top_estacion = []
+    for marca_nombre, est_dict in marca_estacion_count.items():
+        if not est_dict:
+            continue
+        best = max(est_dict.items(), key=lambda x: x[1])
+        marca_top_estacion.append(
+            {"marca": marca_nombre, "estacion": best[0], "total": best[1]}
+        )
+    marca_top_estacion = sorted(marca_top_estacion, key=lambda x: (-x["total"], x["marca"]))[:10]
+
+    # Estación dominante por acorde (top 10 acordes por total)
+    acordes_top_raw = (
+        Acorde.objects.annotate(total_perfumes=Count("perfumes"))
+        .filter(total_perfumes__gt=0)
+        .order_by("-total_perfumes", "nombre")[:20]
+    )
+    acorde_estacion = []
+    for acorde in acordes_top_raw:
+        contador = {}
+        for p in acorde.perfumes.all():
+            for est in p.estaciones.all():
+                contador[est.nombre] = contador.get(est.nombre, 0) + 1
+        if not contador:
+            continue
+        best_est, best_count = max(contador.items(), key=lambda x: x[1])
+        acorde_estacion.append(
+            {
+                "acorde": acorde.nombre,
+                "estacion": best_est,
+                "total": best_count,
+                "perfumes": acorde.total_perfumes,
+            }
+        )
+    acorde_estacion = sorted(acorde_estacion, key=lambda x: (-x["total"], x["acorde"]))[:10]
+
+    context = {
+        "stats": {
+            "total_perfumes": stats.get("total_perfumes") or 0,
+            "promedio_precio": stats.get("promedio_precio") or 0,
+            "total_valor": stats.get("total_valor") or 0,
+        },
+        "stats_extra": stats_extra,
+        "tiendas": tiendas,
+        "tiendas_precio": [
+            {
+                "nombre": tienda_map.get(t["tienda"], t["tienda"]),
+                "avg": t["avg"] or 0,
+                "min": t["min"] or 0,
+            }
+            for t in tiendas_precio
+        ],
+        "top_marcas": top_marcas,
+        "marcas_all": marcas_all,
+        "generos_data": list(generos_data),
+        "mejor_por_marca": mejor_por_marca,
+        "top_acordes": list(top_acordes),
+        "top_notas": list(top_notas),
+        "acordes_all": list(acordes_all),
+        "notas_all": list(notas_all),
+        "estaciones_dist": estaciones_dist,
+        "marca_top_estacion": marca_top_estacion,
+        "acorde_estacion": acorde_estacion,
+    }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
+        return render(request, "estadistica_partial.html", context)
+    return render(request, "estadistica.html", context)
+
+
+def reportes(request):
+    """
+    Reporte por tienda: porcentaje de veces que cada tienda tiene el mejor precio
+    comparando perfumes que existen en más de una tienda.
+    """
+    perfumes = Perfume.objects.all().select_related("marca")
+
+    grupos = defaultdict(list)
+    for p in perfumes:
+        nombre = (p.nombre or "").strip().lower()
+        marca = p.marca.marca.strip().lower() if p.marca else ""
+        key = f"{marca}|{nombre}"
+        grupos[key].append(p)
+
+    store_best_count = {"SILK": 0, "YAURAS": 0, "JOY": 0}
+    comparables = 0
+    mejores_detalle = {"SILK": [], "YAURAS": [], "JOY": []}
+
+    for plist in grupos.values():
+        if len(plist) < 2:
+            continue  # no hay comparación
+        comparables += 1
+        mejor = min(plist, key=lambda x: x.precio or 0)
+        store_best_count[mejor.tienda] = store_best_count.get(mejor.tienda, 0) + 1
+        mejores_detalle[mejor.tienda].append(
+            {
+                "nombre": mejor.nombre,
+                "marca": mejor.marca.marca if mejor.marca else "",
+                "precio": mejor.precio,
+                "tienda": mejor.tienda,
+            }
+        )
+
+    def percent(val):
+        return round((val / comparables) * 100) if comparables else 0
+
+    resumen = [
+        {"tienda": "SILK", "porcentaje": percent(store_best_count.get("SILK", 0)), "total": store_best_count.get("SILK", 0)},
+        {"tienda": "YAURAS", "porcentaje": percent(store_best_count.get("YAURAS", 0)), "total": store_best_count.get("YAURAS", 0)},
+        {"tienda": "JOY", "porcentaje": percent(store_best_count.get("JOY", 0)), "total": store_best_count.get("JOY", 0)},
+    ]
+
+    muestras = {}
+    for code, lista in mejores_detalle.items():
+        muestras[code] = sorted(lista, key=lambda x: x["precio"])[:12]
+
+    context = {
+        "comparables": comparables,
+        "resumen": resumen,
+        "muestras": muestras,
+    }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
+        return render(request, "reportes_partial.html", context)
+    return render(request, "reportes.html", context)

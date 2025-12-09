@@ -1,0 +1,50 @@
+<div class="min-h-screen bg-slate-100">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 space-y-6" id="proyeccion-root">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.35em] text-slate-500">Proyección</p>
+        <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Ingreso estimado simple</h1>
+        <p class="text-sm text-slate-600">Solo ingresa tus ventas mensuales y meses a proyectar.</p>
+      </div>
+      <a data-dynamic-back="home" href="{% url 'home' %}" class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+        ← Volver
+      </a>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-5">
+      <form id="proyeccion-form" class="lg:col-span-2 space-y-4 rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-xl ring-1 ring-black/5">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-slate-900">Parámetros</p>
+          <button type="button" id="proyeccion-reset" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500">Valores sugeridos</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="space-y-1 text-sm font-semibold text-slate-800">
+            Ingreso mensual actual
+            <input type="text" inputmode="numeric" name="ingreso" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" placeholder="500000" value="500000">
+          </label>
+          <label class="space-y-1 text-sm font-semibold text-slate-800">
+            Perfumes vendidos/mes
+            <input type="number" inputmode="numeric" name="perfumes" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" placeholder="20" value="20">
+          </label>
+          <label class="space-y-1 text-sm font-semibold text-slate-800">
+            Decants vendidos/mes
+            <input type="number" inputmode="numeric" name="decants" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" placeholder="40" value="40">
+          </label>
+          <label class="space-y-1 text-sm font-semibold text-slate-800">
+            Horizonte (meses)
+            <input type="number" inputmode="numeric" min="1" max="36" name="horizonte" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" placeholder="6" value="6">
+            <span class="text-[11px] font-semibold text-slate-500">Elige libremente 1 a 36 meses.</span>
+          </label>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:-translate-y-0.5 hover:bg-slate-800 transition">Calcular</button>
+          <p class="text-xs text-slate-500">Proyección lineal sencilla.</p>
+        </div>
+      </form>
+
+      <div class="lg:col-span-3 space-y-4" id="proyeccion-resultados">
+        <div class="rounded-3xl border border-dashed border-slate-300 bg-white/80 p-6 text-center text-slate-500">Ingresa parámetros para ver la proyección.</div>
+      </div>
+    </div>
+  </div>
+</div>

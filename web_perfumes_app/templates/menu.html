@@ -118,92 +118,68 @@
 </style>
 
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-  <div class="mx-auto flex min-h-screen max-w-[1500px] gap-5 px-4 sm:px-6 lg:px-10">
-
-    <!-- Sidebar estilo Laplace + filtros -->
-    <aside class="sidebar-blur relative z-10 w-96 overflow-hidden rounded-[28px] px-6 py-8 text-white">
-      <div class="absolute inset-y-0 left-0 w-px bg-white/10"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_35%)]"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(99,102,241,0.12),transparent_35%)]"></div>
-      <div class="relative flex h-full flex-col gap-6">
-        <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-xl">
-            <i class="fa-solid fa-mountain-sun"></i>
-          </div>
-          <div class="leading-tight">
-            <p class="text-[11px] uppercase tracking-[0.32em] text-slate-300">Laplace</p>
-            <p class="text-lg font-semibold">Toque Fragante</p>
-          </div>
+  <div class="mx-auto flex min-h-screen max-w-[1500px] flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:px-10">
+    <aside class="w-full flex-shrink-0 space-y-4 rounded-[24px] bg-slate-900/70 p-4 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur sidebar-blur lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-[360px] lg:max-w-[360px] lg:overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.3em] text-slate-200/80">Panel</p>
+          <p class="text-lg font-semibold text-white">Explorador</p>
         </div>
+      </div>
 
-        <div class="space-y-5">
-          <nav class="space-y-6 text-sm">
-            <div class="space-y-2">
-              <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Main</p>
-              <div class="space-y-2">
-                <a id="nav-perfumes" href="{% url 'home' %}"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold transition {% if request.path == '/' %}bg-white text-slate-900 shadow-lg ring-1 ring-white/60{% else %}text-slate-200 hover:bg-white/5{% endif %}">
-                  <i class="fa-solid fa-house"></i>
-                  <span>Perfumes</span>
-                </a>
-                <a id="nav-comparar" href="{% url 'comparar' %}"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
-                  <i class="fa-solid fa-code-compare"></i>
-                  <span>Comparar</span>
-                </a>
-                <a href="#proyeccion"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
-                  <i class="fa-solid fa-chart-line"></i>
-                  <span>Proyección de precios</span>
-                </a>
-              </div>
-            </div>
+      <nav class="space-y-2">
+        <a
+          id="nav-perfumes"
+          href="{% url 'home' %}"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition duration-150 hover:bg-white/5">
+          <i class="fa-solid fa-home text-indigo-200"></i>
+          <span>Perfumes</span>
+        </a>
+        <a
+          id="nav-analizar"
+          href="{% url 'analizar' %}"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition duration-150 hover:bg-white/5">
+          <i class="fa-solid fa-sack-dollar text-indigo-200"></i>
+          <span>Calcular ganancias</span>
+        </a>
+        <a
+          id="nav-compras"
+          href="{% url 'comparar' %}"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition duration-150 hover:bg-white/5">
+          <i class="fa-solid fa-cart-shopping text-indigo-200"></i>
+          <span>Comparar perfumes</span>
+        </a>
+        <a
+          id="nav-proyeccion"
+          href="{% url 'proyeccion' %}"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition duration-150 hover:bg-white/5">
+          <i class="fa-solid fa-route text-indigo-200"></i>
+          <span>Proyección de costos</span>
+        </a>
+        <a
+          id="nav-estadisticas"
+          href="{% url 'estadisticas' %}"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition duration-150 hover:bg-white/5">
+          <i class="fa-solid fa-chart-simple text-indigo-200"></i>
+          <span>Estadísticas</span>
+        </a>
+        <a
+          id="nav-reportes"
+          href="{% url 'reportes' %}"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition duration-150 hover:bg-white/5">
+          <i class="fa-solid fa-copy text-indigo-200"></i>
+          <span>Reportes</span>
+        </a>
+      </nav>
 
-            <div class="space-y-2">
-              <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Analytics</p>
-              <div class="space-y-2">
-                <a href="/estadisticas/"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
-                  <i class="fa-solid fa-chart-pie"></i>
-                  <span>Estadísticas</span>
-                </a>
-                <a href="#reportes"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
-                  <i class="fa-solid fa-clipboard-list"></i>
-                  <span>Reportes</span>
-                </a>
-              </div>
-            </div>
+      <div class="h-px bg-white/10"></div>
 
-            <div class="space-y-2">
-              <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Soporte</p>
-              <div class="space-y-2">
-                <a href="#filters-panel"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
-                  <i class="fa-solid fa-filter"></i>
-                  <span>Filtros</span>
-                </a>
-                <a href="#community"
-                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
-                  <i class="fa-solid fa-circle-info"></i>
-                  <span>Ayuda</span>
-                </a>
-              </div>
-            </div>
-          </nav>
-        </div>
-
-        <!-- Filtros incrustados -->
-        <section id="filters-panel" class="flex-1 overflow-y-auto rounded-[20px] bg-slate-900/60 p-4 ring-1 ring-white/10 backdrop-blur-sm">
+      <!-- Filtros incrustados -->
+      <div class="flex-1 space-y-4 overflow-y-auto pr-1">
+        <section id="filters-panel" class="overflow-y-auto rounded-[20px] bg-slate-900/60 p-4 ring-1 ring-white/10 backdrop-blur-sm">
           <form id="filters-form" method="get" class="space-y-5">
             <div class="flex items-center justify-between gap-3">
               <p class="text-[11px] uppercase tracking-[0.3em] text-slate-400">Filtros</p>
-              <button
-                type="submit"
-                class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-semibold text-white shadow-lg ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:bg-white/20">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>Aplicar</span>
-              </button>
             </div>
 
             <div class="space-y-5 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
@@ -260,9 +236,10 @@
                 <div class="space-y-2">
                   {% if generos %}
                     {% for genero in generos %}
+                    {% if genero.nombre != "Mujer" %}
                     {% with genero_id=genero.id|stringformat:"s" %}
-                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 bg-slate-900/50 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
-                      <span>{{ genero.nombre }}</span>
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                      <span class="truncate">{{ genero.nombre }}</span>
                       <input
                         type="checkbox"
                         name="genero"
@@ -272,44 +249,10 @@
                       />
                     </label>
                     {% endwith %}
+                    {% endif %}
                     {% endfor %}
                   {% else %}
-                    <p class="text-xs text-slate-300">Aún no hay géneros disponibles.</p>
-                  {% endif %}
-                </div>
-              </details>
-            </div>
-
-            <div class="space-y-4 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
-              <details open class="space-y-3">
-                <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
-                  <div>
-                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Estaciones</p>
-                    <p class="text-xs text-slate-300">Solo perfumes con {{ estacion_min_porcentaje }}% o más.</p>
-                  </div>
-                  <button
-                    type="button"
-                    id="clear-season-filters"
-                    class="text-xs font-semibold text-indigo-200 underline-offset-4 hover:underline">
-                    Limpiar
-                  </button>
-                </summary>
-                <div class="max-h-[30vh] space-y-2 overflow-y-auto rounded-xl border border-slate-700/60 bg-slate-900/50 p-3 shadow-inner">
-                  {% if estaciones_filtro %}
-                    {% for estacion in estaciones_filtro %}
-                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
-                      <span>{{ estacion.label }}</span>
-                      <input
-                        type="checkbox"
-                        name="estacion"
-                        value="{{ estacion.slug }}"
-                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
-                        {% if estacion.slug in selected_estacion_slugs %}checked{% endif %}
-                      />
-                    </label>
-                    {% endfor %}
-                  {% else %}
-                    <p class="text-xs text-slate-300">No hay estaciones disponibles con datos suficientes.</p>
+                    <p class="text-xs text-slate-300">No hay géneros registrados.</p>
                   {% endif %}
                 </div>
               </details>
@@ -320,7 +263,7 @@
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
                     <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Tiendas</p>
-                    <p class="text-xs text-slate-300">Filtra por tienda de origen.</p>
+                    <p class="text-xs text-slate-300">Filtra por tienda.</p>
                   </div>
                   <button
                     type="button"
@@ -330,23 +273,54 @@
                   </button>
                 </summary>
                 <div class="space-y-2">
-                  {% if tiendas %}
-                    {% for tienda in tiendas %}
-                    {% with code=tienda.code|stringformat:"s" %}
-                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 bg-slate-900/50 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
-                      <span>{{ tienda.label }}</span>
+                  {% for tienda in tiendas %}
+                  <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                    <span class="truncate">{{ tienda.label }}</span>
+                    <input
+                      type="checkbox"
+                      name="tienda"
+                      value="{{ tienda.code }}"
+                      class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                      {% if tienda.code in selected_tienda_codes %}checked{% endif %}
+                    />
+                  </label>
+                  {% empty %}
+                  <p class="text-xs text-slate-300">No hay tiendas registradas.</p>
+                  {% endfor %}
+                </div>
+              </details>
+            </div>
+
+            <div class="space-y-4 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
+              <details open class="space-y-3">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Estaciones</p>
+                    <p class="text-xs text-slate-300">Filtra por estación dominante.</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="clear-season-filters"
+                    class="text-xs font-semibold text-indigo-200 underline-offset-4 hover:underline">
+                    Limpiar
+                  </button>
+                </summary>
+                <div class="space-y-2">
+                  {% if estaciones_filtro %}
+                    {% for estacion in estaciones_filtro %}
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                      <span class="truncate">{{ estacion.label }}</span>
                       <input
                         type="checkbox"
-                        name="tienda"
-                        value="{{ tienda.code }}"
+                        name="estacion"
+                        value="{{ estacion.slug }}"
                         class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
-                        {% if code in selected_tienda_codes %}checked{% endif %}
+                        {% if estacion.slug in selected_estacion_slugs %}checked{% endif %}
                       />
                     </label>
-                    {% endwith %}
                     {% endfor %}
                   {% else %}
-                    <p class="text-xs text-slate-300">No hay tiendas registradas.</p>
+                    <p class="text-xs text-slate-300">No hay estaciones.</p>
                   {% endif %}
                 </div>
               </details>
@@ -427,8 +401,12 @@
 (() => {
   const mainPanel = document.getElementById("main-panel");
   const dynamicPanel = document.getElementById("dynamic-panel");
-  const linkComparar = document.getElementById("nav-comparar");
+  const linkAnalizar = document.getElementById("nav-analizar");
   const linkPerfumes = document.getElementById("nav-perfumes");
+  const linkCompras = document.getElementById("nav-compras");
+  const linkProyeccion = document.getElementById("nav-proyeccion");
+  const linkEstadisticas = document.getElementById("nav-estadisticas");
+  const linkReportes = document.getElementById("nav-reportes");
   if (!mainPanel || !dynamicPanel) {
     return;
   }
@@ -449,7 +427,11 @@
     dynamicPanel.dataset.view = "";
     mainPanel.classList.remove("hidden");
     setActive(linkPerfumes, true);
-    setActive(linkComparar, false);
+    setActive(linkAnalizar, false);
+    setActive(linkCompras, false);
+    setActive(linkProyeccion, false);
+    setActive(linkEstadisticas, false);
+    setActive(linkReportes, false);
     if (typeof window.refreshComparisonUI === "function") {
       window.refreshComparisonUI();
     } else if (typeof window.updateComparisonFromStorage === "function") {
@@ -457,7 +439,7 @@
     }
   };
 
-  const loadComparar = async (url) => {
+  const loadAnalizar = async (url) => {
     dynamicPanel.classList.remove("hidden");
     mainPanel.classList.add("hidden");
     dynamicPanel.dataset.view = "loading";
@@ -469,8 +451,12 @@
       if (!res.ok) throw new Error("No OK");
       const html = await res.text();
       dynamicPanel.innerHTML = html;
-      dynamicPanel.dataset.view = "comparar";
-      setActive(linkComparar, true);
+      dynamicPanel.dataset.view = "analizar";
+      setActive(linkAnalizar, true);
+      setActive(linkCompras, false);
+      setActive(linkProyeccion, false);
+      setActive(linkEstadisticas, false);
+      setActive(linkReportes, false);
       setActive(linkPerfumes, false);
       if (typeof window.initComparar === "function") {
         window.initComparar(dynamicPanel);
@@ -480,13 +466,171 @@
     }
   };
 
-  if (linkComparar) {
-    linkComparar.addEventListener("click", (event) => {
+  const loadCompras = async (url) => {
+    dynamicPanel.classList.remove("hidden");
+    mainPanel.classList.add("hidden");
+    dynamicPanel.dataset.view = "loading";
+    dynamicPanel.innerHTML =
+      '<div class="rounded-[28px] bg-white/85 p-6 text-center text-slate-500 shadow-2xl ring-1 ring-slate-200/80">Cargando compras...</div>';
+    try {
+      const partialUrl = url.includes("?") ? `${url}&partial=1` : `${url}?partial=1`;
+      const res = await fetch(partialUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!res.ok) throw new Error("No OK");
+      const html = await res.text();
+      dynamicPanel.innerHTML = html;
+      dynamicPanel.dataset.view = "compras";
+      setActive(linkCompras, true);
+      setActive(linkAnalizar, false);
+      setActive(linkProyeccion, false);
+      setActive(linkEstadisticas, false);
+      setActive(linkReportes, false);
+      setActive(linkPerfumes, false);
+      if (typeof window.initCompararCompras === "function") {
+        window.initCompararCompras(dynamicPanel);
+      }
+    } catch (error) {
+      window.location.href = url;
+    }
+  };
+
+  const loadProyeccion = async (url) => {
+    dynamicPanel.classList.remove("hidden");
+    mainPanel.classList.add("hidden");
+    dynamicPanel.dataset.view = "loading";
+    dynamicPanel.innerHTML =
+      '<div class="rounded-[28px] bg-white/85 p-6 text-center text-slate-500 shadow-2xl ring-1 ring-slate-200/80">Cargando proyección...</div>';
+    try {
+      const partialUrl = url.includes("?") ? `${url}&partial=1` : `${url}?partial=1`;
+      const res = await fetch(partialUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!res.ok) throw new Error("No OK");
+      const html = await res.text();
+      dynamicPanel.innerHTML = html;
+      dynamicPanel.dataset.view = "proyeccion";
+      setActive(linkProyeccion, true);
+      setActive(linkAnalizar, false);
+      setActive(linkCompras, false);
+      setActive(linkEstadisticas, false);
+      setActive(linkReportes, false);
+      setActive(linkPerfumes, false);
+      if (typeof window.initProyeccion === "function") {
+        window.initProyeccion(dynamicPanel);
+      }
+    } catch (error) {
+      window.location.href = url;
+    }
+  };
+
+  const loadEstadisticas = async (url) => {
+    dynamicPanel.classList.remove("hidden");
+    mainPanel.classList.add("hidden");
+    dynamicPanel.dataset.view = "loading";
+    dynamicPanel.innerHTML =
+      '<div class="rounded-[28px] bg-white/85 p-6 text-center text-slate-500 shadow-2xl ring-1 ring-slate-200/80">Cargando estadísticas...</div>';
+    try {
+      const partialUrl = url.includes("?") ? `${url}&partial=1` : `${url}?partial=1`;
+      const res = await fetch(partialUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!res.ok) throw new Error("No OK");
+      const html = await res.text();
+      dynamicPanel.innerHTML = html;
+      dynamicPanel.dataset.view = "estadisticas";
+      setActive(linkEstadisticas, true);
+      setActive(linkAnalizar, false);
+      setActive(linkCompras, false);
+      setActive(linkProyeccion, false);
+      setActive(linkPerfumes, false);
+      setActive(linkReportes, false);
+      if (typeof window.initEstadisticas === "function") {
+        window.initEstadisticas(dynamicPanel);
+      }
+    } catch (error) {
+      window.location.href = url;
+    }
+  };
+
+  const loadReportes = async (url) => {
+    dynamicPanel.classList.remove("hidden");
+    mainPanel.classList.add("hidden");
+    dynamicPanel.dataset.view = "loading";
+    dynamicPanel.innerHTML =
+      '<div class="rounded-[28px] bg-white/85 p-6 text-center text-slate-500 shadow-2xl ring-1 ring-slate-200/80">Cargando reportes...</div>';
+    try {
+      const partialUrl = url.includes("?") ? `${url}&partial=1` : `${url}?partial=1`;
+      const res = await fetch(partialUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!res.ok) throw new Error("No OK");
+      const html = await res.text();
+      dynamicPanel.innerHTML = html;
+      dynamicPanel.dataset.view = "reportes";
+      setActive(linkReportes, true);
+      setActive(linkEstadisticas, false);
+      setActive(linkAnalizar, false);
+      setActive(linkCompras, false);
+      setActive(linkProyeccion, false);
+      setActive(linkPerfumes, false);
+      if (typeof window.initReportes === "function") {
+        window.initReportes(dynamicPanel);
+      }
+    } catch (error) {
+      window.location.href = url;
+    }
+  };
+
+  if (linkAnalizar) {
+    linkAnalizar.addEventListener("click", (event) => {
       event.preventDefault();
-      if (dynamicPanel.dataset.view === "comparar") {
+      if (dynamicPanel.dataset.view === "analizar") {
         return;
       }
-      loadComparar(linkComparar.href);
+      loadAnalizar(linkAnalizar.href);
+    });
+  }
+
+  if (linkCompras) {
+    linkCompras.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dynamicPanel.dataset.view === "compras") {
+        return;
+      }
+      loadCompras(linkCompras.href);
+    });
+  }
+
+  if (linkProyeccion) {
+    linkProyeccion.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dynamicPanel.dataset.view === "proyeccion") {
+        return;
+      }
+      loadProyeccion(linkProyeccion.href);
+    });
+  }
+
+  if (linkEstadisticas) {
+    linkEstadisticas.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dynamicPanel.dataset.view === "estadisticas") {
+        return;
+      }
+      loadEstadisticas(linkEstadisticas.href);
+    });
+  }
+
+  if (linkReportes) {
+    linkReportes.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dynamicPanel.dataset.view === "reportes") {
+        return;
+      }
+      loadReportes(linkReportes.href);
+    });
+  }
+
+  if (linkReportes) {
+    linkReportes.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dynamicPanel.dataset.view === "reportes") {
+        return;
+      }
+      loadReportes(linkReportes.href);
     });
   }
 
@@ -510,7 +654,11 @@
   // Estado inicial: activar "Perfumes" si está visible el main
   if (!dynamicPanel || dynamicPanel.classList.contains("hidden")) {
     setActive(linkPerfumes, true);
-    setActive(linkComparar, false);
+    setActive(linkAnalizar, false);
+    setActive(linkCompras, false);
+    setActive(linkProyeccion, false);
+    setActive(linkEstadisticas, false);
+    setActive(linkReportes, false);
   }
 })();
 </script>

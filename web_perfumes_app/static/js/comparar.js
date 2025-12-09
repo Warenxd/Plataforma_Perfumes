@@ -346,11 +346,16 @@
       removeBtn.type = "button";
       removeBtn.className = "text-xs font-semibold text-rose-600 hover:text-rose-500";
       removeBtn.textContent = "Quitar";
-        removeBtn.addEventListener("click", () => {
-          const remaining = loadItems().filter((it) => String(it.id) !== String(item.id));
-          saveItems(remaining);
-          render(root);
-        });
+      removeBtn.addEventListener("click", () => {
+        const remaining = loadItems().filter((it) => String(it.id) !== String(item.id));
+        saveItems(remaining);
+        if (typeof window.refreshComparisonUI === "function") {
+          window.refreshComparisonUI();
+        } else if (typeof window.updateComparisonFromStorage === "function") {
+          window.updateComparisonFromStorage();
+        }
+        render(root);
+      });
       tdAcciones.appendChild(removeBtn);
 
       tr.append(tdPerfume, tdCantidad, tdPrecio, tdTotal, tdVenta, tdGanancia, tdAcciones);
@@ -375,6 +380,11 @@
     if (clearBtn && !clearBtn.dataset.bound) {
       clearBtn.addEventListener("click", () => {
         saveItems([]);
+        if (typeof window.refreshComparisonUI === "function") {
+          window.refreshComparisonUI();
+        } else if (typeof window.updateComparisonFromStorage === "function") {
+          window.updateComparisonFromStorage();
+        }
         render(root);
       });
       clearBtn.dataset.bound = "true";

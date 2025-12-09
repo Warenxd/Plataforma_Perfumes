@@ -1,0 +1,20 @@
+<div class="min-h-screen bg-slate-100">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.35em] text-slate-500">Comparar compras</p>
+        <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Tiendas de tus perfumes</h1>
+        <p class="text-sm text-slate-600">Se agrupan automáticamente los perfumes que agregaste según la tienda y precio.</p>
+      </div>
+      <a data-dynamic-back="home" href="{% url 'home' %}" class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+        ← Volver
+      </a>
+    </div>
+
+    <div id="compras-wrapper" class="space-y-4">
+      <div class="rounded-3xl border border-dashed border-slate-300 bg-white/80 p-6 text-center text-slate-500">
+        Cargando comparación...
+      </div>
+    </div>
+  </div>
+</div>
