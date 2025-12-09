@@ -386,6 +386,11 @@ def obtener_acordes(url):
     try:
         driver.get(url)
         time.sleep(random.uniform(1,2))
+        # Asegura que el bloque principal de notas se haya cargado antes de parsear
+        try:
+            driver.wait_for_element("div.notes-box", wait=Wait.MEDIUM)
+        except Exception:
+            pass
         
         # === ACORDES ===
         acordes = []
@@ -413,8 +418,11 @@ def obtener_acordes(url):
         # === ESTACIONES ===
         estaciones = []
         try:
-            driver.wait_for_element("span.vote-button-legend", wait=Wait.SHORT)
             spans = driver.select_all("span.vote-button-legend") or []
+            if not spans:
+                # Algunos renders tardan; espera un poco más y reintenta
+                time.sleep(1.5)
+                spans = driver.select_all("span.vote-button-legend") or []
             vistos = set()
             for span in spans:
                 nombre = (span.text or "").strip()
