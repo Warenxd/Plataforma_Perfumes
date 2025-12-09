@@ -494,8 +494,9 @@
       event.preventDefault();
       const btn = form.querySelector(".js-download-btn");
       if (btn) {
+        btn.dataset.originalText = btn.textContent || "Descargar detalles";
         btn.disabled = true;
-        btn.textContent = "Cargando...";
+        btn.classList.add("hidden");
       }
       setDownloadStatus(form, "", false);
       startDownloadProgress(form);
@@ -550,7 +551,8 @@
         } else {
           if (btn) {
             btn.disabled = false;
-            btn.textContent = "Descargar detalles";
+            btn.textContent = btn.dataset.originalText || "Descargar detalles";
+            btn.classList.remove("hidden");
           }
           setDownloadStatus(form, json?.message || "No se pudo descargar", true);
           showDownloadToast(json?.message || "No se pudo descargar", true);
@@ -558,7 +560,8 @@
       } catch (error) {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = "Descargar detalles";
+          btn.textContent = btn.dataset.originalText || "Descargar detalles";
+          btn.classList.remove("hidden");
         }
         setDownloadStatus(form, "Error de red al descargar", true);
         showDownloadToast("Error de red al descargar", true);

@@ -2,7 +2,7 @@
 {% load format_price %}
 <!-- CONSTRUCCION DE CARD -->
 <div
-  class="flip-card w-full max-w-lg sm:max-w-lg"
+  class="flip-card w-full max-w-lg sm:max-w-lg animate__animated animate__fadeInUp"
   {% if p.imagen %}style="--card-image: url('{{ p.imagen.url }}');"{% endif %}
   data-perfume-id="{{ p.id }}"
   data-perfume-nombre="{{ p.nombre }}"

@@ -549,19 +549,24 @@ def obtener_acordes(url):
                         if not parent:
                             continue
                         # Busca items en el contenedor siguiente (flex wrap)
-                        items = parent.select_all("div[style*='flex'][style*='wrap'] div a") or []
-                        if not items:
-                            items = parent.select_all("div[style*='flex'][style*='wrap'] div") or []
-                        for item in items:
-                            texto = (item.text or "").strip()
-                            texto = re.sub(r'\s+', ' ', texto)
-                            if not texto:
-                                continue
-                            clave_txt = texto.lower()
-                            if clave_txt in vistos:
-                                continue
-                            vistos.add(clave_txt)
-                            notas_planas.append(texto)
+                        flex_wraps = parent.select_all("div[style*='flex'][style*='wrap']") or []
+                        for wrap in flex_wraps:
+                            tarjetas = wrap.select_all("div") or []
+                            for tarjeta in tarjetas:
+                                texto = (tarjeta.text or "").strip()
+                                if not texto:
+                                    # Si el texto está fuera del <a>, intenta con el padre inmediato
+                                    enlace = tarjeta.select("a")
+                                    if enlace and enlace.parent:
+                                        texto = (enlace.parent.text or "").strip()
+                                texto = re.sub(r'\s+', ' ', texto)
+                                if not texto:
+                                    continue
+                                clave_txt = texto.lower()
+                                if clave_txt in vistos:
+                                    continue
+                                vistos.add(clave_txt)
+                                notas_planas.append(texto)
                     if notas_planas:
                         notas["base"].extend(notas_planas)
                         print(f"[Notas] Fallback plano: {len(notas_planas)} notas agregadas")
@@ -767,16 +772,24 @@ def descargar_acordes_individual(request, perfume_id):
             success_msg = f"No se encontraron acordes ni notas para {perfume.nombre}"
             messages.info(request, success_msg)
 
-        # Refrescar instancia para devolver HTML actualizado
-        perfume.refresh_from_db()
+        # Refrescar instancia (incluyendo relaciones) para devolver HTML actualizado
+        perfume = (
+            Perfume.objects.select_related("marca")
+            .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "estaciones")
+            .get(pk=perfume.id)
+        )
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in (request.headers.get("accept") or ""):
             card_html = render_to_string("components/perfume_card.html", {"p": perfume}, request=request)
             updated_cards = []
             for otro in propagados:
                 try:
-                    otro.refresh_from_db()
-                    card = render_to_string("components/perfume_card.html", {"p": otro}, request=request)
+                    otro_fresh = (
+                        Perfume.objects.select_related("marca")
+                        .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "estaciones")
+                        .get(pk=otro.id)
+                    )
+                    card = render_to_string("components/perfume_card.html", {"p": otro_fresh}, request=request)
                     updated_cards.append({"id": otro.id, "html": card})
                 except Exception as e:
                     print(f"[Compartir] No se pudo renderizar tarjeta para {otro.nombre}: {e}")
