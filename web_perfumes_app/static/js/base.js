@@ -886,12 +886,17 @@
 
   const refreshStages = [
     {
-      key: "urls",
-      title: "Actualizando URLs de Fragrantica...",
-      detail: "Buscando coincidencias y normalizando URLs.",
-      progress: 85,
-      statusKey: "urls",
-      formatter: (data) => `${data.urls_actualizadas || 0} URLs normalizadas.`,
+      key: "scraping",
+      title: "Recargando perfumes desde tiendas...",
+      detail: "Scraping de Silk, Yauras y Joy.",
+      progress: 90,
+      statusKey: "scraping",
+      formatter: (data) => {
+        const resultados = data && data.resultados ? data.resultados : {};
+        const creados = resultados.creados || 0;
+        const actualizados = resultados.actualizados || 0;
+        return `Creados: ${creados} · Actualizados: ${actualizados}`;
+      },
     },
   ];
 

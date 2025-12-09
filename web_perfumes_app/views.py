@@ -1768,13 +1768,14 @@ def refrescar_perfumes(request):
     if es_ajax:
         try:
             if etapa == "scraping":
-                _set_refresh_status("scraping", state="skipped")
+                _set_refresh_status("scraping", state="running")
+                resultados = scrapping_tiendas_perfumes()
+                _set_refresh_status("scraping", state="done")
                 return JsonResponse(
                     {
                         "ok": True,
                         "stage": "scraping",
-                        "skipped": True,
-                        "message": "Scraping de tiendas omitido en esta recarga.",
+                        "resultados": resultados,
                     }
                 )
             elif etapa == "urls":
@@ -1794,13 +1795,13 @@ def refrescar_perfumes(request):
             return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
     try:
-        urls_actualizadas = actualizar_urls_fragrantica()
-        mensajes_extra = (
-            f"URLs Fragrantica actualizadas: {urls_actualizadas}"
-        )
+        _set_refresh_status("scraping", state="running")
+        resultados = scrapping_tiendas_perfumes()
+        _set_refresh_status("scraping", state="done")
+        mensajes_extra = f"Scraping completado. Creados: {resultados.get('creados', 0)}, actualizados: {resultados.get('actualizados', 0)}"
         messages.success(request, f"Recarga completada. {mensajes_extra}")
     except Exception as e:
-        _set_refresh_status("urls", state="error", error=str(e))
+        _set_refresh_status("scraping", state="error", error=str(e))
         messages.error(request, f"Ocurrió un problema al refrescar los perfumes: {e}")
     return redirect(reverse("home"))
 

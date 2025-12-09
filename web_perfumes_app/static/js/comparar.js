@@ -48,7 +48,26 @@
     }
   };
 
-  const updateItem = (id, data, root = document) => {
+  const captureCaret = (input) => {
+    if (!input || typeof input.selectionStart !== "number") {
+      return null;
+    }
+    return {
+      start: input.selectionStart,
+      end: input.selectionEnd,
+    };
+  };
+
+  const restoreCaret = (input, cursor) => {
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    if (cursor && typeof cursor.start === "number") {
+      const end = typeof cursor.end === "number" ? cursor.end : cursor.start;
+      input.setSelectionRange(cursor.start, end);
+    }
+  };
+
+  const updateItem = (id, data, root = document, options = {}) => {
     const items = loadItems();
     const next = items.map((item) => {
       if (String(item.id) !== String(id)) {
@@ -57,10 +76,10 @@
       return { ...item, ...data };
     });
     saveItems(next);
-    render(root);
+    render(root, options);
   };
 
-  const mutateDecants = (itemId, mutateFn, root = document) => {
+  const mutateDecants = (itemId, mutateFn, root = document, options = {}) => {
     const items = loadItems();
     const next = items.map((item) => {
       if (String(item.id) !== String(itemId)) {
@@ -70,7 +89,7 @@
       return { ...item, decants: mutateFn(currentDecants) };
     });
     saveItems(next);
-    render(root);
+    render(root, options);
   };
 
   const setGlobalCount = (value) => {
@@ -80,7 +99,7 @@
     }
   };
 
-  const render = (root = document) => {
+  const render = (root = document, opts = {}) => {
     const body = root.querySelector("#compare-body");
     const countEl = root.querySelector("#compare-count");
     const summaryCompra = root.querySelector("#summary-compra");
@@ -88,6 +107,7 @@
     const summaryGanancia = root.querySelector("#summary-ganancia");
     const summaryWrapper = root.querySelector("#summary-ganancia-wrapper");
     const summaryDot = root.querySelector("#summary-ganancia-dot");
+    const focusState = opts.focus;
     if (!body || !countEl) {
       return;
     }
@@ -178,10 +198,18 @@
       const decantList = document.createElement("div");
       decantList.className = "space-y-2";
 
-      const handleDecantUpdate = (decantId, patch) =>
+      const handleDecantUpdate = (decantId, patch, sourceInput, field) =>
         mutateDecants(item.id, (curr) =>
           curr.map((d) => (String(d.id) === String(decantId) ? { ...d, ...patch } : d)),
-          root
+          root,
+          {
+            focus: {
+              itemId: item.id,
+              decantId,
+              field,
+              cursor: captureCaret(sourceInput),
+            },
+          }
         );
 
       decants.forEach((decant) => {
@@ -199,9 +227,9 @@
         mlInput.step = "0.1";
         mlInput.value = Number(decant.ml) || 0;
         mlInput.className = "w-full rounded border border-slate-300 px-2 py-1";
-        mlInput.addEventListener("change", () => {
-          handleDecantUpdate(decant.id, { ml: Number(mlInput.value) || 0 });
-        });
+        mlInput.addEventListener("input", () =>
+          handleDecantUpdate(decant.id, { ml: Number(mlInput.value) || 0 }, mlInput, "decant-ml")
+        );
         mlWrapper.append(mlLabel, mlInput);
 
         const precioWrapper = document.createElement("div");
@@ -215,25 +243,25 @@
         precioInput.step = "1";
         precioInput.value = Number(decant.precio) || 0;
         precioInput.className = "w-full rounded border border-slate-300 px-2 py-1";
-        precioInput.addEventListener("change", () => {
-          handleDecantUpdate(decant.id, { precio: Number(precioInput.value) || 0 });
-        });
+        precioInput.addEventListener("input", () =>
+          handleDecantUpdate(decant.id, { precio: Number(precioInput.value) || 0 }, precioInput, "decant-precio")
+        );
         precioWrapper.append(precioLabel, precioInput);
 
         const cantidadWrapper = document.createElement("div");
         cantidadWrapper.className = "col-span-3 flex items-center gap-1";
         const cantidadLabel = document.createElement("span");
         cantidadLabel.className = "text-slate-500";
-        cantidadLabel.textContent = "Qty";
+        cantidadLabel.textContent = "Cant";
         const cantidadInput = document.createElement("input");
         cantidadInput.type = "number";
         cantidadInput.min = "0";
         cantidadInput.step = "1";
         cantidadInput.value = Number(decant.cantidad) || 0;
         cantidadInput.className = "w-full rounded border border-slate-300 px-2 py-1";
-        cantidadInput.addEventListener("change", () => {
+        cantidadInput.addEventListener("input", () => {
           const val = Number(cantidadInput.value);
-          handleDecantUpdate(decant.id, { cantidad: val >= 0 ? val : 0 });
+          handleDecantUpdate(decant.id, { cantidad: val >= 0 ? val : 0 }, cantidadInput, "decant-cantidad");
         });
         cantidadWrapper.append(cantidadLabel, cantidadInput);
 
@@ -258,6 +286,20 @@
 
         row.append(mlWrapper, precioWrapper, cantidadWrapper, actionsWrapper);
         decantList.appendChild(row);
+
+        if (
+          focusState &&
+          String(focusState.itemId) === String(item.id) &&
+          String(focusState.decantId) === String(decant.id)
+        ) {
+          if (focusState.field === "decant-ml") {
+            requestAnimationFrame(() => restoreCaret(mlInput, focusState.cursor));
+          } else if (focusState.field === "decant-precio") {
+            requestAnimationFrame(() => restoreCaret(precioInput, focusState.cursor));
+          } else if (focusState.field === "decant-cantidad") {
+            requestAnimationFrame(() => restoreCaret(cantidadInput, focusState.cursor));
+          }
+        }
       });
 
       const addDecantBtn = document.createElement("button");
@@ -292,9 +334,26 @@
       qtyInput.step = "1";
       qtyInput.value = Number.isFinite(item.cantidad) ? item.cantidad : 0;
       qtyInput.className = "w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-700";
-      qtyInput.addEventListener("change", () => {
+      qtyInput.addEventListener("input", () => {
         const value = Number(qtyInput.value);
-        updateItem(item.id, { cantidad: value >= 0 ? value : 0 }, root);
+        const safeValue = Number.isFinite(value) && value >= 0 ? value : 0;
+        const cursor = captureCaret(qtyInput);
+        const patch = { cantidad: safeValue };
+        if (safeValue === 0) {
+          patch.precio_venta = 0;
+        }
+        updateItem(
+          item.id,
+          patch,
+          root,
+          {
+            focus: {
+              itemId: item.id,
+              field: "cantidad",
+              cursor,
+            },
+          }
+        );
       });
       tdCantidad.appendChild(qtyInput);
 
@@ -314,19 +373,40 @@
       const tdVenta = document.createElement("td");
       tdVenta.className = "px-4 py-3 whitespace-nowrap";
       const ventaInput = document.createElement("input");
+      const effectivePrecioVenta = qtyNumber > 0 ? Number(item.precio_venta) || 0 : 0;
       ventaInput.type = "number";
       ventaInput.min = "0";
       ventaInput.step = "1";
-      ventaInput.value = Number.isFinite(item.precio_venta) ? item.precio_venta : 0;
+      ventaInput.value = Number.isFinite(effectivePrecioVenta) ? effectivePrecioVenta : 0;
       ventaInput.className = "w-24 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-700";
-      ventaInput.addEventListener("change", () => {
+      ventaInput.disabled = qtyNumber <= 0;
+      if (ventaInput.disabled) {
+        ventaInput.classList.add("bg-slate-100", "cursor-not-allowed", "opacity-80");
+      }
+      const wantsVentaFocus =
+        focusState &&
+        focusState.field === "venta" &&
+        String(focusState.itemId) === String(item.id);
+      ventaInput.addEventListener("input", () => {
         const value = Number(ventaInput.value);
-        updateItem(item.id, { precio_venta: value >= 0 ? value : 0 }, root);
+        const cursor = captureCaret(ventaInput);
+        updateItem(
+          item.id,
+          { precio_venta: value >= 0 ? value : 0 },
+          root,
+          {
+            focus: {
+              itemId: item.id,
+              field: "venta",
+              cursor,
+            },
+          }
+        );
       });
       tdVenta.appendChild(ventaInput);
 
       const tdGanancia = document.createElement("td");
-      const precioVenta = Number(item.precio_venta) || 0;
+      const precioVenta = effectivePrecioVenta;
       const totalVenta = precioVenta * qtyNumber;
       const totalVentaFull = totalVenta + decantTotal;
       const totalGanancia = totalVentaFull - totalCompra;
@@ -360,6 +440,17 @@
 
       tr.append(tdPerfume, tdCantidad, tdPrecio, tdTotal, tdVenta, tdGanancia, tdAcciones);
       body.appendChild(tr);
+
+      if (wantsVentaFocus) {
+        requestAnimationFrame(() => restoreCaret(ventaInput, focusState.cursor));
+      }
+      if (
+        focusState &&
+        focusState.field === "cantidad" &&
+        String(focusState.itemId) === String(item.id)
+      ) {
+        requestAnimationFrame(() => restoreCaret(qtyInput, focusState.cursor));
+      }
     });
 
     const totalItems = loadItems().length;

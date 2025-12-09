@@ -31,11 +31,16 @@
         height: 100%;
         min-height: 560px;
         max-width: 600px;
-        background: #ffffff;
-        border: 1px solid rgb(145, 145, 145);
-        box-shadow: 12px 17px 51px rgba(0, 0, 0, 0.22);
+        background:
+            radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.07), transparent 32%),
+            radial-gradient(circle at 85% 18%, rgba(14, 165, 233, 0.06), transparent 34%),
+            #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        box-shadow:
+            0 18px 40px rgba(15, 23, 42, 0.16),
+            0 1px 0 rgba(255, 255, 255, 0.6);
         backdrop-filter: blur(6px);
-        border-radius: 17px;
+        border-radius: 20px;
         text-align: left;
         cursor: pointer;
         transition: all 0.5s;
@@ -47,10 +52,25 @@
         justify-content: space-between;
     }
 
+    .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(14, 165, 233, 0.25));
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
     .card-image {
         width: 100%;
         height: clamp(220px, 40vw, 280px);
-        border-radius: 17px;
+        border-radius: 14px;
         object-fit: contain;
         transition: transform 0.3s ease, filter 0.3s ease, height 0.2s ease;
     }
@@ -76,19 +96,45 @@
     }
 
     .compare-btn {
-        background: rgb(156, 163, 175);
-        color: #111827;
-        border: none;
-        border-radius: 9999px;
-        padding: 0.4rem 1.2rem;
-        font-weight: 500;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0f172a, #1f2937);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        padding: 0.5rem 1.25rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
         cursor: pointer;
-        transition: background 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, filter 0.18s ease;
+    }
+
+    .compare-btn::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 40%),
+                    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.08), transparent 40%);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
     }
 
     .compare-btn:hover {
-        background: rgb(75, 85, 99);
-        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.26);
+        border-color: rgba(255, 255, 255, 0.2);
+        filter: saturate(1.04);
+    }
+
+    .compare-btn:hover::after {
+        opacity: 1;
+    }
+
+    .compare-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
     }
 
     .flip-card {
@@ -119,7 +165,7 @@
         justify-content: space-between;
         width: 100%;
         height: 100%;
-        border-radius: 17px;
+        border-radius: 20px;
         top: 0;
         left: 0;
         transition: opacity 0.3s ease;
@@ -135,7 +181,7 @@
     .flip-card-back {
         opacity: 0;
         z-index: 2;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.85), rgba(230, 230, 230, 0.55));
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(241, 245, 249, 0.78));
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         padding: 14px 16px 96px 16px;
@@ -266,20 +312,44 @@
     }
 
     .download-btn {
-        background: linear-gradient(135deg, #4ade80, #22c55e);
-        color: #0f172a;
-        font-weight: 600;
-        padding: 0.55rem 1.4rem;
-        border-radius: 9999px;
-        border: none;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: #e2e8f0;
+        font-weight: 700;
+        padding: 0.6rem 1.6rem;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.18);
         cursor: pointer;
-        box-shadow: 0 10px 25px rgba(34, 197, 94, 0.35);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+    }
+
+    .download-btn::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 45%),
+                    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.08), transparent 40%);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
     }
 
     .download-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 14px 32px rgba(34, 197, 94, 0.45);
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.26);
+        border-color: rgba(226, 232, 240, 0.35);
+        filter: saturate(1.03);
+    }
+
+    .download-btn:hover::after {
+        opacity: 1;
+    }
+
+    .download-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
     }
 
     @media (max-width: 640px) {
