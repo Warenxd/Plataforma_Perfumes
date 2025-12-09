@@ -1,0 +1,70 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-[11px] uppercase tracking-[0.35em] text-slate-500">Comparación</p>
+      <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Tus perfumes seleccionados</h1>
+      <p class="text-sm text-slate-600">Se cargan desde los que agregaste en la página principal.</p>
+    </div>
+    <a href="{% url 'home' %}" data-dynamic-back="home" class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+      ← Volver
+    </a>
+  </div>
+
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">Seleccionados:
+          <span id="compare-count">0</span>
+        </span>
+        <button
+          id="compare-clear"
+          type="button"
+          class="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+          Vaciar lista
+        </button>
+      </div>
+      <button
+        id="compare-refresh"
+        type="button"
+        class="text-xs font-semibold text-indigo-600 hover:text-indigo-500">
+        Recargar lista
+      </button>
+    </div>
+    <div class="overflow-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200 text-left text-[11px] uppercase tracking-[0.08em] text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Perfume</th>
+            <th class="px-4 py-3 whitespace-nowrap">Cantidad</th>
+            <th class="px-4 py-3 whitespace-nowrap">Precio</th>
+            <th class="px-4 py-3 whitespace-nowrap">Total</th>
+            <th class="px-4 py-3 whitespace-nowrap">Precio venta</th>
+            <th class="px-4 py-3 whitespace-nowrap">Ganancia</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="compare-body">
+          <tr>
+            <td colspan="7" class="text-center text-slate-500 py-5 text-sm">
+              Aún no agregas perfumes para comparar.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="border-t border-slate-200 bg-slate-50 px-4 py-3 flex flex-wrap items-center justify-end gap-3 text-sm font-semibold">
+      <span class="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-slate-800">
+        <span class="h-2 w-2 rounded-full bg-slate-500"></span>
+        Total compra: <span id="summary-compra">$0</span>
+      </span>
+      <span class="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-1 text-indigo-700">
+        <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+        Total venta: <span id="summary-venta">$0</span>
+      </span>
+      <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 bg-emerald-100 text-emerald-700" id="summary-ganancia-wrapper">
+        <span class="h-2 w-2 rounded-full bg-emerald-500" id="summary-ganancia-dot"></span>
+        Ganancia total: <span id="summary-ganancia">$0</span>
+      </span>
+    </div>
+  </div>
+</div>

@@ -106,249 +106,409 @@
   .hidden {
     display: none;
   }
+  .sidebar-blur {
+    background: linear-gradient(160deg, #0f172a, #0f172a 35%, #111827 65%, #0b1221);
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.35);
+  }
   @media (min-width: 640px) {
     .sm\:table-cell {
       display: table-cell;
     }
   }
 </style>
-<div class="flex min-h-screen">
 
-  <!-- SIDEBAR IZQUIERDO: ocupa toda la altura -->
-  <aside class="w-80 bg-slate-900 text-white flex-shrink-0">
-    <form id="filters-form" method="get" class="flex h-full flex-col gap-6 p-6 text-white">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+  <div class="mx-auto flex min-h-screen max-w-[1500px] gap-5 px-4 sm:px-6 lg:px-10">
 
-      <!-- Logo / título -->
-      <div class="flex items-center gap-3">
-        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-800 text-lg font-semibold">
-          <span class="translate-y-0.5">🏝️</span>
+    <!-- Sidebar estilo Laplace + filtros -->
+    <aside class="sidebar-blur relative z-10 w-96 overflow-hidden rounded-[28px] px-6 py-8 text-white">
+      <div class="absolute inset-y-0 left-0 w-px bg-white/10"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_35%)]"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(99,102,241,0.12),transparent_35%)]"></div>
+      <div class="relative flex h-full flex-col gap-6">
+        <div class="flex items-center gap-3">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-xl">
+            <i class="fa-solid fa-mountain-sun"></i>
+          </div>
+          <div class="leading-tight">
+            <p class="text-[11px] uppercase tracking-[0.32em] text-slate-300">Laplace</p>
+            <p class="text-lg font-semibold">Toque Fragante</p>
+          </div>
         </div>
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">TOQUE FRAGANTE</p>
-          <p class="text-lg font-semibold">TOQUE FRAGANTE</p>
-        </div>
-      </div>
 
-      <div class="space-y-6 text-sm text-slate-100 flex-1 overflow-y-auto">
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Marcas</p>
-          <p class="mt-1 text-xs text-slate-400">Selecciona una o varias marcas para acotar los resultados.</p>
-          <div class="mt-3 rounded-2xl bg-slate-800/80 px-3 py-3 ring-1 ring-slate-700/60 max-h-[65vh] overflow-y-auto">
-            {% if marcas %}
+        <div class="space-y-5">
+          <nav class="space-y-6 text-sm">
+            <div class="space-y-2">
+              <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Main</p>
               <div class="space-y-2">
-                {% for marca in marcas %}
-                {% with marca_id=marca.id|stringformat:"s" %}
-                <label class="flex items-center justify-between gap-2 rounded-xl bg-slate-900/30 px-3 py-2 text-sm font-medium cursor-pointer hover:bg-slate-800/70">
-                  <span class="text-slate-100">{{ marca.marca }}</span>
-                  <input
-                    type="checkbox"
-                    name="marca"
-                    value="{{ marca.id }}"
-                    class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
-                    {% if marca_id in selected_marca_ids %}checked{% endif %}
-                  />
-                </label>
-                {% endwith %}
-                {% endfor %}
+                <a id="nav-perfumes" href="{% url 'home' %}"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold transition {% if request.path == '/' %}bg-white text-slate-900 shadow-lg ring-1 ring-white/60{% else %}text-slate-200 hover:bg-white/5{% endif %}">
+                  <i class="fa-solid fa-house"></i>
+                  <span>Perfumes</span>
+                </a>
+                <a id="nav-comparar" href="{% url 'comparar' %}"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
+                  <i class="fa-solid fa-code-compare"></i>
+                  <span>Comparar</span>
+                </a>
+                <a href="#proyeccion"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
+                  <i class="fa-solid fa-chart-line"></i>
+                  <span>Proyección de precios</span>
+                </a>
               </div>
-            {% else %}
-              <p class="text-xs text-slate-400">Todavía no hay marcas disponibles.</p>
-            {% endif %}
-          </div>
-        </div>
-
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Géneros</p>
-          <p class="mt-1 text-xs text-slate-400">Selecciona rápido entre Hombre o Unisex.</p>
-          <div class="mt-3 rounded-2xl bg-slate-800/80 px-3 py-3 ring-1 ring-slate-700/60">
-            {% if generos %}
-              <div class="space-y-2">
-                {% for genero in generos %}
-                {% with genero_id=genero.id|stringformat:"s" %}
-                <label class="flex items-center justify-between gap-2 rounded-xl bg-slate-900/30 px-3 py-2 text-sm font-medium cursor-pointer hover:bg-slate-800/70">
-                  <span class="text-slate-100">{{ genero.nombre }}</span>
-                  <input
-                    type="checkbox"
-                    name="genero"
-                    value="{{ genero.id }}"
-                    class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
-                    {% if genero_id in selected_genero_ids %}checked{% endif %}
-                  />
-                </label>
-                {% endwith %}
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-xs text-slate-400">Aún no hay géneros disponibles.</p>
-            {% endif %}
-          </div>
-          <button
-            type="button"
-            id="clear-gender-filters"
-            class="mt-3 w-full rounded-2xl border border-slate-600 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400/40">
-            Limpiar géneros
-          </button>
-        </div>
-
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Estaciones</p>
-          <p class="mt-1 text-xs text-slate-400">
-            Se listan solo perfumes con {{ estacion_min_porcentaje }}% o más en la estación seleccionada.
-          </p>
-          <div class="mt-3 rounded-2xl bg-slate-800/80 px-3 py-3 ring-1 ring-slate-700/60 max-h-[65vh] overflow-y-auto">
-            {% if estaciones_filtro %}
-              <div class="space-y-2">
-                {% for estacion in estaciones_filtro %}
-                <label class="flex items-center justify-between gap-2 rounded-xl bg-slate-900/30 px-3 py-2 text-sm font-medium cursor-pointer hover:bg-slate-800/70">
-                  <span class="text-slate-100">{{ estacion.label }}</span>
-                  <input
-                    type="checkbox"
-                    name="estacion"
-                    value="{{ estacion.slug }}"
-                    class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
-                    {% if estacion.slug in selected_estacion_slugs %}checked{% endif %}
-                  />
-                </label>
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-xs text-slate-400">No hay estaciones disponibles con datos suficientes.</p>
-            {% endif %}
-          </div>
-          <button
-            type="button"
-            id="clear-season-filters"
-            class="mt-3 w-full rounded-2xl border border-slate-600 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400/40">
-            Limpiar estaciones
-          </button>
-        </div>
-
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.35em] text-slate-400">Tiendas</p>
-          <p class="mt-1 text-xs text-slate-400">Filtra por tienda de origen.</p>
-          <div class="mt-3 rounded-2xl bg-slate-800/80 px-3 py-3 ring-1 ring-slate-700/60">
-            {% if tiendas %}
-              <div class="space-y-2">
-                {% for tienda in tiendas %}
-                {% with code=tienda.code|stringformat:"s" %}
-                <label class="flex items-center justify-between gap-2 rounded-xl bg-slate-900/30 px-3 py-2 text-sm font-medium cursor-pointer hover:bg-slate-800/70">
-                  <span class="text-slate-100">{{ tienda.label }}</span>
-                  <input
-                    type="checkbox"
-                    name="tienda"
-                    value="{{ tienda.code }}"
-                    class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
-                    {% if code in selected_tienda_codes %}checked{% endif %}
-                  />
-                </label>
-                {% endwith %}
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-xs text-slate-400">No hay tiendas registradas.</p>
-            {% endif %}
-          </div>
-          <button
-            type="button"
-            id="clear-store-filters"
-            class="mt-3 w-full rounded-2xl border border-slate-600 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400/40">
-            Limpiar tiendas
-          </button>
-        </div>
-      </div>
-
-      <!-- Botón abajo -->
-      <div class="mt-auto space-y-3">
-        <button
-          type="submit"
-          class="w-full rounded-2xl bg-indigo-500 py-3 text-base font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-          Aplicar filtros
-        </button>
-        <button
-          type="button"
-          id="clear-brand-filters"
-          class="w-full rounded-2xl border border-slate-600 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400/40">
-          Limpiar marcas
-        </button>
-      </div>
-
-
-    </form>
-  </aside>
-
-    <!-- CONTENIDO DERECHO -->
-  <div class="flex-1 bg-slate-100">
-    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <div class="grid grid-cols-1 gap-6 items-start">
-        <div class="space-y-6">
-          <!-- Top bar -->
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <!-- Nav derecha -->
-            <nav class="flex items-center gap-6 text-sm font-bold text-slate-600">
-              <a href="{% url 'comparar' %}" class="hover:text-slate-900">Comparar</a>
-              <a href="#" class="hover:text-slate-900">Proyeccion de Precios</a>
-            </nav>
-          </div>
-
-          <!-- Encabezado tipo "Los Angeles" / colección -->
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Colección principal</h1>
-              <p class="mt-1 text-sm text-slate-500">
-                Explora estas fragancias seleccionadas de nuestra base de datos.
-              </p>
             </div>
-            <div class="flex items-center gap-3">
-              <div
-                class="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">
-                Total de perfumes: <span id="total-perfumes-count">{{ total_perfumes }}</span>
+
+            <div class="space-y-2">
+              <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Analytics</p>
+              <div class="space-y-2">
+                <a href="/estadisticas/"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
+                  <i class="fa-solid fa-chart-pie"></i>
+                  <span>Estadísticas</span>
+                </a>
+                <a href="#reportes"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
+                  <i class="fa-solid fa-clipboard-list"></i>
+                  <span>Reportes</span>
+                </a>
               </div>
-              <form action="{% url 'refrescar_perfumes' %}" method="post" id="refresh-perfumes-form" data-status-url="{% url 'estado_refresco' %}">
-                {% csrf_token %}
-                <button type="submit"
-                  id="refresh-perfumes-button"
-                  class="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-50 cursor-pointer transition hover:bg-neutral-800 active:scale-105">
-                  Recargar perfumes
-                </button>
-              </form>
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Soporte</p>
+              <div class="space-y-2">
+                <a href="#filters-panel"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
+                  <i class="fa-solid fa-filter"></i>
+                  <span>Filtros</span>
+                </a>
+                <a href="#community"
+                  class="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-slate-200 transition hover:bg-white/5">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <span>Ayuda</span>
+                </a>
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Filtros incrustados -->
+        <section id="filters-panel" class="flex-1 overflow-y-auto rounded-[20px] bg-slate-900/60 p-4 ring-1 ring-white/10 backdrop-blur-sm">
+          <form id="filters-form" method="get" class="space-y-5">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-[11px] uppercase tracking-[0.3em] text-slate-400">Filtros</p>
+              <button
+                type="submit"
+                class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-semibold text-white shadow-lg ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:bg-white/20">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Aplicar</span>
+              </button>
+            </div>
+
+            <div class="space-y-5 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
+              <details open class="space-y-3">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Marcas</p>
+                    <p class="text-xs text-slate-300">Selecciona una o varias marcas.</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="clear-brand-filters"
+                    class="text-xs font-semibold text-indigo-200 underline-offset-4 hover:underline">
+                    Limpiar
+                  </button>
+                </summary>
+                <div class="max-h-[46vh] space-y-2 overflow-y-auto rounded-xl border border-slate-700/60 bg-slate-900/50 p-3 shadow-inner">
+                  {% if marcas %}
+                    {% for marca in marcas %}
+                    {% with marca_id=marca.id|stringformat:"s" %}
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                      <span class="truncate">{{ marca.marca }}</span>
+                      <input
+                        type="checkbox"
+                        name="marca"
+                        value="{{ marca.id }}"
+                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        {% if marca_id in selected_marca_ids %}checked{% endif %}
+                      />
+                    </label>
+                    {% endwith %}
+                    {% endfor %}
+                  {% else %}
+                    <p class="text-xs text-slate-300">Todavía no hay marcas disponibles.</p>
+                  {% endif %}
+                </div>
+              </details>
+            </div>
+
+            <div class="space-y-4 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
+              <details open class="space-y-3">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Géneros</p>
+                    <p class="text-xs text-slate-300">Escoge Hombre, Unisex o ambos.</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="clear-gender-filters"
+                    class="text-xs font-semibold text-indigo-200 underline-offset-4 hover:underline">
+                    Limpiar
+                  </button>
+                </summary>
+                <div class="space-y-2">
+                  {% if generos %}
+                    {% for genero in generos %}
+                    {% with genero_id=genero.id|stringformat:"s" %}
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 bg-slate-900/50 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                      <span>{{ genero.nombre }}</span>
+                      <input
+                        type="checkbox"
+                        name="genero"
+                        value="{{ genero.id }}"
+                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        {% if genero_id in selected_genero_ids %}checked{% endif %}
+                      />
+                    </label>
+                    {% endwith %}
+                    {% endfor %}
+                  {% else %}
+                    <p class="text-xs text-slate-300">Aún no hay géneros disponibles.</p>
+                  {% endif %}
+                </div>
+              </details>
+            </div>
+
+            <div class="space-y-4 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
+              <details open class="space-y-3">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Estaciones</p>
+                    <p class="text-xs text-slate-300">Solo perfumes con {{ estacion_min_porcentaje }}% o más.</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="clear-season-filters"
+                    class="text-xs font-semibold text-indigo-200 underline-offset-4 hover:underline">
+                    Limpiar
+                  </button>
+                </summary>
+                <div class="max-h-[30vh] space-y-2 overflow-y-auto rounded-xl border border-slate-700/60 bg-slate-900/50 p-3 shadow-inner">
+                  {% if estaciones_filtro %}
+                    {% for estacion in estaciones_filtro %}
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                      <span>{{ estacion.label }}</span>
+                      <input
+                        type="checkbox"
+                        name="estacion"
+                        value="{{ estacion.slug }}"
+                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        {% if estacion.slug in selected_estacion_slugs %}checked{% endif %}
+                      />
+                    </label>
+                    {% endfor %}
+                  {% else %}
+                    <p class="text-xs text-slate-300">No hay estaciones disponibles con datos suficientes.</p>
+                  {% endif %}
+                </div>
+              </details>
+            </div>
+
+            <div class="space-y-4 rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-700/60">
+              <details open class="space-y-3">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-400">Tiendas</p>
+                    <p class="text-xs text-slate-300">Filtra por tienda de origen.</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="clear-store-filters"
+                    class="text-xs font-semibold text-indigo-200 underline-offset-4 hover:underline">
+                    Limpiar
+                  </button>
+                </summary>
+                <div class="space-y-2">
+                  {% if tiendas %}
+                    {% for tienda in tiendas %}
+                    {% with code=tienda.code|stringformat:"s" %}
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-slate-800/80 bg-slate-900/50 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-slate-700 hover:bg-slate-800/70">
+                      <span>{{ tienda.label }}</span>
+                      <input
+                        type="checkbox"
+                        name="tienda"
+                        value="{{ tienda.code }}"
+                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        {% if code in selected_tienda_codes %}checked{% endif %}
+                      />
+                    </label>
+                    {% endwith %}
+                    {% endfor %}
+                  {% else %}
+                    <p class="text-xs text-slate-300">No hay tiendas registradas.</p>
+                  {% endif %}
+                </div>
+              </details>
+            </div>
+          </form>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Contenido de perfumes -->
+    <div id="main-panel" class="flex-1 py-8 space-y-6">
+      <div class="rounded-[28px] bg-white/90 p-6 shadow-2xl ring-1 ring-slate-200/80 backdrop-blur">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500">Main</p>
+            <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Colección principal</h1>
+            <p class="mt-1 text-sm text-slate-500">Explora y compara las fragancias de la base de datos.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="rounded-full bg-slate-900/90 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-1 ring-white/30">
+              Total: <span id="total-perfumes-count">{{ total_perfumes }}</span>
+            </div>
+            <form action="{% url 'refrescar_perfumes' %}" method="post" id="refresh-perfumes-form" data-status-url="{% url 'estado_refresco' %}">
+              {% csrf_token %}
+              <button
+                type="submit"
+                id="refresh-perfumes-button"
+                class="inline-flex items-center gap-2 rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-400">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Recargar</span>
+              </button>
+            </form>
             <button
               id="comparison-toggle"
               type="button"
-              class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+              class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
               <i class="fa-solid fa-list"></i>
               <span>Perfumes escogidos</span>
               <span class="inline-flex items-center justify-center rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-800" id="comparison-toggle-count">0</span>
             </button>
-            </div>
           </div>
+        </div>
 
-          {% if error %}
-          <div class="rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-700">
-            {{ error }}
-          </div>
-          {% endif %}
+        {% if error %}
+        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-700">
+          {{ error }}
+        </div>
+        {% endif %}
 
-
-          <!-- Barra de búsqueda -->
+        <div class="mt-6">
           <div class="relative">
             <label for="search" class="sr-only">Buscar</label>
             <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
               <i class="fa-solid fa-magnifying-glass"></i>
             </span>
-            <input id="search" type="search" name="q" placeholder="Busca tu perfume" value="{{ search_query }}"
+            <input
+              id="search"
+              type="search"
+              name="q"
+              placeholder="Busca tu perfume"
+              value="{{ search_query }}"
               class="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
           </div>
-
-          <div id="perfumes-grid" class="transition-all duration-150">
-            {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query selected_marca_ids=selected_marca_ids selected_estacion_slugs=selected_estacion_slugs selected_genero_ids=selected_genero_ids selected_tienda_codes=selected_tienda_codes %}
-          </div>
         </div>
+      </div>
 
+      <div class="rounded-[28px] bg-white/85 p-4 shadow-2xl ring-1 ring-slate-200/80 backdrop-blur transition-all duration-150">
+        <div id="perfumes-grid">
+          {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query selected_marca_ids=selected_marca_ids selected_estacion_slugs=selected_estacion_slugs selected_genero_ids=selected_genero_ids selected_tienda_codes=selected_tienda_codes %}
+        </div>
       </div>
     </div>
+    <div id="dynamic-panel" class="hidden flex-1 py-8 space-y-6"></div>
+  </div>
 </div>
-</div>
-</div>
+
+<script>
+(() => {
+  const mainPanel = document.getElementById("main-panel");
+  const dynamicPanel = document.getElementById("dynamic-panel");
+  const linkComparar = document.getElementById("nav-comparar");
+  const linkPerfumes = document.getElementById("nav-perfumes");
+  if (!mainPanel || !dynamicPanel) {
+    return;
+  }
+
+  const activeClasses = ["bg-white", "text-slate-900", "shadow-lg", "ring-1", "ring-white/60"];
+  const inactiveClasses = ["text-slate-200", "hover:bg-white/5"];
+
+  const setActive = (target, isActive) => {
+    if (!target) return;
+    const classes = target.classList;
+    activeClasses.forEach((c) => classes.toggle(c, isActive));
+    inactiveClasses.forEach((c) => classes.toggle(c, !isActive));
+  };
+
+  const showMain = () => {
+    dynamicPanel.classList.add("hidden");
+    dynamicPanel.innerHTML = "";
+    dynamicPanel.dataset.view = "";
+    mainPanel.classList.remove("hidden");
+    setActive(linkPerfumes, true);
+    setActive(linkComparar, false);
+  };
+
+  const loadComparar = async (url) => {
+    dynamicPanel.classList.remove("hidden");
+    mainPanel.classList.add("hidden");
+    dynamicPanel.dataset.view = "loading";
+    dynamicPanel.innerHTML =
+      '<div class="rounded-[28px] bg-white/85 p-6 text-center text-slate-500 shadow-2xl ring-1 ring-slate-200/80">Cargando comparación...</div>';
+    try {
+      const partialUrl = url.includes("?") ? `${url}&partial=1` : `${url}?partial=1`;
+      const res = await fetch(partialUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!res.ok) throw new Error("No OK");
+      const html = await res.text();
+      dynamicPanel.innerHTML = html;
+      dynamicPanel.dataset.view = "comparar";
+      setActive(linkComparar, true);
+      setActive(linkPerfumes, false);
+      if (typeof window.initComparar === "function") {
+        window.initComparar(dynamicPanel);
+      }
+    } catch (error) {
+      window.location.href = url;
+    }
+  };
+
+  if (linkComparar) {
+    linkComparar.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (dynamicPanel.dataset.view === "comparar") {
+        return;
+      }
+      loadComparar(linkComparar.href);
+    });
+  }
+
+  if (linkPerfumes) {
+    linkPerfumes.addEventListener("click", (event) => {
+      if (!dynamicPanel.classList.contains("hidden")) {
+        event.preventDefault();
+        showMain();
+      }
+    });
+  }
+
+  dynamicPanel.addEventListener("click", (event) => {
+    const backBtn = event.target.closest("[data-dynamic-back='home']");
+    if (backBtn) {
+      event.preventDefault();
+      showMain();
+    }
+  });
+
+  // Estado inicial: activar "Perfumes" si está visible el main
+  if (!dynamicPanel || dynamicPanel.classList.contains("hidden")) {
+    setActive(linkPerfumes, true);
+    setActive(linkComparar, false);
+  }
+})();
+</script>
 
 <!-- Toast descargas -->
 <div

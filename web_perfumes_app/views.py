@@ -1804,6 +1804,8 @@ def comparar(request):
     """
     Renderiza la página de comparación; los perfumes se cargan desde localStorage en el front.
     """
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
+        return render(request, "comparar_partial.html")
     return render(request, "comparar.html")
 
 # RENDER DE VISTAS
