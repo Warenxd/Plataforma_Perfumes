@@ -73,6 +73,13 @@
     render(root);
   };
 
+  const setGlobalCount = (value) => {
+    const badge = document.getElementById("comparison-toggle-count");
+    if (badge) {
+      badge.textContent = value;
+    }
+  };
+
   const render = (root = document) => {
     const body = root.querySelector("#compare-body");
     const countEl = root.querySelector("#compare-count");
@@ -109,6 +116,12 @@
     if (items.length === 0) {
       body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-500 py-5 text-sm">Aún no agregas perfumes para comparar.</td></tr>';
       countEl.textContent = "0";
+      setGlobalCount("0");
+      if (typeof window.refreshComparisonUI === "function") {
+        window.refreshComparisonUI();
+      } else if (typeof window.updateComparisonFromStorage === "function") {
+        window.updateComparisonFromStorage();
+      }
       syncSummary();
       return;
     }
@@ -344,7 +357,14 @@
       body.appendChild(tr);
     });
 
-    countEl.textContent = String(loadItems().length);
+    const totalItems = loadItems().length;
+    countEl.textContent = String(totalItems);
+    setGlobalCount(String(totalItems));
+    if (typeof window.refreshComparisonUI === "function") {
+      window.refreshComparisonUI();
+    } else if (typeof window.updateComparisonFromStorage === "function") {
+      window.updateComparisonFromStorage();
+    }
     totalGananciaGeneral = totalVentaGeneral - totalCompraGeneral;
     syncSummary();
   };

@@ -36,6 +36,7 @@
   const comparisonToggle = document.getElementById("comparison-toggle");
   const comparisonClose = document.getElementById("comparison-close");
   const comparisonToggleCount = document.getElementById("comparison-toggle-count");
+  const comparisonToggleText = document.querySelector("#comparison-toggle span");
   const formatPriceCLP = (value) => {
     const number = Number(value) || 0;
     try {
@@ -87,13 +88,16 @@
     });
   };
 
-  const updateComparisonCounters = () => {
-    const total = comparisonItems.length;
+  const updateComparisonCounters = (forcedTotal) => {
+    const total = typeof forcedTotal === "number" ? forcedTotal : comparisonItems.length;
     if (comparisonCount) {
       comparisonCount.textContent = total;
     }
     if (comparisonToggleCount) {
       comparisonToggleCount.textContent = total;
+    }
+    if (comparisonToggleText) {
+      comparisonToggleText.textContent = total === 1 ? "Perfume escogido" : "Perfumes escogidos";
     }
   };
 
@@ -182,6 +186,36 @@
     }
     syncCompareButtons();
   };
+
+  const syncFromStorage = () => {
+    try {
+      const stored = localStorage.getItem(COMPARISON_STORAGE_KEY);
+      const parsed = stored ? JSON.parse(stored) : [];
+      if (Array.isArray(parsed)) {
+        comparisonItems.length = 0;
+        parsed.forEach((item) => {
+          if (item && item.id) comparisonItems.push(item);
+        });
+        renderComparisonTable();
+        updateComparisonCounters(comparisonItems.length);
+      }
+    } catch (error) {
+      console.warn("No se pudo sincronizar comparación desde storage", error);
+    }
+  };
+
+  const refreshComparisonUI = () => {
+    syncFromStorage();
+    syncCompareButtons();
+  };
+
+  window.updateComparisonFromStorage = refreshComparisonUI;
+  window.refreshComparisonUI = refreshComparisonUI;
+  window.addEventListener("storage", (event) => {
+    if (event.key === COMPARISON_STORAGE_KEY) {
+      refreshComparisonUI();
+    }
+  });
 
   const addToComparison = (payload) => {
     if (!payload || !payload.id) {

@@ -450,6 +450,11 @@
     mainPanel.classList.remove("hidden");
     setActive(linkPerfumes, true);
     setActive(linkComparar, false);
+    if (typeof window.refreshComparisonUI === "function") {
+      window.refreshComparisonUI();
+    } else if (typeof window.updateComparisonFromStorage === "function") {
+      window.updateComparisonFromStorage();
+    }
   };
 
   const loadComparar = async (url) => {
