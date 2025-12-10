@@ -141,7 +141,7 @@
         background-color: transparent;
         width: min(100%, 600px);
         max-width: 600px;
-        min-height: clamp(560px, 70vh, 720px);
+        min-height: clamp(600px, 70vh, 720px);
         height: auto; /* permite crecer con el contenido en vistas móviles */
         margin-inline: auto;
         perspective: 1000px;

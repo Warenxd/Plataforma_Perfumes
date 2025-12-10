@@ -27,6 +27,25 @@
     },
   ];
 
+  const scrollToTop = () => {
+    const topAnchor = document.getElementById("page-top");
+    if (topAnchor && typeof topAnchor.scrollIntoView === "function") {
+      topAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (typeof window.scrollTo === "function") {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      } catch (error) {
+        window.scrollTo(0, 0);
+        return;
+      }
+    }
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
   const COMPARISON_STORAGE_KEY = "perfumes_comparar";
   const comparisonTableBody = document.getElementById("comparison-table-body");
   const comparisonCount = document.getElementById("comparison-count");
@@ -437,6 +456,7 @@
       if (isFetching) {
         return;
       }
+      scrollToTop();
       setLoading(true);
       try {
         const response = await fetch(url, {

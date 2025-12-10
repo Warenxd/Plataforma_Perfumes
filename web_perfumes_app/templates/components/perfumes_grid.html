@@ -3,7 +3,7 @@
 {% with search_query|default_if_none:"" as current_query %}
 {% if perfumes %}
 <!-- GRID DE CARDS -->
-<div class="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-3 justify-items-center">
+<div id="perfumes-grid-top" class="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-3 justify-items-center">
   {% for p in perfumes %}
     {% include "components/perfume_card.html" with p=p %}
   {% endfor %}
@@ -12,12 +12,12 @@
 <!-- PAGINACIÓN -->
 <div class="mt-6 flex justify-center items-center gap-4 text-sm">
   {% if perfumes.has_previous %}
-  <a href="?page=1{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}"
+  <a href="?page=1{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}#page-top"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="1">
     Primera
   </a>
-  <a href="?page={{ perfumes.previous_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}"
+  <a href="?page={{ perfumes.previous_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}#page-top"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="{{ perfumes.previous_page_number }}">
     &lt; Anterior
@@ -29,12 +29,12 @@
   </span>
 
   {% if perfumes.has_next %}
-  <a href="?page={{ perfumes.next_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}"
+  <a href="?page={{ perfumes.next_page_number }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}#page-top"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="{{ perfumes.next_page_number }}">
     Siguiente &gt;
   </a>
-  <a href="?page={{ perfumes.paginator.num_pages }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}"
+  <a href="?page={{ perfumes.paginator.num_pages }}{% if current_query %}&q={{ current_query|urlencode }}{% endif %}{% for marca_id in selected_marca_ids %}&marca={{ marca_id|urlencode }}{% endfor %}{% for genero_id in selected_genero_ids %}&genero={{ genero_id|urlencode }}{% endfor %}{% for estacion_slug in selected_estacion_slugs %}&estacion={{ estacion_slug|urlencode }}{% endfor %}{% for tienda_code in selected_tienda_codes %}&tienda={{ tienda_code|urlencode }}{% endfor %}#page-top"
     class="pagination-link px-3 py-1 rounded-full border border-slate-300 bg-white shadow-sm hover:border-indigo-400"
     data-page="{{ perfumes.paginator.num_pages }}">
     Última

@@ -14,6 +14,29 @@
     }
   };
 
+  const formatPlainNumber = (value) => {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      return "";
+    }
+    try {
+      return number.toLocaleString("es-CL");
+    } catch (error) {
+      return `${number}`;
+    }
+  };
+
+  const sanitizeNumericInput = (raw) => (raw || "").toString().replace(/[^\d]/g, "");
+
+  const parseCurrencyInput = (raw) => {
+    const clean = sanitizeNumericInput(raw);
+    if (!clean) {
+      return null;
+    }
+    const parsed = parseInt(clean, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const loadItems = () => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -24,12 +47,18 @@
       return parsed.map((item) => ({
         ...item,
         cantidad: Number(item.cantidad) >= 0 ? Number(item.cantidad) : 0,
-        precio_venta: Number(item.precio_venta) || 0,
+        precio_venta:
+          item && (item.precio_venta === null || typeof item.precio_venta === "undefined" || item.precio_venta === "")
+            ? null
+            : Number(item.precio_venta) || 0,
         decants: Array.isArray(item.decants)
           ? item.decants.map((d, idx) => ({
               id: d.id || `d-${idx}-${Date.now()}`,
               ml: Number(d.ml) || 0,
-              precio: Number(d.precio) || 0,
+              precio:
+                d && (d.precio === null || typeof d.precio === "undefined" || d.precio === "")
+                  ? null
+                  : Number(d.precio) || 0,
               cantidad: Number(d.cantidad) >= 0 ? Number(d.cantidad) : 1,
             }))
           : [],
@@ -238,14 +267,18 @@
         precioLabel.className = "text-slate-500";
         precioLabel.textContent = "$";
         const precioInput = document.createElement("input");
-        precioInput.type = "number";
-        precioInput.min = "0";
-        precioInput.step = "1";
-        precioInput.value = Number(decant.precio) || 0;
+        precioInput.type = "text";
+        precioInput.inputMode = "numeric";
         precioInput.className = "w-full rounded border border-slate-300 px-2 py-1";
-        precioInput.addEventListener("input", () =>
-          handleDecantUpdate(decant.id, { precio: Number(precioInput.value) || 0 }, precioInput, "decant-precio")
-        );
+        const decantPriceValue =
+          decant.precio === null || typeof decant.precio === "undefined"
+            ? ""
+            : formatPlainNumber(Number(decant.precio) || 0);
+        precioInput.value = decantPriceValue;
+        precioInput.addEventListener("input", () => {
+          const parsed = parseCurrencyInput(precioInput.value);
+          handleDecantUpdate(decant.id, { precio: parsed }, precioInput, "decant-precio");
+        });
         precioWrapper.append(precioLabel, precioInput);
 
         const cantidadWrapper = document.createElement("div");
@@ -340,7 +373,7 @@
         const cursor = captureCaret(qtyInput);
         const patch = { cantidad: safeValue };
         if (safeValue === 0) {
-          patch.precio_venta = 0;
+          patch.precio_venta = null;
         }
         updateItem(
           item.id,
@@ -374,10 +407,13 @@
       tdVenta.className = "px-4 py-3 whitespace-nowrap";
       const ventaInput = document.createElement("input");
       const effectivePrecioVenta = qtyNumber > 0 ? Number(item.precio_venta) || 0 : 0;
-      ventaInput.type = "number";
-      ventaInput.min = "0";
-      ventaInput.step = "1";
-      ventaInput.value = Number.isFinite(effectivePrecioVenta) ? effectivePrecioVenta : 0;
+      const ventaFormValue =
+        item.precio_venta === null || typeof item.precio_venta === "undefined"
+          ? ""
+          : formatPlainNumber(Number(item.precio_venta) || 0);
+      ventaInput.type = "text";
+      ventaInput.inputMode = "numeric";
+      ventaInput.value = qtyNumber > 0 ? ventaFormValue : "";
       ventaInput.className = "w-24 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-700";
       ventaInput.disabled = qtyNumber <= 0;
       if (ventaInput.disabled) {
@@ -388,11 +424,11 @@
         focusState.field === "venta" &&
         String(focusState.itemId) === String(item.id);
       ventaInput.addEventListener("input", () => {
-        const value = Number(ventaInput.value);
         const cursor = captureCaret(ventaInput);
+        const parsed = parseCurrencyInput(ventaInput.value);
         updateItem(
           item.id,
-          { precio_venta: value >= 0 ? value : 0 },
+          { precio_venta: parsed },
           root,
           {
             focus: {
