@@ -49,8 +49,50 @@ def _normalizar_texto(valor):
 MARCA_EQUIVALENCIAS = {
     "armani": "Giorgio Armani",
     "giorgio armani": "Giorgio Armani",
+    "armaf": "Armaf",
+    "armaf - ansam kayaan": "Armaf",
     "dolce & gabbana.": "Dolce & Gabbana",
     "dolce & gabbana": "Dolce & Gabbana",
+    "dolce & gabanna.": "Dolce & Gabbana",
+    "dolce & gabanna": "Dolce & Gabbana",
+    "boss": "Hugo Boss",
+    "hugo boss": "Hugo Boss",
+    "ysl": "Yves Saint Laurent",
+    "yves saint laurent": "Yves Saint Laurent",
+    "dumont": "Dumont Paris",
+    "dumont paris": "Dumont Paris",
+    "ajmal": "Ajmal",
+    "al hambra": "Maison Alhambra",
+    "maison alhambra": "Maison Alhambra",
+    "fragance world": "Fragrance World",
+    "fragrance world": "Fragrance World",
+    "zimaya": "Zimaya",
+    "afnan zimaya": "Afnan",
+    "afnan london": "Afnan",
+    "anfar london": "Anfar",
+    "lattafa rave": "Lattafa",
+    "rave": "Lattafa",
+    "emir": "Paris Corner",
+    "pendora scents": "Paris Corner",
+    "inzpira": "Paris Corner",
+    "sublime": "Paris Corner",
+    "inzpira,sublime": "Paris Corner",
+    "ansam kayaan": "Armaf",
+    "mugler": "Mugler",
+    "thierry mugler": "Mugler",
+    "victorinox": "Victorinox",
+    "swiss army victorinox": "Victorinox",
+    "jo milano": "Jo Milano Paris",
+    "jo milano paris": "Jo Milano Paris",
+    "maison asrar": "Maison Asrar",
+    "maisom asrar": "Maison Asrar",
+    "al haramain": "Al Haramain",
+    "afnan": "Afnan",
+    "auraa desire": "Auraa",
+    "marly": "Marly",
+    "parfums de marly": "Marly",
+    "rayhaan": "Rayhaan",
+    "rayhann": "Rayhaan",
     "halloween,jesus del pozo": "Jesus del Pozo",
     "halloween jesus del pozo": "Jesus del Pozo",
     "jesus del pozo": "Jesus del Pozo",
@@ -100,6 +142,45 @@ def _refrescar_cache_marcas():
     for m in Marca.objects.all():
         norm = _normalizar_texto(m.marca)
         _marcas_cache.append((norm, m))
+
+def _normalizar_marcas_existentes():
+    """
+    Fusiona marcas duplicadas según nombre normalizado y reasigna perfumes.
+    """
+    from collections import defaultdict
+
+    grupos = defaultdict(list)
+    marcas = list(Marca.objects.all().order_by("id"))
+
+    for marca in marcas:
+        canon = _normalizar_marca_nombre(marca.marca)
+        clave = _normalizar_texto(canon)
+        if not clave:
+            continue
+        grupos[clave].append((canon, marca))
+
+    for clave, items in grupos.items():
+        if not items:
+            continue
+        canon = items[0][0]
+        # Si ya existe una marca con el nombre canónico exacto, úsala como principal.
+        principal = next((m for c, m in items if (m.marca or "").strip().lower() == canon.strip().lower()), items[0][1])
+        # Ajusta el nombre del principal al canon (si no hay conflicto con otro id).
+        if principal.marca != canon:
+            conflict = Marca.objects.filter(marca__iexact=canon).exclude(id=principal.id).first()
+            if conflict:
+                principal = conflict  # usar la ya canónica
+            else:
+                principal.marca = canon
+                principal.save(update_fields=["marca"])
+
+        for _, marca in items:
+            if marca.id == principal.id:
+                continue
+            Perfume.objects.filter(marca=marca).update(marca=principal)
+            if not marca.perfumes.exists():
+                marca.delete()
+    _refrescar_cache_marcas()
 
 def _inferir_marca_por_nombre(nombre):
     """
@@ -1850,6 +1931,8 @@ def proyeccion(request):
 
 # RENDER DE VISTAS
 def home(request):
+    _normalizar_marcas_existentes()
+
     search_query = (request.GET.get("q") or "").strip()
     marca_ids_raw = request.GET.getlist("marca")
     marca_ids = []
@@ -2292,6 +2375,8 @@ def reportes(request):
     Reporte por tienda: porcentaje de veces que cada tienda tiene el mejor precio
     comparando perfumes que existen en más de una tienda.
     """
+    _normalizar_marcas_existentes()
+
     def _clave_comparable(perfume):
         """
         Genera una clave normalizada para agrupar perfumes entre tiendas.

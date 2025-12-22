@@ -119,7 +119,7 @@
 
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
   <div class="mx-auto flex min-h-screen max-w-[1500px] flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:px-10">
-    <aside class="w-full flex-shrink-0 space-y-4 rounded-[24px] bg-slate-900/70 p-4 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur sidebar-blur lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-[360px] lg:max-w-[360px] lg:overflow-hidden flex flex-col">
+    <aside class="w-full flex-shrink-0 space-y-4 rounded-[24px] bg-slate-900/70 p-4 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur sidebar-blur lg:sticky lg:top-6 lg:w-[360px] lg:max-w-[360px] lg:max-h-[calc(100vh-3rem)] lg:overflow-hidden flex flex-col">
       <div class="flex items-center justify-between gap-3">
         <div>
           <p class="text-[11px] uppercase tracking-[0.3em] text-slate-200/80">Panel</p>
@@ -206,7 +206,7 @@
                         type="checkbox"
                         name="marca"
                         value="{{ marca.id }}"
-                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        class="h-4 w-4 rounded border-slate-500 bg-white text-indigo-600 accent-indigo-500 focus:ring-2 focus:ring-indigo-300 focus:ring-offset-1 focus:ring-offset-slate-900 transition"
                         {% if marca_id in selected_marca_ids %}checked{% endif %}
                       />
                     </label>
@@ -244,7 +244,7 @@
                         type="checkbox"
                         name="genero"
                         value="{{ genero.id }}"
-                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        class="h-4 w-4 rounded border-slate-500 bg-white text-indigo-600 accent-indigo-500 focus:ring-2 focus:ring-indigo-300 focus:ring-offset-1 focus:ring-offset-slate-900 transition"
                         {% if genero_id in selected_genero_ids %}checked{% endif %}
                       />
                     </label>
@@ -280,7 +280,7 @@
                       type="checkbox"
                       name="tienda"
                       value="{{ tienda.code }}"
-                      class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                      class="h-4 w-4 rounded border-slate-500 bg-white text-indigo-600 accent-indigo-500 focus:ring-2 focus:ring-indigo-300 focus:ring-offset-1 focus:ring-offset-slate-900 transition"
                       {% if tienda.code in selected_tienda_codes %}checked{% endif %}
                     />
                   </label>
@@ -314,7 +314,7 @@
                         type="checkbox"
                         name="estacion"
                         value="{{ estacion.slug }}"
-                        class="h-4 w-4 rounded border-slate-500 bg-slate-900 text-indigo-400 focus:ring-0"
+                        class="h-4 w-4 rounded border-slate-500 bg-white text-indigo-600 accent-indigo-500 focus:ring-2 focus:ring-indigo-300 focus:ring-offset-1 focus:ring-offset-slate-900 transition"
                         {% if estacion.slug in selected_estacion_slugs %}checked{% endif %}
                       />
                     </label>
