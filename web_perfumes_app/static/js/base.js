@@ -30,12 +30,12 @@
   const scrollToTop = () => {
     const topAnchor = document.getElementById("page-top");
     if (topAnchor && typeof topAnchor.scrollIntoView === "function") {
-      topAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+      topAnchor.scrollIntoView({ behavior: "auto", block: "start" });
       return;
     }
     if (typeof window.scrollTo === "function") {
       try {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: "auto" });
         return;
       } catch (error) {
         window.scrollTo(0, 0);
@@ -56,6 +56,32 @@
   const comparisonClose = document.getElementById("comparison-close");
   const comparisonToggleCount = document.getElementById("comparison-toggle-count");
   const comparisonToggleText = document.querySelector("#comparison-toggle span");
+  const mainPanel = document.getElementById("main-panel");
+
+  const isPerfumesView = () =>
+    !mainPanel || !mainPanel.classList.contains("hidden");
+
+  const syncComparisonVisibility = () => {
+    const visible = isPerfumesView();
+    if (comparisonToggle) {
+      comparisonToggle.classList.toggle("hidden", !visible);
+    }
+    if (comparisonPanel) {
+      if (!visible) {
+        comparisonPanel.classList.add("hidden");
+      }
+      // Si visible, no forzamos a mostrar el panel (queda según estado previo/toggle)
+    }
+  };
+
+  if (mainPanel) {
+    const observer = new MutationObserver(syncComparisonVisibility);
+    observer.observe(mainPanel, { attributes: true, attributeFilter: ["class"] });
+    syncComparisonVisibility();
+  } else {
+    // Fallback: ocultar si no encontramos el panel principal
+    syncComparisonVisibility();
+  }
   const formatPriceCLP = (value) => {
     const number = Number(value) || 0;
     try {
@@ -315,6 +341,9 @@
 
   if (comparisonToggle && comparisonPanel) {
     comparisonToggle.addEventListener("click", () => {
+      if (!isPerfumesView()) {
+        return;
+      }
       const isHidden = comparisonPanel.classList.contains("hidden");
       if (isHidden) {
         comparisonPanel.classList.remove("hidden");
@@ -332,6 +361,9 @@
 
   if (comparisonTableBody) {
     comparisonTableBody.addEventListener("click", (event) => {
+      if (!isPerfumesView()) {
+        return;
+      }
       const button = event.target.closest("[data-remove-id]");
       if (!button) {
         return;
@@ -459,7 +491,8 @@
       scrollToTop();
       setLoading(true);
       try {
-        const response = await fetch(url, {
+        const fetchUrl = url.split("#")[0]; // evita fragmentos en la solicitud
+        const response = await fetch(fetchUrl, {
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
         if (!response.ok) {
@@ -471,10 +504,20 @@
         }
         replaceContent(data.html);
         updateTotalPerfumes(data.total_perfumes);
-        syncSearchInputFromUrl(url);
-        syncFiltersFromUrl(url);
+        // Normaliza la URL a la página real devuelta (ej: si pedimos más allá de la última).
+        const normalized = new URL(fetchUrl, window.location.origin);
+        if (data.page && Number.isFinite(Number(data.page))) {
+          const pageNumber = Number(data.page);
+          if (pageNumber <= 1) {
+            normalized.searchParams.delete("page");
+          } else {
+            normalized.searchParams.set("page", pageNumber);
+          }
+        }
+        syncSearchInputFromUrl(normalized.toString());
+        syncFiltersFromUrl(normalized.toString());
         if (push) {
-          pushState(url, data.html, data.total_perfumes, replaceState);
+          pushState(normalized.toString(), data.html, data.total_perfumes, replaceState);
         }
       } catch (error) {
         console.error(error);
@@ -685,7 +728,7 @@
     });
 
     pushState(
-      window.location.href,
+      window.location.href.split("#")[0],
       grid.innerHTML,
       totalPerfumesCount ? totalPerfumesCount.textContent : null,
       true

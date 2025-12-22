@@ -1816,7 +1816,7 @@
     top: 0;
     left: 0;
     transition: opacity 0.3s ease;
-    padding: 16px 16px 96px 16px;
+    padding: 16px 16px 120px 16px;
     box-sizing: border-box;
   }
   .flip-card-front {
@@ -1918,8 +1918,19 @@
     background: rgba(52, 211, 153, 0.2);
     border-color: rgba(5, 150, 105, 0.35);
   }
+  .nota-chip-general {
+    background: rgba(94, 234, 212, 0.2);
+    border-color: rgba(45, 212, 191, 0.35);
+  }
   .back-icons {
     gap: 18px;
+  }
+  .card-back-content {
+    width: 100%;
+    max-height: calc(100% - 96px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 8px;
   }
   .flip-card:hover .flip-card-back {
     opacity: 1;
@@ -1975,7 +1986,7 @@
   }
   @media (max-width: 640px) {
     .flip-card-front, .flip-card-back {
-      padding: 12px 12px 88px 12px;
+      padding: 12px 12px 108px 12px;
     }
     .card-image {
       height: 220px;

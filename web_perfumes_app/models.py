@@ -62,6 +62,7 @@ class Perfume(models.Model):
     notas_salida = models.ManyToManyField(Nota, related_name='perfumes_salida', blank=True) #si no se le asigna valor al campo, por defecto es una lista vacía.
     notas_corazon = models.ManyToManyField(Nota, related_name='perfumes_corazon', blank=True)
     notas_base = models.ManyToManyField(Nota, related_name='perfumes_base', blank=True)
+    notas_general = models.ManyToManyField(Nota, related_name='perfumes_general', blank=True, null=True)
     estaciones = models.ManyToManyField(Estacion, related_name='perfumes', blank=True) #related_name sirve para hacer consultas inversas, para hacer consultas desde la tabla relacionada hacia la original
     fragrantica_url = models.URLField(blank=True, null=True)
 

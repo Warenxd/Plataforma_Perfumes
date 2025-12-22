@@ -1,7 +1,7 @@
 (() => {
   const STORAGE_KEY = "perfumes_comparar";
   const shippingDefaults = {
-    silk: { label: "Silk", valor: 4500 },
+    silk: { label: "Silk", valor: 6000 },
     yauras: { label: "Yauras", valor: 6000 },
     joy: { label: "Joy", valor: 4100 },
   };

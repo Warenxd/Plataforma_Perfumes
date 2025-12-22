@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q, Avg, Sum, Count, Min
+from django.db.models import Q, Avg, Sum, Count, Min, Value, IntegerField, Case, When
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -348,6 +348,7 @@ def _compartir_detalles_perfume(perfume):
     notas_salida_src = list(perfume.notas_salida.all()) if perfume.notas_salida.exists() else []
     notas_corazon_src = list(perfume.notas_corazon.all()) if perfume.notas_corazon.exists() else []
     notas_base_src = list(perfume.notas_base.all()) if perfume.notas_base.exists() else []
+    notas_general_src = list(perfume.notas_general.all()) if perfume.notas_general.exists() else []
     estaciones_src = list(perfume.estaciones.all()) if perfume.estaciones.exists() else []
 
     propagados = []
@@ -364,6 +365,9 @@ def _compartir_detalles_perfume(perfume):
             cambios = True
         if notas_base_src and not otro.notas_base.exists():
             otro.notas_base.set(notas_base_src)
+            cambios = True
+        if notas_general_src and not otro.notas_general.exists():
+            otro.notas_general.set(notas_general_src)
             cambios = True
         if estaciones_src and not otro.estaciones.exists():
             otro.estaciones.set(estaciones_src)
@@ -461,7 +465,7 @@ def obtener_acordes(url):
             print(f"[Estaciones] Error obteniendo estaciones en {url}: {e}")
 
         # === NOTAS PIRÁMIDE (solo texto) ===
-        notas = {'salida': [], 'corazon': [], 'base': []}
+        notas = {'salida': [], 'corazon': [], 'base': [], 'general': []}
         try:
             secciones = {
                 "Notas de Salida": "salida",
@@ -568,7 +572,7 @@ def obtener_acordes(url):
                                 vistos.add(clave_txt)
                                 notas_planas.append(texto)
                     if notas_planas:
-                        notas["base"].extend(notas_planas)
+                        notas["general"].extend(notas_planas)
                         print(f"[Notas] Fallback plano: {len(notas_planas)} notas agregadas")
                 except Exception as e:
                     print(f"[Notas] Error en fallback plano en {url}: {e}")
@@ -664,7 +668,7 @@ def actualizar_acordes_todos():
 
                 perfume.acordes.set(acorde_objs)
 
-            # === GUARDAR NOTAS (salida, corazón, base) ===
+            # === GUARDAR NOTAS (salida, corazón, base, general) ===
             for seccion, nombres in notas.items():
                 if not nombres:
                     continue
@@ -680,6 +684,8 @@ def actualizar_acordes_todos():
                     perfume.notas_corazon.set(nota_objs)
                 elif seccion == "base":
                     perfume.notas_base.set(nota_objs)
+                elif seccion == "general":
+                    perfume.notas_general.set(nota_objs)
 
             # === GUARDAR ESTACIONES ===
             _guardar_estaciones_perfume(perfume, estaciones_data)
@@ -744,6 +750,7 @@ def descargar_acordes_individual(request, perfume_id):
             "salida": perfume.notas_salida,
             "corazon": perfume.notas_corazon,
             "base": perfume.notas_base,
+            "general": perfume.notas_general,
         }
 
         for seccion, manager in secciones_notas.items():
@@ -775,7 +782,7 @@ def descargar_acordes_individual(request, perfume_id):
         # Refrescar instancia (incluyendo relaciones) para devolver HTML actualizado
         perfume = (
             Perfume.objects.select_related("marca")
-            .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "estaciones")
+            .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "notas_general", "estaciones")
             .get(pk=perfume.id)
         )
 
@@ -786,7 +793,7 @@ def descargar_acordes_individual(request, perfume_id):
                 try:
                     otro_fresh = (
                         Perfume.objects.select_related("marca")
-                        .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "estaciones")
+                        .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "notas_general", "estaciones")
                         .get(pk=otro.id)
                     )
                     card = render_to_string("components/perfume_card.html", {"p": otro_fresh}, request=request)
@@ -1895,26 +1902,79 @@ def home(request):
         .prefetch_related("estaciones", "generos")
         .select_related("marca")
     )
+    list_mode = False
+
     if search_query:
-        perfumes_list = perfumes_list.filter(
-            Q(nombre__icontains=search_query) | Q(marca__marca__icontains=search_query)
-        )
+        palabras = [p.strip() for p in re.split(r'\s+', search_query) if p.strip()]
+        if palabras:
+            q_busqueda = Q()
+            for palabra in palabras:
+                q_busqueda |= Q(nombre__icontains=palabra) | Q(marca__marca__icontains=palabra)
+            perfumes_list = perfumes_list.filter(q_busqueda)
+
+            def _normalizar_busqueda(txt):
+                base = _normalizar_texto(txt)
+                base = re.sub(r'[^a-z0-9 ]+', ' ', base or "")
+                base = re.sub(r'\b\d+(?:[\.,]\d+)?\s*(?:ml|oz)\b', ' ', base)
+                base = re.sub(r'\b\d+\s*x\s*\d+\b', ' ', base)
+                base = re.sub(r'\b(edt|edp|edc|eau|toilette|parfum|perfume|tester)\b', ' ', base)
+                base = re.sub(r'\b(hombre|mujer|unisex|men|women|for|pour)\b', ' ', base)
+                base = re.sub(r'\s+', ' ', base).strip()
+                return base
+
+            palabras_norm = [_normalizar_busqueda(p) for p in palabras if _normalizar_busqueda(p)]
+
+            def _score_perfume(p):
+                nombre_norm = _normalizar_busqueda(p.nombre)
+                marca_norm = _normalizar_busqueda(p.marca.marca if p.marca else "")
+                score = 0
+                for palabra in palabras_norm:
+                    if palabra and palabra in nombre_norm:
+                        score += 3
+                    if palabra and palabra in marca_norm:
+                        score += 1
+                return score
+
+            perfumes_list = sorted(perfumes_list, key=lambda p: (-_score_perfume(p), p.nombre or ""))
+            list_mode = True
     if tienda_codes:
-        perfumes_list = perfumes_list.filter(tienda__in=tienda_codes)
+        if list_mode:
+            perfumes_list = [p for p in perfumes_list if (p.tienda or "").strip().upper() in tienda_codes]
+        else:
+            perfumes_list = perfumes_list.filter(tienda__in=tienda_codes)
     if marca_ids:
-        perfumes_list = perfumes_list.filter(marca_id__in=marca_ids)
+        if list_mode:
+            marca_ids_set = set(marca_ids)
+            perfumes_list = [p for p in perfumes_list if p.marca_id in marca_ids_set]
+        else:
+            perfumes_list = perfumes_list.filter(marca_id__in=marca_ids)
     if genero_ids:
-        perfumes_list = perfumes_list.filter(generos__id__in=genero_ids)
+        if list_mode:
+            genero_ids_set = set(genero_ids)
+            perfumes_list = [
+                p for p in perfumes_list
+                if p.generos.filter(id__in=genero_ids_set).exists()
+            ]
+        else:
+            perfumes_list = perfumes_list.filter(generos__id__in=genero_ids)
     for slug in selected_estacion_slugs:
         estacion_ids = estaciones_slug_map.get(slug, {}).get("ids")
         if not estacion_ids:
             continue
-        perfumes_list = perfumes_list.filter(
-            estaciones__in=estacion_ids,
-            estaciones__porcentaje__gte=ESTACION_MIN_PORCENTAJE,
-        )
+        if list_mode:
+            ids_set = set(estacion_ids)
+            perfumes_list = [
+                p for p in perfumes_list
+                if p.estaciones.filter(id__in=ids_set, porcentaje__gte=ESTACION_MIN_PORCENTAJE).exists()
+            ]
+        else:
+            perfumes_list = perfumes_list.filter(
+                estaciones__in=estacion_ids,
+                estaciones__porcentaje__gte=ESTACION_MIN_PORCENTAJE,
+            )
     if selected_estacion_slugs:
-        perfumes_list = perfumes_list.distinct()
+        if not list_mode:
+            perfumes_list = perfumes_list.distinct()
     paginator = Paginator(perfumes_list, 15)
     page_number = request.GET.get("page")
     perfumes = paginator.get_page(page_number)
@@ -1923,7 +1983,7 @@ def home(request):
         estaciones_info = list(perfume.estaciones.values_list("nombre", "porcentaje"))
         print(f"[Home] {perfume.nombre}: {estaciones_info}")
 
-    total_perfumes = perfumes_list.count()
+    total_perfumes = len(perfumes_list) if list_mode else perfumes_list.count()
     marcas = Marca.objects.filter(perfumes__isnull=False).order_by("marca").distinct()
     generos = Genero.objects.filter(perfumes__isnull=False).order_by("nombre").distinct()
     tienda_labels = dict(Perfume.TIENDA_CHOICES)
@@ -2232,13 +2292,40 @@ def reportes(request):
     Reporte por tienda: porcentaje de veces que cada tienda tiene el mejor precio
     comparando perfumes que existen en más de una tienda.
     """
+    def _clave_comparable(perfume):
+        """
+        Genera una clave normalizada para agrupar perfumes entre tiendas.
+        Usa nombre y marca sin acentos, en minúsculas y sin signos.
+        Limpia tamaño (ml/oz), género y concentración (edt/edp/tester) para
+        agrupar variantes del mismo perfume.
+        """
+        nombre_norm = _normalizar_texto(perfume.nombre)
+        marca_norm = _normalizar_texto(perfume.marca.marca if perfume.marca else "")
+        if not nombre_norm:
+            return None
+
+        def limpiar(txt):
+            base = re.sub(r'[^a-z0-9 ]+', ' ', txt or " ")
+            base = re.sub(r'\b\d+(?:[\.,]\d+)?\s*(?:ml|oz)\b', ' ', base)
+            base = re.sub(r'\b\d+\s*x\s*\d+\b', ' ', base)  # packs tipo 2x100
+            stopwords = {
+                "edt", "edp", "edc", "eau", "toilette", "parfum", "perfume", "tester",
+                "hombre", "mujer", "unisex", "men", "women", "for", "pour",
+            }
+            partes = [p for p in base.split() if p and p not in stopwords]
+            return " ".join(partes).strip()
+
+        nombre_clave = limpiar(nombre_norm)
+        marca_clave = limpiar(marca_norm)
+        return f"{marca_clave}|{nombre_clave}"
+
     perfumes = Perfume.objects.all().select_related("marca")
 
     grupos = defaultdict(list)
     for p in perfumes:
-        nombre = (p.nombre or "").strip().lower()
-        marca = p.marca.marca.strip().lower() if p.marca else ""
-        key = f"{marca}|{nombre}"
+        key = _clave_comparable(p)
+        if not key:
+            continue
         grupos[key].append(p)
 
     store_best_count = {"SILK": 0, "YAURAS": 0, "JOY": 0}

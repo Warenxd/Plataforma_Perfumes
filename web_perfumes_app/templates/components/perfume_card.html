@@ -81,7 +81,7 @@
 
     <!-- CARA TRASERA -->
     <div class="flip-card-back card relative from-slate-50/80 via-white to-emerald-50/40 backdrop-blur">
-      <div class="text-center flex flex-col items-center gap-2 px-1 sm:px-2">
+      <div class="card-back-content text-center flex flex-col items-center gap-2 px-1 sm:px-2">
         <div class="text-xs font-Lexend text-gray-500 tracking-wide">{{ p.marca.marca }}</div>
         <div class="text-lg font-Poppins uppercase font-bold text-slate-800 leading-tight">
           {{ p.nombre }}
@@ -145,10 +145,22 @@
           </div>
           {% endif %}
         </div>
+        {% elif p.notas_general.count > 0 %}
+        <div
+          class="notas-piramide w-full -mx-2 sm:-mx-3 px-1 sm:px-2 py-2 border border-white/30 rounded-2xl bg-transparent max-h-60 overflow-y-auto pr-1">
+          <p class="text-[11px] font-Lexend font-semibold tracking-[0.3em] text-gray-900 uppercase mb-1">
+            Notas olfativas
+          </p>
+          <div class="nota-tags">
+            {% for nota in p.notas_general.all %}
+            <span class="nota-chip nota-chip-general">{{ nota.nombre }}</span>
+            {% endfor %}
+          </div>
+        </div>
         {% endif %}
       </div>
 
-      {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 %}
+      {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 and p.notas_general.count == 0 %}
       <div class="download-wrapper mt-6">
         <form method="post" action="{% url 'descargar_acordes_individual' p.id %}" class="js-download-form">
           {% csrf_token %}
