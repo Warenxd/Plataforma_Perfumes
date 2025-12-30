@@ -540,8 +540,8 @@
 
     grid.addEventListener("click", (event) => {
       const card = event.target.closest(".flip-card");
-      if (card && isMobileViewport()) {
-        if (touchMoved) {
+      if (card) {
+        if (isMobileViewport() && touchMoved) {
           return;
         }
         const interactive = event.target.closest("button, a, input, select, textarea, label");

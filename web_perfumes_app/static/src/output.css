@@ -490,9 +490,6 @@
   .max-w-\[18rem\] {
     max-width: 18rem;
   }
-  .max-w-\[1500px\] {
-    max-width: 1500px;
-  }
   .max-w-lg {
     max-width: var(--container-lg);
   }
@@ -580,9 +577,6 @@
   }
   .gap-6 {
     gap: calc(var(--spacing) * 6);
-  }
-  .gap-10 {
-    gap: calc(var(--spacing) * 10);
   }
   .space-y-1 {
     :where(& > :not(:last-child)) {
@@ -1608,6 +1602,11 @@
       padding-inline: calc(var(--spacing) * 2);
     }
   }
+  .sm\:px-4 {
+    @media (width >= 40rem) {
+      padding-inline: calc(var(--spacing) * 4);
+    }
+  }
   .sm\:px-6 {
     @media (width >= 40rem) {
       padding-inline: calc(var(--spacing) * 6);
@@ -1715,19 +1714,24 @@
       overflow: hidden;
     }
   }
+  .lg\:px-6 {
+    @media (width >= 64rem) {
+      padding-inline: calc(var(--spacing) * 6);
+    }
+  }
   .lg\:px-8 {
     @media (width >= 64rem) {
       padding-inline: calc(var(--spacing) * 8);
     }
   }
-  .lg\:px-10 {
-    @media (width >= 64rem) {
-      padding-inline: calc(var(--spacing) * 10);
-    }
-  }
   .xl\:grid-cols-3 {
     @media (width >= 80rem) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .\32 xl\:grid-cols-4 {
+    @media (width >= 96rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 }
@@ -1736,7 +1740,7 @@
     box-sizing: border-box;
     width: 100%;
     height: 100%;
-    min-height: 560px;
+    min-height: 590px;
     max-width: 600px;
     background: radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.07), transparent 32%), radial-gradient(circle at 85% 18%, rgba(14, 165, 233, 0.06), transparent 34%), #ffffff;
     border: 1px solid rgba(15, 23, 42, 0.12);
@@ -1782,7 +1786,7 @@
   }
   .card-price {
     position: absolute;
-    bottom: 118px;
+    bottom: 90px;
     left: 0;
     width: 100%;
     text-align: center;
@@ -1835,9 +1839,9 @@
   }
   .flip-card {
     background-color: transparent;
-    width: min(100%, 600px);
-    max-width: 600px;
-    min-height: clamp(600px, 70vh, 720px);
+    width: min(100%, 360px);
+    max-width: 380px;
+    min-height: clamp(560px, 70vh, 700px);
     height: auto;
     margin-inline: auto;
     perspective: 1000px;

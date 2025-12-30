@@ -3,7 +3,7 @@
 {% with search_query|default_if_none:"" as current_query %}
 {% if perfumes %}
 <!-- GRID DE CARDS -->
-<div id="perfumes-grid-top" class="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-3 justify-items-center">
+<div id="perfumes-grid-top" class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 justify-items-center">
   {% for p in perfumes %}
     {% include "components/perfume_card.html" with p=p %}
   {% endfor %}
