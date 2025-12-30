@@ -115,16 +115,71 @@
       display: table-cell;
     }
   }
+  /* Mobile sidebar behavior */
+  @media (max-width: 1023px) {
+    .sidebar-panel {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 90%;
+      max-width: 340px;
+      height: 100vh;
+      transform: translateX(-105%);
+      transition: transform 220ms ease, box-shadow 220ms ease;
+      z-index: 60;
+      border-top-right-radius: 22px;
+      border-bottom-right-radius: 22px;
+      overflow-y: auto;
+    }
+    .sidebar-panel.is-open {
+      transform: translateX(0);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+    }
+    .sidebar-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      z-index: 50;
+      display: none;
+    }
+    .sidebar-scrim.is-open {
+      display: block;
+    }
+  }
 </style>
 
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
   <div class="mx-auto flex min-h-screen max-w-[1500px] flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:px-10">
-    <aside class="w-full flex-shrink-0 space-y-4 rounded-[24px] bg-slate-900/70 p-4 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur sidebar-blur lg:sticky lg:top-6 lg:w-[360px] lg:max-w-[360px] lg:max-h-[calc(100vh-3rem)] lg:overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between gap-3 lg:hidden">
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Panel</p>
+        <p class="text-lg font-semibold text-slate-900">Explorador</p>
+      </div>
+      <button
+        id="sidebar-open-btn"
+        type="button"
+        class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-1 ring-white/20 transition hover:-translate-y-0.5 hover:bg-slate-800">
+        <i class="fa-solid fa-bars"></i>
+        <span>Filtros</span>
+      </button>
+    </div>
+
+    <div id="sidebar-scrim" class="sidebar-scrim lg:hidden"></div>
+
+    <aside
+      id="filters-sidebar"
+      class="sidebar-panel w-full flex-shrink-0 space-y-4 rounded-[24px] bg-slate-900/70 p-4 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur sidebar-blur lg:relative lg:translate-x-0 lg:top-6 lg:w-[360px] lg:max-w-[360px] lg:max-h-[calc(100vh-3rem)] lg:overflow-hidden flex flex-col lg:sticky">
       <div class="flex items-center justify-between gap-3">
         <div>
           <p class="text-[11px] uppercase tracking-[0.3em] text-slate-200/80">Panel</p>
           <p class="text-lg font-semibold text-white">Explorador</p>
         </div>
+        <button
+          id="sidebar-close-btn"
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center rounded-full p-2 text-slate-100 hover:bg-white/10">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <nav class="space-y-2">
@@ -407,6 +462,11 @@
   const linkProyeccion = document.getElementById("nav-proyeccion");
   const linkEstadisticas = document.getElementById("nav-estadisticas");
   const linkReportes = document.getElementById("nav-reportes");
+  const LAST_VIEW_KEY = "menu:last-view";
+  const sidebar = document.getElementById("filters-sidebar");
+  const sidebarScrim = document.getElementById("sidebar-scrim");
+  const sidebarOpenBtn = document.getElementById("sidebar-open-btn");
+  const sidebarCloseBtn = document.getElementById("sidebar-close-btn");
   if (!mainPanel || !dynamicPanel) {
     return;
   }
@@ -426,6 +486,34 @@
   const activeClasses = ["bg-white", "text-slate-900", "shadow-lg", "ring-1", "ring-white/60"];
   const inactiveClasses = ["text-slate-200", "hover:bg-white/5"];
 
+  const saveView = (view) => {
+    try {
+      localStorage.setItem(LAST_VIEW_KEY, view);
+    } catch (error) {
+      // ignore storage errors
+    }
+  };
+
+  const getSavedView = () => {
+    try {
+      return localStorage.getItem(LAST_VIEW_KEY);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const closeSidebar = () => {
+    sidebar?.classList.remove("is-open");
+    sidebarScrim?.classList.remove("is-open");
+    document.body.classList.remove("overflow-hidden");
+  };
+
+  const openSidebar = () => {
+    sidebar?.classList.add("is-open");
+    sidebarScrim?.classList.add("is-open");
+    document.body.classList.add("overflow-hidden");
+  };
+
   const setActive = (target, isActive) => {
     if (!target) return;
     const classes = target.classList;
@@ -438,6 +526,8 @@
     dynamicPanel.innerHTML = "";
     dynamicPanel.dataset.view = "";
     mainPanel.classList.remove("hidden");
+    closeSidebar();
+    saveView("perfumes");
     setComparisonVisible(true);
     setActive(linkPerfumes, true);
     setActive(linkAnalizar, false);
@@ -452,9 +542,11 @@
     }
   };
 
-  const loadAnalizar = async (url) => {
+  const loadAnalizar = async (url, options = {}) => {
+    const { remember = true } = options;
     dynamicPanel.classList.remove("hidden");
     mainPanel.classList.add("hidden");
+    closeSidebar();
     setComparisonVisible(false);
     dynamicPanel.dataset.view = "loading";
     dynamicPanel.innerHTML =
@@ -472,6 +564,9 @@
       setActive(linkEstadisticas, false);
       setActive(linkReportes, false);
       setActive(linkPerfumes, false);
+      if (remember) {
+        saveView("analizar");
+      }
       if (typeof window.initComparar === "function") {
         window.initComparar(dynamicPanel);
       }
@@ -480,9 +575,11 @@
     }
   };
 
-  const loadCompras = async (url) => {
+  const loadCompras = async (url, options = {}) => {
+    const { remember = true } = options;
     dynamicPanel.classList.remove("hidden");
     mainPanel.classList.add("hidden");
+    closeSidebar();
     setComparisonVisible(false);
     dynamicPanel.dataset.view = "loading";
     dynamicPanel.innerHTML =
@@ -500,6 +597,9 @@
       setActive(linkEstadisticas, false);
       setActive(linkReportes, false);
       setActive(linkPerfumes, false);
+      if (remember) {
+        saveView("compras");
+      }
       if (typeof window.initCompararCompras === "function") {
         window.initCompararCompras(dynamicPanel);
       }
@@ -508,9 +608,11 @@
     }
   };
 
-  const loadProyeccion = async (url) => {
+  const loadProyeccion = async (url, options = {}) => {
+    const { remember = true } = options;
     dynamicPanel.classList.remove("hidden");
     mainPanel.classList.add("hidden");
+    closeSidebar();
     setComparisonVisible(false);
     dynamicPanel.dataset.view = "loading";
     dynamicPanel.innerHTML =
@@ -528,6 +630,9 @@
       setActive(linkEstadisticas, false);
       setActive(linkReportes, false);
       setActive(linkPerfumes, false);
+      if (remember) {
+        saveView("proyeccion");
+      }
       if (typeof window.initProyeccion === "function") {
         window.initProyeccion(dynamicPanel);
       }
@@ -536,9 +641,11 @@
     }
   };
 
-  const loadEstadisticas = async (url) => {
+  const loadEstadisticas = async (url, options = {}) => {
+    const { remember = true } = options;
     dynamicPanel.classList.remove("hidden");
     mainPanel.classList.add("hidden");
+    closeSidebar();
     setComparisonVisible(false);
     dynamicPanel.dataset.view = "loading";
     dynamicPanel.innerHTML =
@@ -556,6 +663,9 @@
       setActive(linkProyeccion, false);
       setActive(linkPerfumes, false);
       setActive(linkReportes, false);
+      if (remember) {
+        saveView("estadisticas");
+      }
       if (typeof window.initEstadisticas === "function") {
         window.initEstadisticas(dynamicPanel);
       }
@@ -564,9 +674,11 @@
     }
   };
 
-  const loadReportes = async (url) => {
+  const loadReportes = async (url, options = {}) => {
+    const { remember = true } = options;
     dynamicPanel.classList.remove("hidden");
     mainPanel.classList.add("hidden");
+    closeSidebar();
     setComparisonVisible(false);
     dynamicPanel.dataset.view = "loading";
     dynamicPanel.innerHTML =
@@ -584,11 +696,35 @@
       setActive(linkCompras, false);
       setActive(linkProyeccion, false);
       setActive(linkPerfumes, false);
+      if (remember) {
+        saveView("reportes");
+      }
       if (typeof window.initReportes === "function") {
         window.initReportes(dynamicPanel);
       }
     } catch (error) {
       window.location.href = url;
+    }
+  };
+
+  const restoreInitialView = () => {
+    const lastView = getSavedView();
+    if (!lastView) return;
+    const handlers = {
+      analizar: [linkAnalizar, loadAnalizar],
+      compras: [linkCompras, loadCompras],
+      proyeccion: [linkProyeccion, loadProyeccion],
+      estadisticas: [linkEstadisticas, loadEstadisticas],
+      reportes: [linkReportes, loadReportes],
+      perfumes: [linkPerfumes, showMain],
+    };
+    const entry = handlers[lastView];
+    if (entry && entry[0] && typeof entry[1] === "function") {
+      if (lastView === "perfumes") {
+        entry[1]();
+      } else {
+        entry[1](entry[0].href, { remember: true });
+      }
     }
   };
 
@@ -642,16 +778,6 @@
     });
   }
 
-  if (linkReportes) {
-    linkReportes.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (dynamicPanel.dataset.view === "reportes") {
-        return;
-      }
-      loadReportes(linkReportes.href);
-    });
-  }
-
   if (linkPerfumes) {
     linkPerfumes.addEventListener("click", (event) => {
       if (!dynamicPanel.classList.contains("hidden")) {
@@ -678,6 +804,32 @@
     setActive(linkEstadisticas, false);
     setActive(linkReportes, false);
   }
+
+  sidebarOpenBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    openSidebar();
+  });
+
+  sidebarCloseBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    closeSidebar();
+  });
+
+  sidebarScrim?.addEventListener("click", closeSidebar);
+
+  document.addEventListener("keyup", (event) => {
+    if (event.key === "Escape") {
+      closeSidebar();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 1024) {
+      closeSidebar();
+    }
+  });
+
+  restoreInitialView();
 })();
 </script>
 

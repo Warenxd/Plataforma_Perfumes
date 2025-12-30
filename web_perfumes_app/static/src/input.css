@@ -84,6 +84,14 @@
         padding-bottom: 70px; /* espacio para precio y botón */
     }
 
+    .card-price {
+        position: absolute;
+        bottom: 118px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+    }
+
     .compare-section {
         position: absolute;
         bottom: 18px;
@@ -303,15 +311,16 @@
         padding-bottom: 8px;
     }
 
-    .flip-card:hover .flip-card-back {
+    /* Toggleable flip for touch/click */
+    .flip-card.is-flipped .flip-card-back {
         opacity: 1;
     }
 
-    .flip-card:hover .card-body {
+    .flip-card.is-flipped .card-body {
         opacity: 0;
     }
 
-    .flip-card:hover .card-image {
+    .flip-card.is-flipped .card-image {
         height: clamp(240px, 45vw, 320px);
         filter: blur(7px);
         animation: floaty 3s infinite;

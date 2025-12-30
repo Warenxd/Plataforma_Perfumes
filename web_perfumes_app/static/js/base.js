@@ -61,6 +61,9 @@
   const isPerfumesView = () =>
     !mainPanel || !mainPanel.classList.contains("hidden");
 
+  const isMobileViewport = () =>
+    window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+
   const syncComparisonVisibility = () => {
     const visible = isPerfumesView();
     if (comparisonToggle) {
@@ -377,7 +380,7 @@
 
   if (grid && supportsFetch) {
     let isFetching = false;
-    let searchDebounce = null;
+    let touchMoved = false;
     const loaderClasses = ["opacity-50", "pointer-events-none"];
     const progressMap = new WeakMap();
     const setDownloadStatus = (form, message, isError) => {
@@ -527,7 +530,28 @@
       }
     };
 
+    grid.addEventListener("touchstart", () => {
+      touchMoved = false;
+    });
+
+    grid.addEventListener("touchmove", () => {
+      touchMoved = true;
+    });
+
     grid.addEventListener("click", (event) => {
+      const card = event.target.closest(".flip-card");
+      if (card && isMobileViewport()) {
+        if (touchMoved) {
+          return;
+        }
+        const interactive = event.target.closest("button, a, input, select, textarea, label");
+        if (!interactive) {
+          event.preventDefault();
+          card.classList.toggle("is-flipped");
+          return;
+        }
+      }
+
       const compareButton = event.target.closest(".compare-btn");
       if (compareButton) {
         event.preventDefault();
@@ -634,27 +658,21 @@
     });
 
     if (searchInput) {
-      let lastValue = searchInput.value;
       searchInput.setAttribute("autocomplete", "off");
-
-      searchInput.addEventListener("input", () => {
-        const currentValue = searchInput.value;
-        clearTimeout(searchDebounce);
-        searchDebounce = setTimeout(() => {
-          const trimmed = currentValue.trim();
-          if (trimmed === lastValue.trim()) {
-            return;
-          }
-          lastValue = currentValue;
-          const url = new URL(window.location.href);
-          if (trimmed) {
-            url.searchParams.set("q", trimmed);
-          } else {
-            url.searchParams.delete("q");
-          }
-          url.searchParams.delete("page");
-          fetchPage(url.toString());
-        }, 350);
+      searchInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") {
+          return;
+        }
+        event.preventDefault();
+        const trimmed = searchInput.value.trim();
+        const url = new URL(window.location.href);
+        if (trimmed) {
+          url.searchParams.set("q", trimmed);
+        } else {
+          url.searchParams.delete("q");
+        }
+        url.searchParams.delete("page");
+        fetchPage(url.toString());
       });
     }
 

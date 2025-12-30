@@ -128,6 +128,21 @@
     }
   };
 
+  const captureScrollState = (root = document) => {
+    const scrollEl = root.querySelector("[data-compare-scroll]");
+    if (!scrollEl) return null;
+    return {
+      node: scrollEl,
+      left: scrollEl.scrollLeft,
+      top: scrollEl.scrollTop,
+    };
+  };
+
+  const restoreScrollState = (state) => {
+    if (!state || !state.node) return;
+    state.node.scrollTo({ left: state.left, top: state.top, behavior: "auto" });
+  };
+
   const render = (root = document, opts = {}) => {
     const body = root.querySelector("#compare-body");
     const countEl = root.querySelector("#compare-count");
@@ -137,6 +152,7 @@
     const summaryWrapper = root.querySelector("#summary-ganancia-wrapper");
     const summaryDot = root.querySelector("#summary-ganancia-dot");
     const focusState = opts.focus;
+    const scrollState = captureScrollState(root);
     if (!body || !countEl) {
       return;
     }
@@ -172,6 +188,7 @@
         window.updateComparisonFromStorage();
       }
       syncSummary();
+      restoreScrollState(scrollState);
       return;
     }
 
@@ -499,6 +516,9 @@
     }
     totalGananciaGeneral = totalVentaGeneral - totalCompraGeneral;
     syncSummary();
+    if (scrollState) {
+      requestAnimationFrame(() => restoreScrollState(scrollState));
+    }
   };
 
   const bindControls = (root = document) => {
