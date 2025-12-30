@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "perfumes_comparar";
+  const SHIPPING_OVERRIDES_KEY = "perfumes_comparar_envios";
   const shippingDefaults = {
     silk: { label: "Silk", valor: 6000 },
     yauras: { label: "Yauras", valor: 6000 },
@@ -34,10 +35,35 @@
   const inferShipping = (tiendaRaw) => {
     const name = (tiendaRaw || "").toLowerCase().trim();
     if (!name) return null;
+    const overrides = loadShippingOverrides();
+    if (overrides[name] !== undefined) {
+      const val = Number(overrides[name]);
+      if (Number.isFinite(val) && val >= 0) return val;
+    }
     if (name.includes("silk")) return shippingDefaults.silk.valor;
     if (name.includes("yauras")) return shippingDefaults.yauras.valor;
     if (name.includes("joy")) return shippingDefaults.joy.valor;
     return null;
+  };
+
+  const loadShippingOverrides = () => {
+    try {
+      const raw = localStorage.getItem(SHIPPING_OVERRIDES_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  };
+
+  const saveShippingOverride = (tienda, valor) => {
+    const current = loadShippingOverrides();
+    current[(tienda || "").toLowerCase().trim()] = valor;
+    try {
+      localStorage.setItem(SHIPPING_OVERRIDES_KEY, JSON.stringify(current));
+    } catch (error) {
+      console.warn("No se pudo guardar envío personalizado", error);
+    }
   };
 
   const renderCompras = (root = document) => {
@@ -94,70 +120,75 @@
         minStoreTotal !== null && minStoreCount === 1 && totalTienda === minStoreTotal;
       const card = document.createElement("div");
       card.className =
-        "rounded-[28px] border " +
+        "rounded-[28px] border shadow-xl p-5 space-y-5 ring-1 ring-black/5 " +
         (storeIsBest
           ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-50"
-          : "border-slate-200 bg-white") +
-        " shadow-xl p-5 space-y-4 ring-1 ring-black/5";
+          : "border-slate-200 bg-white");
       const header = document.createElement("div");
-      header.className = "flex items-start justify-between gap-3";
+      header.className = "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between";
       const totalBadge = storeIsBest
-        ? `<span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
+        ? `<span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3.5 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
             <i class="fa-solid fa-trophy"></i> Mejor total: ${formatPrice(totalTienda)}
           </span>`
-        : `<span class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 shadow-sm">
+        : `<span class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-indigo-100 shadow-sm">
             Total tienda: ${formatPrice(totalTienda)}
           </span>`;
       header.innerHTML = `
-        <div class="space-y-1">
-          <p class="text-[11px] uppercase tracking-[0.28em] text-slate-500">Tienda</p>
-          <p class="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-900 text-white text-sm shadow">${tienda.charAt(0) || "T"}</span>
-            <span>${tienda}</span>
+        <div class="space-y-2">
+          <p class="text-[12px] uppercase tracking-[0.28em] text-slate-500">Tienda</p>
+          <p class="text-xl font-semibold text-slate-900 flex items-center gap-3">
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white text-sm shadow">${tienda.charAt(0) || "T"}</span>
+            <span class="text-2xl">${tienda}</span>
           </p>
-          <p class="text-xs text-slate-500">Envío estimado único: ${formatPrice(shipping)}</p>
+          <label class="mt-1 flex flex-wrap items-center gap-2 text-[13px] font-semibold text-slate-600">
+            Envío:
+            <input type="number" min="0" inputmode="numeric" value="${shipping || 0}"
+              class="w-32 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm focus:border-indigo-400 focus:outline-none"
+              data-store-shipping="${tienda}">
+            <span class="text-[11px] text-slate-500">(aplica una vez)</span>
+          </label>
         </div>
         <div class="text-right space-y-2">
-          <span class="block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">${lista.length} perfume(s)</span>
+          <span class="block rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">${lista.length} perfume(s)</span>
           ${totalBadge}
         </div>
       `;
       const list = document.createElement("div");
-      list.className = "space-y-2";
+      list.className = "space-y-4";
 
       lista.forEach((perfume) => {
         const price = Number(perfume.precio) || 0;
         const total = price + shipping;
         const row = document.createElement("div");
-        row.className = "rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm shadow-sm ring-1 ring-white/60";
+        row.className = "rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm ring-1 ring-white/60";
         row.innerHTML = `
           <div class="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">${perfume.marca || ""}</p>
-              <p class="font-semibold text-slate-900">${perfume.nombre || "Perfume"}</p>
+            <div class="flex items-start gap-3">
+              <div class="h-14 w-14 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
+                ${
+                  perfume.imagen
+                    ? `<img src="${perfume.imagen}" alt="${perfume.nombre || ""}" class="h-full w-full object-cover">`
+                    : '<span class="text-[11px] text-slate-500">Sin foto</span>'
+                }
+              </div>
+              <div class="leading-tight">
+                <p class="text-[12px] uppercase tracking-[0.18em] text-slate-500">${perfume.marca || ""}</p>
+                <p class="text-base font-semibold text-slate-900">${perfume.nombre || "Perfume"}</p>
+              </div>
             </div>
             <div class="text-right space-y-1">
-              <span class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+              <span class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-700">
                 Precio: ${formatPrice(perfume.precio)}
               </span>
-              <div class="text-xs text-slate-600 font-semibold text-indigo-700">Total con envío tienda: ${formatPrice(total)}</div>
+              <div class="text-sm text-slate-600 font-semibold text-indigo-700">Total con envío tienda: ${formatPrice(total)}</div>
             </div>
           </div>
-          <div class="mt-2 flex items-center gap-3">
-            <div class="h-14 w-14 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
-              ${
-                perfume.imagen
-                  ? `<img src="${perfume.imagen}" alt="${perfume.nombre || ""}" class="h-full w-full object-cover">`
-                  : '<span class="text-[11px] text-slate-500">Sin foto</span>'
-              }
-            </div>
-            <div class="text-xs text-slate-600 flex-1">
-              ${
-                perfume.url
-                  ? `<a class="text-indigo-600 hover:text-indigo-500 font-semibold" href="${perfume.url}" target="_blank" rel="noopener">Ver tienda</a>`
-                  : "Sin enlace"
-              }
-            </div>
+          <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+            ${
+              perfume.url
+                ? `<a class="text-indigo-600 hover:text-indigo-500 font-semibold" href="${perfume.url}" target="_blank" rel="noopener">Ver tienda</a>`
+                : "Sin enlace"
+            }
             <button class="text-[11px] font-semibold text-rose-600 hover:text-rose-500" data-remove-perfume="${perfume.id}">Quitar</button>
           </div>
         `;
@@ -171,7 +202,7 @@
     wrapper.innerHTML = "";
     wrapper.appendChild(grid);
 
-    if (!wrapper.dataset.removeHandlerBound) {
+    if (!wrapper.dataset.handlersBound) {
       wrapper.addEventListener("click", (event) => {
         const removeBtn = event.target.closest("[data-remove-perfume]");
         if (removeBtn) {
@@ -194,7 +225,20 @@
           }
         }
       });
-      wrapper.dataset.removeHandlerBound = "1";
+
+      wrapper.addEventListener("change", (event) => {
+        const input = event.target.closest("[data-store-shipping]");
+        if (input) {
+          const tienda = input.dataset.storeShipping;
+          const val = Number(input.value);
+          const safe = Number.isFinite(val) && val >= 0 ? val : 0;
+          input.value = safe;
+          saveShippingOverride(tienda, safe);
+          renderCompras(root);
+        }
+      });
+
+      wrapper.dataset.handlersBound = "1";
     }
   };
 

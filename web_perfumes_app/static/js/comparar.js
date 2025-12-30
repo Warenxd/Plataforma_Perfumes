@@ -227,9 +227,9 @@
       // Decants
       const decants = Array.isArray(item.decants) ? item.decants : [];
       const decantBox = document.createElement("div");
-      decantBox.className = "mt-3 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3";
+      decantBox.className = "mt-3 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4";
       const decantHeader = document.createElement("div");
-      decantHeader.className = "flex items-center justify-between text-xs font-semibold text-slate-700";
+      decantHeader.className = "flex items-center justify-between text-sm font-semibold text-slate-700";
       const decantCount = document.createElement("span");
       decantCount.textContent = `Decants (${decants.length})`;
       const decantTotalLabel = document.createElement("span");
@@ -242,7 +242,7 @@
       decantBox.appendChild(decantHeader);
 
       const decantList = document.createElement("div");
-      decantList.className = "space-y-2";
+      decantList.className = "space-y-3";
 
       const handleDecantUpdate = (decantId, patch, sourceInput, field) =>
         mutateDecants(item.id, (curr) =>
@@ -260,33 +260,33 @@
 
       decants.forEach((decant) => {
         const row = document.createElement("div");
-        row.className = "grid grid-cols-12 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs";
+        row.className = "grid grid-cols-12 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm";
 
         const mlWrapper = document.createElement("div");
-        mlWrapper.className = "col-span-3 flex items-center gap-1";
+        mlWrapper.className = "col-span-3 flex items-center gap-1.5";
         const mlLabel = document.createElement("span");
-        mlLabel.className = "text-slate-500";
+        mlLabel.className = "text-slate-500 text-sm";
         mlLabel.textContent = "ML";
         const mlInput = document.createElement("input");
         mlInput.type = "number";
         mlInput.min = "0";
         mlInput.step = "0.1";
         mlInput.value = Number(decant.ml) || 0;
-        mlInput.className = "w-full rounded border border-slate-300 px-2 py-1";
+        mlInput.className = "w-full rounded border border-slate-300 px-2 py-1.5 text-sm";
         mlInput.addEventListener("input", () =>
           handleDecantUpdate(decant.id, { ml: Number(mlInput.value) || 0 }, mlInput, "decant-ml")
         );
         mlWrapper.append(mlLabel, mlInput);
 
         const precioWrapper = document.createElement("div");
-        precioWrapper.className = "col-span-3 flex items-center gap-1";
+        precioWrapper.className = "col-span-3 flex items-center gap-1.5";
         const precioLabel = document.createElement("span");
-        precioLabel.className = "text-slate-500";
+        precioLabel.className = "text-slate-500 text-sm";
         precioLabel.textContent = "$";
         const precioInput = document.createElement("input");
         precioInput.type = "text";
         precioInput.inputMode = "numeric";
-        precioInput.className = "w-full rounded border border-slate-300 px-2 py-1";
+        precioInput.className = "w-full rounded border border-slate-300 px-2 py-1.5 text-sm";
         const decantPriceValue =
           decant.precio === null || typeof decant.precio === "undefined"
             ? ""
@@ -299,16 +299,16 @@
         precioWrapper.append(precioLabel, precioInput);
 
         const cantidadWrapper = document.createElement("div");
-        cantidadWrapper.className = "col-span-3 flex items-center gap-1";
+        cantidadWrapper.className = "col-span-3 flex items-center gap-1.5";
         const cantidadLabel = document.createElement("span");
-        cantidadLabel.className = "text-slate-500";
+        cantidadLabel.className = "text-slate-500 text-sm";
         cantidadLabel.textContent = "Cant";
         const cantidadInput = document.createElement("input");
         cantidadInput.type = "number";
         cantidadInput.min = "0";
         cantidadInput.step = "1";
         cantidadInput.value = Number(decant.cantidad) || 0;
-        cantidadInput.className = "w-full rounded border border-slate-300 px-2 py-1";
+        cantidadInput.className = "w-full rounded border border-slate-300 px-2 py-1.5 text-sm";
         cantidadInput.addEventListener("input", () => {
           const val = Number(cantidadInput.value);
           handleDecantUpdate(decant.id, { cantidad: val >= 0 ? val : 0 }, cantidadInput, "decant-cantidad");
@@ -316,14 +316,14 @@
         cantidadWrapper.append(cantidadLabel, cantidadInput);
 
         const actionsWrapper = document.createElement("div");
-        actionsWrapper.className = "col-span-3 flex items-center justify-end gap-2";
+        actionsWrapper.className = "col-span-3 flex items-center justify-end gap-3";
         const totalDecant = (Number(decant.precio) || 0) * (Number(decant.cantidad) || 0);
         const totalTag = document.createElement("span");
-        totalTag.className = "rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700";
+        totalTag.className = "rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700";
         totalTag.textContent = formatPriceCLP(totalDecant);
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
-        removeBtn.className = "text-[11px] font-semibold text-rose-600 hover:text-rose-500";
+        removeBtn.className = "text-sm font-semibold text-rose-600 hover:text-rose-500";
         removeBtn.textContent = "Quitar";
         removeBtn.addEventListener("click", () => {
           mutateDecants(
@@ -519,6 +519,7 @@
     if (scrollState) {
       requestAnimationFrame(() => restoreScrollState(scrollState));
     }
+
   };
 
   const bindControls = (root = document) => {

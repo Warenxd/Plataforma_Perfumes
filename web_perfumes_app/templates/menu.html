@@ -437,7 +437,14 @@
               name="q"
               placeholder="Busca tu perfume"
               value="{{ search_query }}"
+              autocomplete="off"
+              data-suggest-url="{% url 'sugerir_perfumes' %}"
               class="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+            <div
+              id="search-suggestions"
+              class="absolute z-20 mt-1 hidden w-full rounded-2xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 overflow-hidden">
+              <ul class="divide-y divide-slate-200 text-sm" role="listbox"></ul>
+            </div>
           </div>
         </div>
       </div>

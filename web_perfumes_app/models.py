@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 # Un modelo es una representación de una tabla de base de datos.
@@ -10,6 +11,7 @@ class Acorde(models.Model):
 
     def __str__(self):
         return self.nombre
+
 
 # TABLA DE NOTAS DE LOS PERFUMES
 class Nota(models.Model):
@@ -74,3 +76,30 @@ class Perfume(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class VentaRegistro(models.Model):
+    TIPO_PERFUME = "PERFUME"
+    TIPO_DECANT = "DECANT"
+    TIPO_CHOICES = [
+        (TIPO_PERFUME, "Perfume"),
+        (TIPO_DECANT, "Decant"),
+    ]
+
+    nombre = models.CharField(max_length=160)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default=TIPO_PERFUME)
+    tienda = models.CharField(max_length=20, choices=Perfume.TIENDA_CHOICES)
+    unidades = models.PositiveIntegerField(default=1)
+    precio_unitario = models.PositiveIntegerField(help_text="Precio de venta del ítem.")
+    fecha_venta = models.DateField(default=timezone.now)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_venta", "-creado_en"]
+
+    @property
+    def total(self):
+        return (self.precio_unitario or 0) * (self.unidades or 0)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_tipo_display()})"

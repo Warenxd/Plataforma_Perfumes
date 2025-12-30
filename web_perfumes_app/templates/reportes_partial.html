@@ -1,59 +1,328 @@
 {% load format_price %}
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100" data-reportes-root>
+  <div class="mx-auto max-w-[125vw] px-3 sm:px-5 lg:px-6 py-10 space-y-8 animate__animated animate__fadeInUp">
     <div class="flex items-center justify-between gap-4">
       <div>
         <p class="text-[11px] uppercase tracking-[0.35em] text-slate-500">Reportes</p>
-        <h1 class="text-3xl font-semibold text-slate-900">Mejor precio por tienda</h1>
-        <p class="text-sm text-slate-600">Compara perfumes repetidos entre tiendas y muestra quién tiene el mejor precio.</p>
+        <h1 class="text-3xl font-semibold text-slate-900">Ventas y ganancias</h1>
+        <p class="text-sm text-slate-600">Registra perfumes o decants vendidos por tienda y revisa los líderes por mes y año.</p>
       </div>
       <a data-dynamic-back="home" href="{% url 'home' %}" class="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
         ← Volver
       </a>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-4 animate__animated animate__fadeInUp">
-      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:col-span-1">
-        <p class="text-[11px] uppercase tracking-[0.28em] text-slate-500">Perfumes comparables</p>
-        <p class="mt-1 text-3xl font-semibold text-slate-900">{{ comparables }}</p>
-        <p class="text-xs text-slate-500 mt-1">Perfumes presentes en 2+ tiendas.</p>
-      </div>
-      {% for r in resumen %}
-      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p class="text-[11px] uppercase tracking-[0.28em] text-slate-500">{{ r.tienda }}</p>
-        <p class="mt-1 text-3xl font-semibold text-slate-900">{{ r.porcentaje }}%</p>
-        <p class="text-xs text-slate-500 mt-1">Mejor precio en {{ r.total }} casos.</p>
-      </div>
-      {% endfor %}
-    </div>
-
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate__animated animate__fadeInUp">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.28em] text-slate-500">Muestras</p>
-          <p class="text-lg font-semibold text-slate-900">Ejemplos de perfumes donde cada tienda es más barata</p>
-        </div>
-      </div>
-        <div class="mt-4 grid gap-4 md:grid-cols-3">
-          {% for code, lista in muestras.items %}
-          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p class="text-sm font-semibold text-slate-800">{{ code }}</p>
-            <div class="mt-2 space-y-2 max-h-[280px] overflow-auto pr-1">
-              {% if lista %}
-                {% for p in lista %}
-                <div class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                  <p class="font-semibold text-slate-900">{{ p.nombre }}</p>
-                  <p class="text-xs text-slate-600">{{ p.marca }}</p>
-                  <p class="text-xs font-semibold text-emerald-700">{{ p.precio|format_price }}</p>
-                </div>
-                {% endfor %}
-              {% else %}
-                <p class="text-xs text-slate-600">Sin ejemplos.</p>
-              {% endif %}
+    {% if messages %}
+      <div class="space-y-2">
+        {% for message in messages %}
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm">
+            {{ message }}
           </div>
-        </div>
         {% endfor %}
       </div>
+    {% endif %}
+
+    <div class="grid gap-6 lg:grid-cols-1 items-start">
+      <div class="space-y-4 rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-xl ring-1 ring-black/5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Nuevo registro</p>
+            <p class="text-lg font-semibold text-slate-900">Tabla de ventas (perfume o decant)</p>
+            <p class="text-xs text-slate-500">Tabla tipo “Calcular ganancias”: ocupa ~2/3 del ancho para agregar varias filas antes de guardar.</p>
+          </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">Manual</span>
+        </div>
+        <form method="post" action="{% url 'reportes' %}" class="space-y-4" data-reportes-form-table>
+          {% csrf_token %}
+          <input type="hidden" name="year" value="{{ selected_year }}">
+          <p class="text-xs text-slate-500">Agrega varias filas y guarda todo junto.</p>
+          <div class="flex items-center justify-between gap-2">
+            <button type="button" data-reportes-add-row class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+              <i class="fa-solid fa-plus"></i>
+              <span>Agregar fila</span>
+            </button>
+            <button type="button" data-reportes-clear-rows class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+              <i class="fa-solid fa-eraser"></i>
+              <span>Limpiar tabla</span>
+            </button>
+            <button type="button" data-reportes-save-rows class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Guardar todo</span>
+            </button>
+          </div>
+          <div class="overflow-x-auto overflow-y-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table class="w-full min-w-[1400px] text-sm">
+              <thead class="bg-slate-50 text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <tr>
+                  <th class="py-2 px-3 text-left w-[110px]">Imagen</th>
+                  <th class="py-2 px-3 text-left w-[320px]">Producto</th>
+                  <th class="py-2 px-3 text-left">Tipo</th>
+                  <th class="py-2 px-3 text-left w-[140px]">Tienda</th>
+                  <th class="py-2 px-3 text-right w-[90px]">Unidades</th>
+                  <th class="py-2 px-3 text-right w-[120px]">Precio unit.</th>
+                  <th class="py-2 px-3 text-right">Total</th>
+                  <th class="py-2 px-3 text-left w-[150px]">Fecha</th>
+                  <th class="py-2 px-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody data-reportes-table-body>
+              </tbody>
+            </table>
+          </div>
+          <input type="hidden" data-reportes-default-fecha value="{{ form.initial.fecha_venta|default:form.fecha_venta.value|default:today }}">
+        </form>
+        <template id="reportes-row-template">
+          <tr class="border-b border-slate-100" data-reportes-row>
+            <td class="py-2 px-3 align-middle w-[140px]">
+              <div class="h-20 w-20 max-h-24 max-w-24 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center" data-reportes-thumb>
+                <span class="text-[12px] font-semibold text-slate-400">Img</span>
+              </div>
+            </td>
+            <td class="py-2 px-3 align-middle w-[320px]">
+              <div class="space-y-1 relative">
+                <input type="text" name="nombre" autocomplete="off" data-suggest-url="{% url 'sugerir_perfumes' %}" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" placeholder="Nombre del perfume/decant">
+                <div class="absolute left-0 right-0 z-30 mt-1 hidden rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 overflow-hidden" data-reportes-suggestions>
+                  <ul class="divide-y divide-slate-200 text-sm" role="listbox"></ul>
+                </div>
+              </div>
+            </td>
+            <td class="py-2 px-3 align-middle w-[140px]">
+              <select name="tipo" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none">
+                {% for value, label in form.fields.tipo.choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="py-2 px-3 align-middle">
+              <select name="tienda" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none">
+                {% for value, label in form.fields.tienda.choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="py-2 px-3 align-middle w-[90px]">
+              <input type="number" min="1" name="unidades" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 text-right focus:border-indigo-400 focus:outline-none" value="1">
+            </td>
+            <td class="py-2 px-3 align-middle w-[120px]">
+              <input type="number" min="0" name="precio_unitario" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 text-right focus:border-indigo-400 focus:outline-none" value="0">
+            </td>
+            <td class="py-2 px-3 align-middle text-right" data-row-total>$0</td>
+            <td class="py-2 px-3 align-middle w-[150px]">
+              <input type="date" name="fecha_venta" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" value="{{ form.initial.fecha_venta|default:form.fecha_venta.value|default:today }}">
+            </td>
+            <td class="py-2 px-3 align-middle text-right">
+              <button type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-500" data-reportes-remove-row>Quitar</button>
+            </td>
+          </tr>
+        </template>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-xl ring-1 ring-black/5">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Resumen</p>
+              <p class="text-lg font-semibold text-slate-900">Ganancias y unidades</p>
+            </div>
+            <form method="get" action="{% url 'reportes' %}" class="flex items-center gap-2" data-reportes-year-form>
+              <label for="year-select" class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Año</label>
+              <select id="year-select" name="year" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" data-reportes-year-select>
+                {% for year in years %}
+                  <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+          <div class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-5 py-4 text-white shadow-lg">
+              <p class="text-[12px] uppercase tracking-[0.3em] text-slate-200/80">Total {{ selected_year }}</p>
+              <p class="mt-1 text-3xl font-semibold">{{ total_anual.total|format_price }}</p>
+              <p class="text-sm text-slate-200/80">Ingresos acumulados.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+              <p class="text-[12px] uppercase tracking-[0.3em] text-slate-500">Unidades</p>
+              <p class="mt-1 text-3xl font-semibold text-slate-900">{{ total_anual.unidades|default:0 }}</p>
+              <div class="mt-2 flex flex-wrap gap-2 text-[13px]">
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800">Perfumes: {{ total_por_tipo.PERFUME|default:0 }}</span>
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800">Decants: {{ total_por_tipo.DECANT|default:0 }}</span>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+              <p class="text-[12px] uppercase tracking-[0.3em] text-slate-500">Tienda líder</p>
+              {% with lider=ventas_por_tienda_anual|first %}
+                {% if lider %}
+                  <p class="mt-1 text-xl font-semibold text-slate-900">{{ lider.nombre }}</p>
+                  <p class="text-sm text-slate-500">Ingresos: {{ lider.total|format_price }}</p>
+                {% else %}
+                  <p class="mt-1 text-xl font-semibold text-slate-400">Sin datos</p>
+                {% endif %}
+              {% endwith %}
+            </div>
+          </div>
+          <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+            <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Histórico por año</p>
+            {% if resumen_anual %}
+              <div class="mt-2 overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                  <thead>
+                    <tr class="text-[11px] uppercase tracking-[0.25em] text-slate-500">
+                      <th class="py-2 pr-4">Año</th>
+                      <th class="py-2 pr-4">Ingresos</th>
+                      <th class="py-2 pr-4">Unidades</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    {% for row in resumen_anual %}
+                      <tr>
+                        <td class="py-2 pr-4 font-semibold text-slate-900">{{ row.anio }}</td>
+                        <td class="py-2 pr-4 font-semibold text-slate-800">{{ row.total|format_price }}</td>
+                        <td class="py-2 pr-4 text-slate-700">{{ row.unidades|default:0 }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-sm text-slate-500">Aún no hay datos anuales. Registra una venta para comenzar.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-xl ring-1 ring-black/5">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Detalle mensual</p>
+          <p class="text-lg font-semibold text-slate-900">{{ selected_year }}</p>
+          <p class="text-sm text-slate-500">Perfume y decant más vendidos, tienda líder y ganancias por mes.</p>
+        </div>
+      </div>
+      {% if hay_datos %}
+        <div class="mt-4 space-y-3">
+          <div class="rounded-2xl border border-slate-200 bg-white/90 p-3" data-accordion="year">
+            <button type="button" class="flex w-full items-center justify-between text-left" data-accordion-trigger>
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Año {{ selected_year }}</p>
+                <p class="text-sm font-semibold text-slate-900">Detalle por mes (ventas, unidades, precios)</p>
+              </div>
+              <span class="rounded-full bg-slate-900/90 px-3 py-1 text-[11px] font-semibold text-white shadow" data-accordion-label>Ocultar</span>
+            </button>
+            <div class="mt-3 overflow-hidden transition-all duration-300 ease-in-out" data-accordion-body>
+              <div class="space-y-3">
+                {% for mes in monthly_data %}
+                  {% with month_id='month-data-'|add:mes.mes_num %}
+                  <div class="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm space-y-3" data-month-card data-month-id="{{ mes.mes_num }}">
+                    <div class="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
+                      <button type="button" class="flex items-center gap-3" data-month-toggle>
+                        <span class="rounded-full bg-slate-900/90 px-3 py-1 text-[11px] font-semibold text-white shadow">Mes {{ mes.mes_num }}</span>
+                        <p class="text-base sm:text-lg font-semibold text-slate-900">{{ mes.mes }}</p>
+                      </button>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] font-semibold text-slate-700 hover:bg-slate-50" data-month-edit data-month-json="{{ month_id }}" title="Cargar este mes para editar">
+                          <i class="fa-solid fa-pen-to-square text-slate-500"></i>
+                          <span>Editar</span>
+                        </button>
+                        <div class="text-right">
+                          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Ganancia</p>
+                          <p class="text-xl sm:text-2xl font-semibold text-slate-900">{{ mes.ingreso_total|format_price }}</p>
+                        </div>
+                        <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700" data-month-label>Ocultar</span>
+                      </div>
+                    </div>
+                    <div class="space-y-3" data-month-body>
+                      <div class="grid gap-3 md:grid-cols-3">
+                        <div class="rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+                          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Perfume más vendido</p>
+                          {% if mes.top_perfume %}
+                            <p class="font-semibold text-slate-900">{{ mes.top_perfume.nombre }}</p>
+                            <p class="text-xs text-slate-600">Tienda: {{ mes.top_perfume_tienda }}</p>
+                            <p class="text-xs text-slate-600">Unidades: {{ mes.top_perfume.unidades }}</p>
+                          {% else %}
+                            <p class="text-xs text-slate-500">Sin datos.</p>
+                          {% endif %}
+                        </div>
+                        <div class="rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+                          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Decant más vendido</p>
+                          {% if mes.top_decant %}
+                            <p class="font-semibold text-slate-900">{{ mes.top_decant.nombre }}</p>
+                            <p class="text-xs text-slate-600">Tienda: {{ mes.top_decant_tienda }}</p>
+                            <p class="text-xs text-slate-600">Unidades: {{ mes.top_decant.unidades }}</p>
+                          {% else %}
+                            <p class="text-xs text-slate-500">Sin datos.</p>
+                          {% endif %}
+                        </div>
+                        <div class="rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+                          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Tienda más vendida</p>
+                          {% if mes.top_store %}
+                            <p class="font-semibold text-slate-900">{{ mes.top_store_tienda }}</p>
+                            <p class="text-xs text-slate-600">Ingresos: {{ mes.top_store.ingresos|format_price }}</p>
+                          {% else %}
+                            <p class="text-xs text-slate-500">Sin datos.</p>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-2">Ventas del mes</p>
+                        {% if mes.ventas %}
+                        <div class="divide-y divide-slate-200">
+                          {% for v in mes.ventas %}
+                            <div class="flex flex-col gap-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5" data-month-sale data-nombre="{{ v.nombre }}" data-tipo="{{ v.tipo }}" data-tienda="{{ v.tienda }}" data-unidades="{{ v.unidades }}" data-precio="{{ v.precio_unitario }}" data-fecha="{{ v.fecha_venta|date:'Y-m-d' }}" data-imagen="{{ v.imagen }}">
+                              <div class="flex items-start gap-4">
+                                {% if v.imagen %}
+                                  <div class="w-24 sm:w-28 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                    <img src="{{ v.imagen }}" alt="{{ v.nombre }}" class="h-full w-full object-cover">
+                                  </div>
+                                {% else %}
+                                  <div class="h-20 w-20 flex-shrink-0 rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400 flex items-center justify-center">N/A</div>
+                                {% endif %}
+                                <div class="leading-tight">
+                                  <p class="text-lg sm:text-xl font-semibold text-slate-900">{{ v.nombre }}</p>
+                                  <div class="mt-1 flex flex-wrap gap-3 text-[14px] sm:text-[15px]">
+                                    {% if v.tienda == "SILK" %}
+                                      <span class="inline-flex items-center rounded-full bg-indigo-100 px-3.5 py-1.5 font-semibold text-indigo-800">{{ v.tienda_label }}</span>
+                                    {% elif v.tienda == "YAURAS" %}
+                                      <span class="inline-flex items-center rounded-full bg-amber-100 px-3.5 py-1.5 font-semibold text-amber-800">{{ v.tienda_label }}</span>
+                                    {% elif v.tienda == "JOY" %}
+                                      <span class="inline-flex items-center rounded-full bg-emerald-100 px-3.5 py-1.5 font-semibold text-emerald-800">{{ v.tienda_label }}</span>
+                                    {% else %}
+                                      <span class="inline-flex items-center rounded-full bg-slate-200 px-3.5 py-1.5 font-semibold text-slate-800">{{ v.tienda_label }}</span>
+                                    {% endif %}
+                                    {% if v.tipo == "PERFUME" %}
+                                      <span class="inline-flex items-center rounded-full bg-emerald-100 px-3.5 py-1.5 font-semibold text-emerald-800">{{ v.tipo_label }}</span>
+                                    {% else %}
+                                      <span class="inline-flex items-center rounded-full bg-orange-100 px-3.5 py-1.5 font-semibold text-orange-800">{{ v.tipo_label }}</span>
+                                    {% endif %}
+                                  </div>
+                                  <p class="text-[14px] sm:text-[15px] text-slate-700">Fecha: <span class="font-semibold text-slate-900">{{ v.fecha_venta }}</span></p>
+                                </div>
+                              </div>
+                              <div class="text-right text-sm sm:text-base text-slate-700 space-y-2">
+                                <p>Unidades: <span class="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 font-semibold text-slate-800">{{ v.unidades }}</span></p>
+                                <p>Precio: <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-800">{{ v.precio_unitario|format_price }}</span></p>
+                                <p>Total: <span class="inline-flex items-center rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">{{ v.total|format_price }}</span></p>
+                              </div>
+                            </div>
+                          {% endfor %}
+                          </div>
+                        {% else %}
+                          <p class="text-xs text-slate-500">Sin ventas registradas.</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                    {{ mes.ventas|json_script:month_id }}
+                  </div>
+                  {% endwith %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+          Aún no hay registros. Agrega tu primera venta para ver los líderes por mes.
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>

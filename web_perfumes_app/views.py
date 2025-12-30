@@ -1,31 +1,36 @@
-import requests
-import re
-import urllib.parse
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-from django.contrib import messages
-from django.urls import reverse
-from django.views.decorators.http import require_POST
-from django.core.paginator import Paginator
-from django.db import transaction
-from django.db.models import Q, Avg, Sum, Count, Min, Value, IntegerField, Case, When
-from django.template.loader import render_to_string
-from django.utils import timezone
-from django.utils.text import slugify
-from .models import *
-from django.shortcuts import render, redirect, get_object_or_404   # ← AÑADE get_object_or_404
-from django.contrib import messages
-import time
-import random
-import unicodedata
-import threading
 import atexit
+import random
+import re
+import threading
+import time
+import unicodedata
+import urllib.parse
+from collections import defaultdict
+from datetime import datetime
+
+import requests
+import json
 from botasaurus.browser import Driver, Wait
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
-from collections import defaultdict
+from django import forms
+from django.contrib import messages
+from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Case, Count, IntegerField, Min, Q, Sum, Value, When, F, ExpressionWrapper, Avg
+from django.db.models.functions import ExtractYear
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.text import slugify
+from django.views.decorators.http import require_POST
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
+
+from .models import *
 
 # Create your views here.
 def _parsear_clp(texto):
@@ -1929,6 +1934,48 @@ def proyeccion(request):
         return render(request, "proyeccion_partial.html")
     return render(request, "proyeccion.html")
 
+
+def sugerir_perfumes(request):
+    """
+    Devuelve sugerencias de perfumes/marcas para el buscador.
+    """
+    query = (request.GET.get("q") or "").strip()
+    if not query:
+        return JsonResponse({"results": []})
+
+    palabras = [p.strip() for p in re.split(r'\s+', query) if p.strip()]
+    perfumes_qs = Perfume.objects.select_related("marca")
+    for palabra in palabras:
+        perfumes_qs = perfumes_qs.filter(Q(nombre__icontains=palabra) | Q(marca__marca__icontains=palabra))
+
+    tienda_map = dict(Perfume.TIENDA_CHOICES)
+    resultados = (
+        perfumes_qs.order_by("nombre")
+        .values("nombre", "marca__marca", "imagen", "tienda")
+        .distinct()[:12]
+    )
+    data = []
+    for r in resultados:
+        nombre = r.get("nombre")
+        if not nombre:
+            continue
+        marca = r.get("marca__marca") or ""
+        imagen = r.get("imagen") or ""
+        if imagen and not imagen.startswith("http"):
+            imagen = request.build_absolute_uri(f"{settings.MEDIA_URL}{imagen}")
+        tienda_code = r.get("tienda") or ""
+        tienda_label = tienda_map.get(tienda_code, tienda_code)
+        data.append(
+            {
+                "nombre": nombre,
+                "marca": marca,
+                "imagen": imagen,
+                "tienda": tienda_label,
+                "tienda_code": tienda_code,
+            }
+        )
+    return JsonResponse({"results": data})
+
 # RENDER DE VISTAS
 def home(request):
     _normalizar_marcas_existentes()
@@ -2058,7 +2105,7 @@ def home(request):
     if selected_estacion_slugs:
         if not list_mode:
             perfumes_list = perfumes_list.distinct()
-    paginator = Paginator(perfumes_list, 15)
+    paginator = Paginator(perfumes_list, 16)
     page_number = request.GET.get("page")
     perfumes = paginator.get_page(page_number)
 
@@ -2370,86 +2417,262 @@ def estadisticas(request):
     return render(request, "estadistica.html", context)
 
 
+MESES_ES = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+]
+
+INPUT_CLASSES = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none"
+
+
+class VentaRegistroForm(forms.ModelForm):
+    class Meta:
+        model = VentaRegistro
+        fields = ["nombre", "tipo", "tienda", "unidades", "precio_unitario", "fecha_venta"]
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": INPUT_CLASSES, "placeholder": "Nombre del perfume o decant"}),
+            "tipo": forms.Select(attrs={"class": INPUT_CLASSES}),
+            "tienda": forms.Select(attrs={"class": INPUT_CLASSES}),
+            "unidades": forms.NumberInput(attrs={"class": INPUT_CLASSES, "min": 1, "inputmode": "numeric"}),
+            "precio_unitario": forms.NumberInput(attrs={"class": INPUT_CLASSES, "min": 0, "inputmode": "numeric"}),
+            "fecha_venta": forms.DateInput(attrs={"class": INPUT_CLASSES, "type": "date"}),
+        }
+        labels = {
+            "nombre": "Perfume / decant",
+            "tipo": "Tipo",
+            "tienda": "Tienda",
+            "unidades": "Unidades vendidas",
+            "precio_unitario": "Precio unitario",
+            "fecha_venta": "Fecha de venta",
+        }
+
+    def clean_unidades(self):
+        unidades = self.cleaned_data.get("unidades") or 0
+        if unidades <= 0:
+            raise forms.ValidationError("Ingresa al menos 1 unidad.")
+        return unidades
+
+    def clean_precio_unitario(self):
+        precio = self.cleaned_data.get("precio_unitario") or 0
+        if precio <= 0:
+            raise forms.ValidationError("El precio debe ser mayor a 0.")
+        return precio
+
+
 def reportes(request):
-    """
-    Reporte por tienda: porcentaje de veces que cada tienda tiene el mejor precio
-    comparando perfumes que existen en más de una tienda.
-    """
-    _normalizar_marcas_existentes()
+    tienda_map = dict(Perfume.TIENDA_CHOICES)
+    total_expr = ExpressionWrapper(F("precio_unitario") * F("unidades"), output_field=IntegerField())
+    ventas_qs = VentaRegistro.objects.all()
+    years_available = [d.year for d in ventas_qs.dates("fecha_venta", "year", order="DESC")]
+    current_year = timezone.now().year
 
-    def _clave_comparable(perfume):
-        """
-        Genera una clave normalizada para agrupar perfumes entre tiendas.
-        Usa nombre y marca sin acentos, en minúsculas y sin signos.
-        Limpia tamaño (ml/oz), género y concentración (edt/edp/tester) para
-        agrupar variantes del mismo perfume.
-        """
-        nombre_norm = _normalizar_texto(perfume.nombre)
-        marca_norm = _normalizar_texto(perfume.marca.marca if perfume.marca else "")
-        if not nombre_norm:
-            return None
+    is_partial = (
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or request.GET.get("partial") == "1"
+        or request.POST.get("partial") == "1"
+    )
 
-        def limpiar(txt):
-            base = re.sub(r'[^a-z0-9 ]+', ' ', txt or " ")
-            base = re.sub(r'\b\d+(?:[\.,]\d+)?\s*(?:ml|oz)\b', ' ', base)
-            base = re.sub(r'\b\d+\s*x\s*\d+\b', ' ', base)  # packs tipo 2x100
-            stopwords = {
-                "edt", "edp", "edc", "eau", "toilette", "parfum", "perfume", "tester",
-                "hombre", "mujer", "unisex", "men", "women", "for", "pour",
-            }
-            partes = [p for p in base.split() if p and p not in stopwords]
-            return " ".join(partes).strip()
+    year_param = request.POST.get("year") or request.GET.get("year")
+    try:
+        selected_year = int(year_param) if year_param else None
+    except (TypeError, ValueError):
+        selected_year = None
 
-        nombre_clave = limpiar(nombre_norm)
-        marca_clave = limpiar(marca_norm)
-        return f"{marca_clave}|{nombre_clave}"
+    form_initial = {
+        "fecha_venta": timezone.now().date(),
+        "tipo": VentaRegistro.TIPO_PERFUME,
+        "tienda": Perfume.TIENDA_CHOICES[0][0] if Perfume.TIENDA_CHOICES else None,
+    }
 
-    perfumes = Perfume.objects.all().select_related("marca")
+    if request.method == "POST" and request.headers.get("Content-Type", "").startswith("application/json"):
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+            entries = payload.get("entries") or []
+        except Exception:
+            return JsonResponse({"ok": False, "error": "Formato inválido"}, status=400)
+        nuevos = []
+        for entry in entries:
+            try:
+                nombre = (entry.get("nombre") or "").strip()
+                tipo = entry.get("tipo") or VentaRegistro.TIPO_PERFUME
+                tienda = entry.get("tienda") or Perfume.TIENDA_CHOICES[0][0]
+                unidades = int(entry.get("unidades") or 0)
+                precio_unitario = int(entry.get("precio_unitario") or 0)
+                fecha_txt = entry.get("fecha_venta") or ""
+                fecha_venta = datetime.fromisoformat(fecha_txt).date()
+            except Exception:
+                return JsonResponse({"ok": False, "error": "Datos incompletos o inválidos"}, status=400)
+            if not nombre or unidades <= 0 or precio_unitario <= 0:
+                return JsonResponse({"ok": False, "error": "Nombre, unidades y precio son obligatorios"}, status=400)
+            nuevos.append(
+                VentaRegistro(
+                    nombre=nombre,
+                    tipo=tipo,
+                    tienda=tienda,
+                    unidades=unidades,
+                    precio_unitario=precio_unitario,
+                    fecha_venta=fecha_venta,
+                )
+            )
+        if nuevos:
+            VentaRegistro.objects.bulk_create(nuevos)
+        target_year = nuevos[0].fecha_venta.year if nuevos else selected_year
+        return JsonResponse({"ok": True, "count": len(nuevos), "year": target_year})
+    elif request.method == "POST":
+        form = VentaRegistroForm(request.POST)
+        if form.is_valid():
+            venta = form.save()
+            selected_year = venta.fecha_venta.year
+            messages.success(request, "Venta guardada correctamente.")
+            params = {"year": selected_year}
+            if is_partial:
+                params["partial"] = "1"
+            redirect_url = reverse("reportes")
+            if params:
+                redirect_url = f"{redirect_url}?{urllib.parse.urlencode(params)}"
+            return redirect(redirect_url)
+    else:
+        form = VentaRegistroForm(initial=form_initial)
 
-    grupos = defaultdict(list)
-    for p in perfumes:
-        key = _clave_comparable(p)
-        if not key:
-            continue
-        grupos[key].append(p)
+    # Enriquecer widget del nombre con endpoint de sugerencias
+    try:
+        form.fields["nombre"].widget.attrs.update(
+            {"data-suggest-url": reverse("sugerir_perfumes"), "autocomplete": "off"}
+        )
+    except Exception:
+        pass
 
-    store_best_count = {"SILK": 0, "YAURAS": 0, "JOY": 0}
-    comparables = 0
-    mejores_detalle = {"SILK": [], "YAURAS": [], "JOY": []}
+    if not selected_year:
+        selected_year = years_available[0] if years_available else current_year
 
-    for plist in grupos.values():
-        if len(plist) < 2:
-            continue  # no hay comparación
-        comparables += 1
-        mejor = min(plist, key=lambda x: x.precio or 0)
-        store_best_count[mejor.tienda] = store_best_count.get(mejor.tienda, 0) + 1
-        mejores_detalle[mejor.tienda].append(
+    if selected_year and selected_year not in years_available:
+        years_available = [selected_year] + years_available
+
+    ventas_year = ventas_qs.filter(fecha_venta__year=selected_year)
+
+    # Prefetch imágenes de perfumes por nombre (para detalle mensual)
+    nombres_ventas = list(ventas_year.values_list("nombre", flat=True).distinct())
+    imagen_map = {}
+    if nombres_ventas:
+        for p in Perfume.objects.filter(nombre__in=nombres_ventas).values("nombre", "imagen"):
+            img = p.get("imagen") or ""
+            if img and not str(img).startswith("http"):
+                img = request.build_absolute_uri(f"{settings.MEDIA_URL}{img}")
+            imagen_map.setdefault(p["nombre"], img)
+
+    monthly_data = []
+    for idx, month_name in enumerate(MESES_ES, start=1):
+        month_qs = ventas_year.filter(fecha_venta__month=idx).annotate(total_item=total_expr)
+        ingreso_total = month_qs.aggregate(total=Sum("total_item"))["total"] or 0
+        ventas_detalle = [
             {
-                "nombre": mejor.nombre,
-                "marca": mejor.marca.marca if mejor.marca else "",
-                "precio": mejor.precio,
-                "tienda": mejor.tienda,
+                "nombre": v["nombre"],
+                "tienda": v["tienda"],
+                "tienda_label": tienda_map.get(v["tienda"], v["tienda"]),
+                "tipo": v["tipo"],
+                "tipo_label": "Perfume" if v["tipo"] == VentaRegistro.TIPO_PERFUME else "Decant",
+                "unidades": v["unidades"] or 0,
+                "precio_unitario": v["precio_unitario"] or 0,
+                "total": v["total_item"] or 0,
+                "fecha_venta": v["fecha_venta"],
+                "imagen": imagen_map.get(v["nombre"], ""),
+            }
+            for v in month_qs.values("nombre", "tienda", "tipo", "unidades", "precio_unitario", "total_item", "fecha_venta")
+            .order_by("-fecha_venta", "nombre")
+        ]
+        top_perfume = (
+            month_qs.filter(tipo=VentaRegistro.TIPO_PERFUME)
+            .values("nombre", "tienda")
+            .annotate(unidades=Sum("unidades"), ingresos=Sum("total_item"))
+            .order_by("-unidades", "-ingresos", "nombre")
+            .first()
+        )
+        top_decant = (
+            month_qs.filter(tipo=VentaRegistro.TIPO_DECANT)
+            .values("nombre", "tienda")
+            .annotate(unidades=Sum("unidades"), ingresos=Sum("total_item"))
+            .order_by("-unidades", "-ingresos", "nombre")
+            .first()
+        )
+        top_store = (
+            month_qs.values("tienda")
+            .annotate(ingresos=Sum("total_item"), unidades=Sum("unidades"))
+            .order_by("-ingresos", "tienda")
+            .first()
+        )
+        monthly_data.append(
+            {
+                "mes": month_name,
+                "mes_num": idx,
+                "ingreso_total": ingreso_total,
+                "top_perfume": top_perfume,
+                "top_decant": top_decant,
+                "top_store": top_store,
+                "top_perfume_tienda": tienda_map.get(top_perfume["tienda"], top_perfume["tienda"]) if top_perfume else None,
+                "top_decant_tienda": tienda_map.get(top_decant["tienda"], top_decant["tienda"]) if top_decant else None,
+                "top_store_tienda": tienda_map.get(top_store["tienda"], top_store["tienda"]) if top_store else None,
+                "ventas": ventas_detalle,
             }
         )
 
-    def percent(val):
-        return round((val / comparables) * 100) if comparables else 0
-
-    resumen = [
-        {"tienda": "SILK", "porcentaje": percent(store_best_count.get("SILK", 0)), "total": store_best_count.get("SILK", 0)},
-        {"tienda": "YAURAS", "porcentaje": percent(store_best_count.get("YAURAS", 0)), "total": store_best_count.get("YAURAS", 0)},
-        {"tienda": "JOY", "porcentaje": percent(store_best_count.get("JOY", 0)), "total": store_best_count.get("JOY", 0)},
+    resumen_anual_qs = (
+        ventas_qs.annotate(anio=ExtractYear("fecha_venta"), total_item=total_expr)
+        .values("anio")
+        .annotate(total=Sum("total_item"), unidades=Sum("unidades"))
+        .order_by("-anio")
+    )
+    resumen_anual = [
+        {"anio": int(row["anio"]), "total": row["total"] or 0, "unidades": row["unidades"] or 0}
+        for row in resumen_anual_qs
+    ]
+    total_anual = ventas_year.annotate(total_item=total_expr).aggregate(total=Sum("total_item"), unidades=Sum("unidades"))
+    total_por_tipo = {
+        VentaRegistro.TIPO_PERFUME: 0,
+        VentaRegistro.TIPO_DECANT: 0,
+    }
+    for item in (
+        ventas_year.values("tipo")
+        .annotate(unidades=Sum("unidades"))
+    ):
+        tipo = item.get("tipo")
+        if tipo in total_por_tipo:
+            total_por_tipo[tipo] = item.get("unidades") or 0
+    ventas_por_tienda_anual = [
+        {
+            "tienda": row["tienda"],
+            "total": row["total"] or 0,
+            "unidades": row["unidades"] or 0,
+            "nombre": tienda_map.get(row["tienda"], row["tienda"]),
+        }
+        for row in ventas_year.annotate(total_item=total_expr)
+        .values("tienda")
+        .annotate(total=Sum("total_item"), unidades=Sum("unidades"))
+        .order_by("-total", "tienda")
     ]
 
-    muestras = {}
-    for code, lista in mejores_detalle.items():
-        muestras[code] = sorted(lista, key=lambda x: x["precio"])[:12]
-
     context = {
-        "comparables": comparables,
-        "resumen": resumen,
-        "muestras": muestras,
+        "form": form,
+        "years": years_available,
+        "selected_year": selected_year,
+        "monthly_data": monthly_data,
+        "resumen_anual": resumen_anual,
+        "total_anual": {"total": total_anual.get("total") or 0, "unidades": total_anual.get("unidades") or 0},
+        "total_por_tipo": total_por_tipo,
+        "ventas_por_tienda_anual": ventas_por_tienda_anual,
+        "tienda_map": tienda_map,
+        "hay_datos": ventas_qs.exists(),
+        "today": timezone.now().date(),
     }
-    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("partial") == "1":
+    if is_partial:
         return render(request, "reportes_partial.html", context)
     return render(request, "reportes.html", context)

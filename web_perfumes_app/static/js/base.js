@@ -1042,4 +1042,6 @@
       runRefreshWorkflow();
     });
   }
+
+  // Sugerencias en buscador principal (home) - desactivadas
 })();
