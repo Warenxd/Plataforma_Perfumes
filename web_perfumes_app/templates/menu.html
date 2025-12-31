@@ -107,7 +107,7 @@
     display: none;
   }
   .sidebar-blur {
-    background: linear-gradient(175deg, #0a0b09 0%, #0a0b09 30%, #1d232a 60%, #2c3238 100%);
+    background: linear-gradient(175deg, #090705 0%, #090705 25%, #090705 60%, #090705 100%);
     box-shadow:
       0 24px 60px rgba(0, 0, 0, 0.55),
       inset 0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -197,7 +197,7 @@
          lg:w-[360px] lg:max-w-[360px]
          overflow-hidden">
       <div class="flex items-center justify-center px-3 mt-3">
-        <img src="{% static 'assets/logo-toqueFragante.jpg' %}" alt="Logo Toque Fragante" class="h-40 w-auto drop-shadow-lg" style="clip-path: inset(0 0 20% 0);">
+        <img src="{% static 'assets/toque-fragante-logo.png' %}" alt="Logo Toque Fragante" class="h-24 w-auto drop-shadow-lg;">
       </div>
       <div class="flex items-center justify-between gap-3 pl-2 pr-2">
         <div>
@@ -261,18 +261,18 @@
 
       <!-- Filtros incrustados -->
       <div class="flex-1 min-h-0 space-y-4 overflow-y-auto pr-1">
-        <section id="filters-panel" class="overflow-y-auto lg:max-h-[calc(100vh-260px)] rounded-[18px] bg-[#111218] p-4 ring-1 ring-white/10 backdrop-blur-sm shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+        <section id="filters-panel" class="overflow-y-auto lg:max-h-[calc(100vh-260px)] rounded-[18px] bg-[#090705] p-4 ring-1 ring-white/10 backdrop-blur-sm shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
           <form id="filters-form" method="get" class="space-y-5">
             <div class="flex items-center justify-between gap-3">
-              <p class="text-[11px] uppercase tracking-[0.3em] text-slate-200">Filtros</p>
+              <p class="text-[11px] uppercase tracking-[0.3em] text-slate-100">Filtros</p>
             </div>
 
-            <div class="space-y-5 rounded-2xl bg-[#151924] p-4 ring-1 ring-[#222938] shadow-inner">
+            <div class="space-y-5 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
-                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-300">Marcas</p>
-                    <p class="text-xs text-slate-400">Selecciona una o varias marcas.</p>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-200">Marcas</p>
+                    <p class="text-xs text-slate-300">Selecciona una o varias marcas.</p>
                   </div>
                   <button
                     type="button"
@@ -281,11 +281,11 @@
                     Limpiar
                   </button>
                 </summary>
-                <div class="max-h-[46vh] space-y-2 overflow-y-auto rounded-xl border border-[#222938] bg-[#0f1016] p-3 shadow-inner filter-scroll">
+                <div class="max-h-[46vh] space-y-2 overflow-y-auto rounded-xl border border-[#1f2630] bg-[#0c0f16] p-3 shadow-inner filter-scroll">
                   {% if marcas %}
                     {% for marca in marcas %}
                     {% with marca_id=marca.id|stringformat:"s" %}
-                    <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1f2532] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2d3547] hover:bg-[#151b28]">
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2430] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2a3342] hover:bg-[#121924]">
                       <span class="truncate">{{ marca.marca }}</span>
                       <input
                         type="checkbox"
@@ -304,12 +304,12 @@
               </details>
             </div>
 
-            <div class="space-y-4 rounded-2xl bg-[#151924] p-4 ring-1 ring-[#222938] shadow-inner">
+            <div class="space-y-4 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
-                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-300">Géneros</p>
-                    <p class="text-xs text-slate-400">Escoge Hombre, Unisex o ambos.</p>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-200">Géneros</p>
+                    <p class="text-xs text-slate-300">Escoge Hombre, Unisex o ambos.</p>
                   </div>
                   <button
                     type="button"
@@ -323,7 +323,7 @@
                     {% for genero in generos %}
                     {% if genero.nombre != "Mujer" %}
                     {% with genero_id=genero.id|stringformat:"s" %}
-                    <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1f2532] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2d3547] hover:bg-[#151b28]">
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2430] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2a3342] hover:bg-[#121924]">
                       <span class="truncate">{{ genero.nombre }}</span>
                       <input
                         type="checkbox"
@@ -343,12 +343,12 @@
               </details>
             </div>
 
-            <div class="space-y-4 rounded-2xl bg-[#151924] p-4 ring-1 ring-[#222938] shadow-inner">
+            <div class="space-y-4 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
-                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-300">Tiendas</p>
-                    <p class="text-xs text-slate-400">Filtra por tienda.</p>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-200">Tiendas</p>
+                    <p class="text-xs text-slate-300">Filtra por tienda.</p>
                   </div>
                   <button
                     type="button"
@@ -359,7 +359,7 @@
                 </summary>
                 <div class="space-y-2">
                   {% for tienda in tiendas %}
-                  <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1f2532] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2d3547] hover:bg-[#151b28]">
+                  <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2430] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2a3342] hover:bg-[#121924]">
                     <span class="truncate">{{ tienda.label }}</span>
                     <input
                       type="checkbox"
@@ -376,12 +376,12 @@
               </details>
             </div>
 
-            <div class="space-y-4 rounded-2xl bg-[#151924] p-4 ring-1 ring-[#222938] shadow-inner">
+            <div class="space-y-4 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
-                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-300">Estaciones</p>
-                    <p class="text-xs text-slate-400">Filtra por estación dominante.</p>
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-slate-200">Estaciones</p>
+                    <p class="text-xs text-slate-300">Filtra por estación dominante.</p>
                   </div>
                   <button
                     type="button"
@@ -393,7 +393,7 @@
                 <div class="space-y-2">
                   {% if estaciones_filtro %}
                     {% for estacion in estaciones_filtro %}
-                    <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1f2532] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2d3547] hover:bg-[#151b28]">
+                    <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2430] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2a3342] hover:bg-[#121924]">
                       <span class="truncate">{{ estacion.label }}</span>
                       <input
                         type="checkbox"
