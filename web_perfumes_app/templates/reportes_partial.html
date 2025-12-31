@@ -2,13 +2,8 @@
 <style>
   [data-reportes-table-wrapper] {
     width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  touch-action: pan-x;
-  scrollbar-gutter: stable;
+    max-width: 100%;
+    overflow: visible;
   }
   [data-reportes-table] {
     width: max-content;
@@ -32,10 +27,8 @@
     scrollbar-gutter: stable;
   }
   [data-reportes-scroll-content] {
-    min-width: 720px;
-  }
-  [data-reportes-scroll-content][data-size="wide"] {
-    min-width: 1024px;
+    display: inline-block;
+    min-width: 100%;
   }
   [data-reportes-table-wrapper]::-webkit-scrollbar {
     height: 10px;
