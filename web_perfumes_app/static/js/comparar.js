@@ -260,10 +260,11 @@
 
       decants.forEach((decant) => {
         const row = document.createElement("div");
-        row.className = "grid grid-cols-12 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm";
+        row.className =
+          "grid grid-cols-12 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm decant-row";
 
         const mlWrapper = document.createElement("div");
-        mlWrapper.className = "col-span-3 flex items-center gap-1.5";
+        mlWrapper.className = "col-span-3 flex items-center gap-1.5 decant-field";
         const mlLabel = document.createElement("span");
         mlLabel.className = "text-slate-500 text-sm";
         mlLabel.textContent = "ML";
@@ -279,7 +280,7 @@
         mlWrapper.append(mlLabel, mlInput);
 
         const precioWrapper = document.createElement("div");
-        precioWrapper.className = "col-span-3 flex items-center gap-1.5";
+        precioWrapper.className = "col-span-3 flex items-center gap-1.5 decant-field";
         const precioLabel = document.createElement("span");
         precioLabel.className = "text-slate-500 text-sm";
         precioLabel.textContent = "$";
@@ -299,7 +300,7 @@
         precioWrapper.append(precioLabel, precioInput);
 
         const cantidadWrapper = document.createElement("div");
-        cantidadWrapper.className = "col-span-3 flex items-center gap-1.5";
+        cantidadWrapper.className = "col-span-3 flex items-center gap-1.5 decant-field";
         const cantidadLabel = document.createElement("span");
         cantidadLabel.className = "text-slate-500 text-sm";
         cantidadLabel.textContent = "Cant";
@@ -316,7 +317,7 @@
         cantidadWrapper.append(cantidadLabel, cantidadInput);
 
         const actionsWrapper = document.createElement("div");
-        actionsWrapper.className = "col-span-3 flex items-center justify-end gap-3";
+        actionsWrapper.className = "col-span-3 flex items-center justify-end gap-3 decant-actions";
         const totalDecant = (Number(decant.precio) || 0) * (Number(decant.cantidad) || 0);
         const totalTag = document.createElement("span");
         totalTag.className = "rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700";

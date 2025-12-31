@@ -1,7 +1,32 @@
 {% load format_price %}
+<style>
+  [data-reportes-root] {
+    overflow-x: auto;
+  }
+  [data-reportes-table-wrapper] {
+    width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  }
+  [data-reportes-table-wrapper]::-webkit-scrollbar {
+    height: 10px;
+  }
+  [data-reportes-table-wrapper]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  [data-reportes-table-wrapper]::-webkit-scrollbar-thumb {
+    background: linear-gradient(120deg, rgba(15, 23, 42, 0.65), rgba(79, 70, 229, 0.65));
+    border-radius: 999px;
+  }
+</style>
+
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100" data-reportes-root>
-  <div class="mx-auto max-w-[125vw] px-3 sm:px-5 lg:px-6 py-10 space-y-8 animate__animated animate__fadeInUp">
-    <div class="flex items-center justify-between gap-4">
+  <div class="w-full max-w-6xl mx-auto px-3 sm:px-5 lg:px-6 py-10 space-y-8 animate__animated animate__fadeInUp">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p class="text-[11px] uppercase tracking-[0.35em] text-slate-500">Reportes</p>
         <h1 class="text-3xl font-semibold text-slate-900">Ventas y ganancias</h1>
@@ -36,49 +61,50 @@
           {% csrf_token %}
           <input type="hidden" name="year" value="{{ selected_year }}">
           <p class="text-xs text-slate-500">Agrega varias filas y guarda todo junto.</p>
-          <div class="flex items-center justify-between gap-2">
-            <button type="button" data-reportes-add-row class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+          <div class="flex flex-wrap items-center gap-3 justify-between sm:justify-start" data-reportes-actions>
+            <button type="button" data-reportes-add-row class="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 sm:flex-none sm:w-auto">
               <i class="fa-solid fa-plus"></i>
               <span>Agregar fila</span>
             </button>
-            <button type="button" data-reportes-clear-rows class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+            <button type="button" data-reportes-clear-rows class="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 sm:flex-none sm:w-auto">
               <i class="fa-solid fa-eraser"></i>
               <span>Limpiar tabla</span>
             </button>
-            <button type="button" data-reportes-save-rows class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800">
+            <button type="button" data-reportes-save-rows class="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800 sm:flex-none sm:w-auto">
               <i class="fa-solid fa-floppy-disk"></i>
               <span>Guardar todo</span>
             </button>
           </div>
-          <div class="overflow-x-auto overflow-y-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table class="w-full min-w-[1400px] text-sm">
+          <div class="w-full rounded-2xl border border-slate-200 bg-white shadow-sm overflow-x-auto" data-reportes-table-wrapper>
+            <table class="min-w-[900px] sm:min-w-[980px] lg:min-w-[1180px] text-sm">
               <thead class="bg-slate-50 text-[11px] uppercase tracking-[0.2em] text-slate-500">
                 <tr>
-                  <th class="py-2 px-3 text-left w-[110px]">Imagen</th>
-                  <th class="py-2 px-3 text-left w-[320px]">Producto</th>
-                  <th class="py-2 px-3 text-left">Tipo</th>
-                  <th class="py-2 px-3 text-left w-[140px]">Tienda</th>
-                  <th class="py-2 px-3 text-right w-[90px]">Unidades</th>
-                  <th class="py-2 px-3 text-right w-[120px]">Precio unit.</th>
-                  <th class="py-2 px-3 text-right">Total</th>
-                  <th class="py-2 px-3 text-left w-[150px]">Fecha</th>
-                  <th class="py-2 px-3 text-right">Acciones</th>
+                  <th class="py-2 px-3 text-left w-[90px]">Imagen</th>
+                  <th class="py-2 px-3 text-left w-[260px]">Producto</th>
+                  <th class="py-2 px-3 text-left w-[110px]">Tipo</th>
+                  <th class="py-2 px-3 text-left w-[120px]">Tienda</th>
+                  <th class="py-2 px-3 text-right w-[70px]">Unidades</th>
+                  <th class="py-2 px-3 text-right w-[100px]">Precio unit.</th>
+                  <th class="py-2 px-3 text-right w-[110px]">Total</th>
+                  <th class="py-2 px-3 text-left w-[130px]">Fecha</th>
+                  <th class="py-2 px-3 text-right w-[110px]">Acciones</th>
                 </tr>
               </thead>
               <tbody data-reportes-table-body>
               </tbody>
             </table>
           </div>
+          <p class="text-[11px] text-slate-500">Desliza horizontalmente sobre la tabla para ver todas las columnas.</p>
           <input type="hidden" data-reportes-default-fecha value="{{ form.initial.fecha_venta|default:form.fecha_venta.value|default:today }}">
         </form>
         <template id="reportes-row-template">
           <tr class="border-b border-slate-100" data-reportes-row>
-            <td class="py-2 px-3 align-middle w-[140px]">
-              <div class="h-20 w-20 max-h-24 max-w-24 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center" data-reportes-thumb>
+            <td class="py-2 px-3 align-middle w-[100px]">
+              <div class="h-16 w-16 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center" data-reportes-thumb>
                 <span class="text-[12px] font-semibold text-slate-400">Img</span>
               </div>
             </td>
-            <td class="py-2 px-3 align-middle w-[320px]">
+            <td class="py-2 px-3 align-middle w-[260px]">
               <div class="space-y-1 relative">
                 <input type="text" name="nombre" autocomplete="off" data-suggest-url="{% url 'sugerir_perfumes' %}" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" placeholder="Nombre del perfume/decant">
                 <div class="absolute left-0 right-0 z-30 mt-1 hidden rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 overflow-hidden" data-reportes-suggestions>
@@ -86,31 +112,31 @@
                 </div>
               </div>
             </td>
-            <td class="py-2 px-3 align-middle w-[140px]">
+            <td class="py-2 px-3 align-middle w-[110px]">
               <select name="tipo" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none">
                 {% for value, label in form.fields.tipo.choices %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
             </td>
-            <td class="py-2 px-3 align-middle">
+            <td class="py-2 px-3 align-middle w-[120px]">
               <select name="tienda" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none">
                 {% for value, label in form.fields.tienda.choices %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
             </td>
-            <td class="py-2 px-3 align-middle w-[90px]">
+            <td class="py-2 px-3 align-middle w-[80px]">
               <input type="number" min="1" name="unidades" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 text-right focus:border-indigo-400 focus:outline-none" value="1">
             </td>
-            <td class="py-2 px-3 align-middle w-[120px]">
+            <td class="py-2 px-3 align-middle w-[100px]">
               <input type="number" min="0" name="precio_unitario" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 text-right focus:border-indigo-400 focus:outline-none" value="0">
             </td>
-            <td class="py-2 px-3 align-middle text-right" data-row-total>$0</td>
-            <td class="py-2 px-3 align-middle w-[150px]">
+            <td class="py-2 px-3 align-middle text-right w-[110px]" data-row-total>$0</td>
+            <td class="py-2 px-3 align-middle w-[130px]">
               <input type="date" name="fecha_venta" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" value="{{ form.initial.fecha_venta|default:form.fecha_venta.value|default:today }}">
             </td>
-            <td class="py-2 px-3 align-middle text-right">
+            <td class="py-2 px-3 align-middle text-right w-[110px]">
               <button type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-500" data-reportes-remove-row>Quitar</button>
             </td>
           </tr>
@@ -133,7 +159,7 @@
               </select>
             </form>
           </div>
-          <div class="grid gap-4 md:grid-cols-3">
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-5 py-4 text-white shadow-lg">
               <p class="text-[12px] uppercase tracking-[0.3em] text-slate-200/80">Total {{ selected_year }}</p>
               <p class="mt-1 text-3xl font-semibold">{{ total_anual.total|format_price }}</p>
@@ -142,9 +168,15 @@
             <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
               <p class="text-[12px] uppercase tracking-[0.3em] text-slate-500">Unidades</p>
               <p class="mt-1 text-3xl font-semibold text-slate-900">{{ total_anual.unidades|default:0 }}</p>
-              <div class="mt-2 flex flex-wrap gap-2 text-[13px]">
-                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800">Perfumes: {{ total_por_tipo.PERFUME|default:0 }}</span>
-                <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800">Decants: {{ total_por_tipo.DECANT|default:0 }}</span>
+              <div class="mt-2 flex flex-col gap-2 text-[13px]">
+                <div class="flex items-center justify-between rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800">
+                  <span>Perfumes</span>
+                  <span>{{ total_por_tipo.PERFUME|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800">
+                  <span>Decants</span>
+                  <span>{{ total_por_tipo.DECANT|default:0 }}</span>
+                </div>
               </div>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">

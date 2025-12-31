@@ -29,18 +29,19 @@
         box-sizing: border-box;
         width: 100%;
         height: 100%;
-        min-height: 590px;
+        min-height: 610px;
         max-width: 600px;
         background:
-            radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.07), transparent 32%),
-            radial-gradient(circle at 85% 18%, rgba(14, 165, 233, 0.06), transparent 34%),
-            #ffffff;
-        border: 1px solid rgba(15, 23, 42, 0.12);
-        box-shadow:
-            0 18px 40px rgba(15, 23, 42, 0.16),
-            0 1px 0 rgba(255, 255, 255, 0.6);
+            radial-gradient(circle at 12% 12%, rgba(59, 130, 246, 0.25), transparent 35%),
+            radial-gradient(circle at 85% 18%, rgba(236, 72, 153, 0.2), transparent 38%),
+            #050914;
+        border: 1px solid rgba(226, 232, 240, 0.18);
+        box-shadow: 0 26px 55px rgba(15, 23, 42, 0.16);
         backdrop-filter: blur(6px);
         border-radius: 20px;
+        clip-path: inset(0 round 20px);
+        position: relative;
+        isolation: isolate;
         text-align: left;
         cursor: pointer;
         transition: all 0.5s;
@@ -48,7 +49,7 @@
         flex-direction: column;
         user-select: none;
         color: black;
-        overflow: hidden;
+        overflow: visible;
         justify-content: space-between;
     }
 
@@ -86,7 +87,7 @@
 
     .card-price {
         position: absolute;
-        bottom: 90px;
+        bottom: 110px;
         left: 0;
         width: 100%;
         text-align: center;
@@ -94,7 +95,7 @@
 
     .compare-section {
         position: absolute;
-        bottom: 18px;
+        bottom: 30px;
         left: 0;
         width: 100%;
         display: flex;
@@ -104,52 +105,72 @@
     }
 
     .compare-btn {
-        position: relative;
-        overflow: hidden;
-        background: linear-gradient(135deg, #0f172a, #1f2937);
-        color: #e2e8f0;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 14px;
-        padding: 0.5rem 1.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        background-color: #101a32;
+        color: #f8fafc;
+        padding: 0.55rem 1.35rem;
         font-weight: 600;
-        letter-spacing: 0.01em;
+        letter-spacing: 0.02em;
         cursor: pointer;
-        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
-        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, filter 0.18s ease;
-    }
-
-    .compare-btn::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 40%),
-                    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.08), transparent 40%);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        pointer-events: none;
+        transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
     }
 
     .compare-btn:hover {
+        background-color: #172442;
         transform: translateY(-1px);
-        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.26);
-        border-color: rgba(255, 255, 255, 0.2);
-        filter: saturate(1.04);
-    }
-
-    .compare-btn:hover::after {
-        opacity: 1;
     }
 
     .compare-btn:active {
         transform: translateY(0);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
+    }
+
+    .decant-row {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .decant-row .decant-field {
+        min-width: 0;
+    }
+
+    .decant-row .decant-actions {
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 1024px) {
+        .decant-row {
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .decant-row {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .decant-row .decant-field,
+        .decant-row .decant-actions {
+            flex: 0 0 140px;
+            grid-column: auto;
+        }
+
+        .decant-row .decant-actions {
+            flex: 0 0 170px;
+            justify-content: flex-start;
+            gap: 0.75rem;
+        }
     }
 
     .flip-card {
         background-color: transparent;
         width: min(100%, 360px);
         max-width: 380px;
-        min-height: clamp(560px, 70vh, 700px);
+        min-height: clamp(640px, 72vh, 760px);
         height: auto; /* permite crecer con el contenido en vistas móviles */
         margin-inline: auto;
         perspective: 1000px;
@@ -334,8 +355,10 @@
     }
 
     .download-btn {
-        position: relative;
-        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
         background: linear-gradient(135deg, #0f172a, #1e293b);
         color: #e2e8f0;
         font-weight: 700;
@@ -343,35 +366,17 @@
         border-radius: 14px;
         border: 1px solid rgba(226, 232, 240, 0.18);
         cursor: pointer;
-        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
-    }
-
-    .download-btn::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 45%),
-                    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.08), transparent 40%);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        pointer-events: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
     .download-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.26);
-        border-color: rgba(226, 232, 240, 0.35);
-        filter: saturate(1.03);
-    }
-
-    .download-btn:hover::after {
-        opacity: 1;
+        transform: translateY(-1px);
+        border-color: rgba(226, 232, 240, 0.3);
     }
 
     .download-btn:active {
         transform: translateY(0);
-        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.24);
     }
 
     @media (max-width: 640px) {
