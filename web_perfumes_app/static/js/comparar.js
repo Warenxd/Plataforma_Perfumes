@@ -233,12 +233,23 @@
       const decantCount = document.createElement("span");
       decantCount.textContent = `Decants (${decants.length})`;
       const decantTotalLabel = document.createElement("span");
+      const decantMetrics = document.createElement("div");
+      decantMetrics.className = "flex items-center gap-2 text-[12px]";
       const decantTotal = decants.reduce(
         (acc, d) => acc + (Number(d.precio) || 0) * (Number(d.cantidad) || 0),
         0
       );
+      const decantMlTotal = decants.reduce(
+        (acc, d) => acc + (Number(d.ml) || 0) * (Number(d.cantidad) || 0),
+        0
+      );
+      const decantMlLabel = document.createElement("span");
+      decantMlLabel.className = "rounded-full bg-slate-200 px-2.5 py-1 text-[12px] font-semibold text-slate-700";
+      decantMlLabel.textContent = `Total ml: ${formatPlainNumber(decantMlTotal)}`;
+      decantTotalLabel.className = "rounded-full bg-indigo-100 px-2.5 py-1 text-[12px] font-semibold text-indigo-700";
       decantTotalLabel.textContent = `Total: ${formatPriceCLP(decantTotal)}`;
-      decantHeader.append(decantCount, decantTotalLabel);
+      decantMetrics.append(decantMlLabel, decantTotalLabel);
+      decantHeader.append(decantCount, decantMetrics);
       decantBox.appendChild(decantHeader);
 
       const decantList = document.createElement("div");
