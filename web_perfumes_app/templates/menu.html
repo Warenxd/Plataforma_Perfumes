@@ -309,7 +309,7 @@
                 <div class="space-y-2">
                   {% if generos %}
                     {% for genero in generos %}
-                    {% if genero.nombre != "Mujer" %}
+                    {% if genero.nombre != "Mujer" and genero.nombre != "Arabe" %}
                     {% with genero_id=genero.id|stringformat:"s" %}
                     <label class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2430] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2a3342] hover:bg-[#121924]">
                       <span class="truncate">{{ genero.nombre }}</span>

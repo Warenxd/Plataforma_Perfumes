@@ -803,6 +803,7 @@ def actualizar_acordes_todos():
 @require_POST
 def descargar_acordes_individual(request, perfume_id):
     perfume = get_object_or_404(Perfume, id=perfume_id)
+    es_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in (request.headers.get("accept") or "")
     
     if not perfume.fragrantica_url:
         encontrada = _buscar_fragrantica_con_driver(perfume.nombre)
@@ -811,7 +812,10 @@ def descargar_acordes_individual(request, perfume_id):
             perfume.save(update_fields=["fragrantica_url"])
             print(f"[Fragrantica] URL encontrada y guardada: {encontrada}")
         else:
-            messages.error(request, f"No se pudo encontrar URL de Fragrantica para {perfume.nombre}")
+            if not es_ajax:
+                messages.error(request, f"No se pudo encontrar URL de Fragrantica para {perfume.nombre}")
+            if es_ajax:
+                return JsonResponse({"ok": False, "message": "No se pudo encontrar URL de Fragrantica"}, status=400)
             return redirect('home')
     
     try:
@@ -869,10 +873,12 @@ def descargar_acordes_individual(request, perfume_id):
 
         if datos_guardados:
             success_msg = f"¡Acordes y notas cargados para {perfume.nombre}!"
-            messages.success(request, success_msg)
+            if not es_ajax:
+                messages.success(request, success_msg)
         else:
             success_msg = f"No se encontraron acordes ni notas para {perfume.nombre}"
-            messages.info(request, success_msg)
+            if not es_ajax:
+                messages.info(request, success_msg)
 
         # Refrescar instancia (incluyendo relaciones) para devolver HTML actualizado
         perfume = (
@@ -881,7 +887,7 @@ def descargar_acordes_individual(request, perfume_id):
             .get(pk=perfume.id)
         )
 
-        if request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in (request.headers.get("accept") or ""):
+        if es_ajax:
             card_html = render_to_string("components/perfume_card.html", {"p": perfume}, request=request)
             updated_cards = []
             for otro in propagados:
@@ -906,8 +912,9 @@ def descargar_acordes_individual(request, perfume_id):
 
     except Exception as e:
         error_msg = f"Error al cargar acordes: {e}"
-        messages.error(request, error_msg)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in (request.headers.get("accept") or ""):
+        if not es_ajax:
+            messages.error(request, error_msg)
+        if es_ajax:
             return JsonResponse({"ok": False, "message": error_msg, "nombre": perfume.nombre}, status=400)
         return redirect('home')
 

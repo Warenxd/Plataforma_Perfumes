@@ -2226,6 +2226,11 @@
       min-width: 1180px;
     }
   }
+  .lg\:min-w-\[1380px\] {
+    @media (width >= 64rem) {
+      min-width: 1380px;
+    }
+  }
   .lg\:grid-cols-1 {
     @media (width >= 64rem) {
       grid-template-columns: repeat(1, minmax(0, 1fr));
