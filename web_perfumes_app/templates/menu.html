@@ -119,11 +119,11 @@
   #filters-panel,
   .filter-scroll {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
   }
   #filters-panel::-webkit-scrollbar,
   .filter-scroll::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
   #filters-panel::-webkit-scrollbar-track,
   .filter-scroll::-webkit-scrollbar-track {
@@ -131,8 +131,9 @@
   }
   #filters-panel::-webkit-scrollbar-thumb,
   .filter-scroll::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15));
+    background: rgba(255, 255, 255, 0.32);
     border-radius: 999px;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0) inset, 0 6px 12px rgba(0, 0, 0, 0.25);
   }
   @media (min-width: 640px) {
     .sm\:table-cell {
@@ -195,7 +196,7 @@
       class="sidebar-panel w-full flex-shrink-0 space-y-3 bg-slate-900/70 px-4 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur sidebar-blur lg:sticky lg:top-0
          lg:h-screen lg:max-h-screen
          lg:w-[360px] lg:max-w-[360px]
-         overflow-hidden">
+         overflow-hidden flex flex-col">
       <div class="flex items-center justify-center px-3 mt-3">
         <img src="{% static 'assets/toque-fragante-logo.png' %}" alt="Logo Toque Fragante" class="h-24 w-auto drop-shadow-lg;">
       </div>
@@ -260,14 +261,14 @@
       <div class="h-px bg-white/10"></div>
 
       <!-- Filtros incrustados -->
-      <div class="flex-1 min-h-0 space-y-4 overflow-y-auto pr-1">
-        <section id="filters-panel" class="overflow-y-auto lg:max-h-[calc(100vh-260px)] rounded-[18px] bg-[#090705] p-4 ring-1 ring-white/10 backdrop-blur-sm shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+      <div class="flex-1 min-h-0 overflow-y-auto pr-1 filter-scroll">
+        <section id="filters-panel" class="space-y-5 overflow-visible rounded-[18px] bg-[#0e0e0e] p-4 ring-1 ring-white/10 backdrop-blur-sm shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
           <form id="filters-form" method="get" class="space-y-5">
             <div class="flex items-center justify-between gap-3">
-              <p class="text-[11px] uppercase tracking-[0.3em] text-slate-100">Filtros</p>
+              <p class="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-100">Filtros</p>
             </div>
 
-            <div class="space-y-5 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
+            <div class="space-y-5 rounded-2xl bg-[#0a0a0a] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
@@ -281,7 +282,7 @@
                     Limpiar
                   </button>
                 </summary>
-                <div class="max-h-[46vh] space-y-2 overflow-y-auto rounded-xl border border-[#1f2630] bg-[#0c0f16] p-3 shadow-inner filter-scroll">
+                <div class="max-h-[46vh] space-y-2 overflow-y-auto rounded-xl border border-[#1f2630] bg-[#0a0a0a] p-3 shadow-inner filter-scroll">
                   {% if marcas %}
                     {% for marca in marcas %}
                     {% with marca_id=marca.id|stringformat:"s" %}
@@ -304,7 +305,7 @@
               </details>
             </div>
 
-            <div class="space-y-4 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
+            <div class="space-y-4 rounded-2xl bg-[#0a0a0a] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
@@ -343,7 +344,7 @@
               </details>
             </div>
 
-            <div class="space-y-4 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
+            <div class="space-y-4 rounded-2xl bg-[#0a0a0a] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
@@ -376,7 +377,7 @@
               </details>
             </div>
 
-            <div class="space-y-4 rounded-2xl bg-[#111821] p-4 ring-1 ring-[#1f2630] shadow-inner">
+            <div class="space-y-4 rounded-2xl bg-[#0a0a0a] p-4 ring-1 ring-[#1f2630] shadow-inner">
               <details open class="space-y-3">
                 <summary class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm font-semibold text-slate-100 hover:text-white">
                   <div>
