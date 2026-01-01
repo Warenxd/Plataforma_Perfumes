@@ -158,6 +158,7 @@
           const currentMonthCard = currentRoot.querySelector(`[data-month-card][data-month-id="${monthId}"]`);
           if (newMonthCard && currentMonthCard && currentMonthCard.parentNode) {
             currentMonthCard.replaceWith(newMonthCard);
+            initReportes(root);
             return;
           }
         }
