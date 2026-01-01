@@ -1669,6 +1669,9 @@
   .ring-indigo-100 {
     --tw-ring-color: var(--color-indigo-100);
   }
+  .ring-rose-100 {
+    --tw-ring-color: var(--color-rose-100);
+  }
   .ring-slate-100 {
     --tw-ring-color: var(--color-slate-100);
   }
@@ -1865,6 +1868,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-indigo-400);
+      }
+    }
+  }
+  .hover\:bg-rose-100 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-rose-100);
       }
     }
   }

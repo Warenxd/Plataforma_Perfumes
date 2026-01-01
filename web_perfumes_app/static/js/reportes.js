@@ -17,8 +17,19 @@
           return;
         }
         const html = await res.text();
-        root.innerHTML = html;
-        initReportes(root);
+        // Reemplazar solo el contenedor de reportes para evitar re-render completo
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const newRoot = doc.querySelector("[data-reportes-root]");
+        const currentRoot = root.querySelector("[data-reportes-root]");
+        if (newRoot && currentRoot && currentRoot.parentNode) {
+          currentRoot.replaceWith(newRoot);
+          initReportes(root);
+        } else {
+          // fallback
+          root.innerHTML = html;
+          initReportes(root);
+        }
       } catch (error) {
         console.error("Error cargando reportes:", error);
       }
@@ -94,6 +105,74 @@
       const n = Number(val) || 0;
       return n.toLocaleString("es-CL", { minimumFractionDigits: 0 });
     };
+
+    // Eliminar venta desde el detalle mensual
+    container.addEventListener("click", async (event) => {
+      const deleteBtn = event.target.closest("[data-reportes-delete]");
+      if (!deleteBtn) return;
+      const deleteUrl = deleteBtn.dataset.deleteUrl;
+      const yearSelect = container.querySelector("[data-reportes-year-select]");
+      const selectedYear = yearSelect ? yearSelect.value : null;
+       const monthCard = deleteBtn.closest("[data-month-card]");
+       const monthId = monthCard ? monthCard.dataset.monthId : null;
+      if (!deleteUrl || !csrfToken) return;
+      deleteBtn.disabled = true;
+      try {
+        const res = await fetch(deleteUrl, {
+          method: "POST",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": csrfToken,
+          },
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || data.ok === false) {
+          console.error("No se pudo eliminar la venta");
+          deleteBtn.disabled = false;
+          return;
+        }
+        const yearForm = container.querySelector("[data-reportes-year-form]");
+        const baseUrl = yearForm ? yearForm.getAttribute("action") : window.location.pathname;
+        const params = new URLSearchParams();
+        if (selectedYear) params.set("year", selectedYear);
+        params.set("partial", "1");
+        const url = new URL(baseUrl, window.location.origin);
+        url.search = params.toString();
+
+        const resPartial = await fetch(url.toString(), {
+          method: "GET",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!resPartial.ok) {
+          window.location.href = url.toString();
+          return;
+        }
+        const html = await resPartial.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const newRoot = doc.querySelector("[data-reportes-root]");
+        const currentRoot = root.querySelector("[data-reportes-root]");
+
+        if (monthId && newRoot && currentRoot) {
+          const newMonthCard = newRoot.querySelector(`[data-month-card][data-month-id="${monthId}"]`);
+          const currentMonthCard = currentRoot.querySelector(`[data-month-card][data-month-id="${monthId}"]`);
+          if (newMonthCard && currentMonthCard && currentMonthCard.parentNode) {
+            currentMonthCard.replaceWith(newMonthCard);
+            return;
+          }
+        }
+        // fallback: reemplazar todo el contenedor de reportes
+        if (newRoot && currentRoot && currentRoot.parentNode) {
+          currentRoot.replaceWith(newRoot);
+          initReportes(root);
+        } else {
+          replaceContent(url.toString(), { method: "GET" });
+        }
+      } catch (error) {
+        console.error("Error eliminando venta", error);
+        deleteBtn.disabled = false;
+      }
+    });
 
     if (tableBody && tableBody.childNodes.length && !tableBody.querySelector("[data-reportes-row]")) {
       tableBody.innerHTML = "";

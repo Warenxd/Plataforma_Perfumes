@@ -2036,6 +2036,16 @@ def estado_refresco(request):
         data = REFRESH_STATUS
     return JsonResponse({"ok": True, "status": data})
 
+@require_POST
+def eliminar_venta(request, venta_id):
+    try:
+        venta = VentaRegistro.objects.get(pk=venta_id)
+        year = venta.fecha_venta.year
+        venta.delete()
+        return JsonResponse({"ok": True, "year": year})
+    except VentaRegistro.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Venta no encontrada"}, status=404)
+
 
 def analizar(request):
     """
@@ -2705,6 +2715,7 @@ def reportes(request):
         ingreso_total = month_qs.aggregate(total=Sum("total_item"))["total"] or 0
         ventas_detalle = [
             {
+                "id": v["id"],
                 "nombre": v["nombre"],
                 "tienda": v["tienda"],
                 "tienda_label": tienda_map.get(v["tienda"], v["tienda"]),
@@ -2716,7 +2727,7 @@ def reportes(request):
                 "fecha_venta": v["fecha_venta"],
                 "imagen": imagen_map.get(v["nombre"], ""),
             }
-            for v in month_qs.values("nombre", "tienda", "tipo", "unidades", "precio_unitario", "total_item", "fecha_venta")
+            for v in month_qs.values("id", "nombre", "tienda", "tipo", "unidades", "precio_unitario", "total_item", "fecha_venta")
             .order_by("-fecha_venta", "nombre")
         ]
         top_perfume = (

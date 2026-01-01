@@ -10,6 +10,7 @@ urlpatterns = [
     path('perfumes/refresh/status/', views.estado_refresco, name="estado_refresco"),
     path('perfumes/sugerencias/', views.sugerir_perfumes, name='sugerir_perfumes'),
     path('descargar-acordes/<int:perfume_id>/', views.descargar_acordes_individual, name='descargar_acordes_individual'),
+    path('ventas/<int:venta_id>/eliminar/', views.eliminar_venta, name='eliminar_venta'),
     path('analisis/', views.analizar, name='analizar'),
     path('comparar/', views.comparar_compras, name='comparar'),
     path('proyeccion/', views.proyeccion, name='proyeccion'),

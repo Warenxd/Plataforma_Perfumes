@@ -355,6 +355,10 @@
                                 <p>Unidades: <span class="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 font-semibold text-slate-800">{{ v.unidades }}</span></p>
                                 <p>Precio: <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-800">{{ v.precio_unitario|format_price }}</span></p>
                                 <p>Total: <span class="inline-flex items-center rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">{{ v.total|format_price }}</span></p>
+                                <button type="button" class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 hover:bg-rose-100" data-reportes-delete data-venta-id="{{ v.id }}" data-delete-url="{% url 'eliminar_venta' v.id %}">
+                                  <i class="fa-solid fa-trash"></i>
+                                  <span>Eliminar</span>
+                                </button>
                               </div>
                             </div>
                           {% endfor %}
