@@ -773,6 +773,7 @@
   const refreshStageLabel = document.getElementById("refresh-stage-label");
   const refreshProgressBar = document.getElementById("refresh-progress-bar");
   const refreshErrorText = document.getElementById("refresh-error-text");
+  const refreshCancelButton = document.getElementById("refresh-cancel-button");
   const refreshStatusUrl = refreshForm ? refreshForm.dataset.statusUrl : null;
   let refreshProgressInterval = null;
   let currentProgressValue = 0;
@@ -942,6 +943,17 @@
     refreshStatusInterval = setInterval(poll, 1000);
   };
 
+  const cancelRefresh = () => {
+    stopStatusPolling();
+    stopProgressAnimation();
+    hideOverlay();
+    updateStageText("Cancelado", "");
+    updateProgress(0);
+    if (refreshButton) {
+      refreshButton.disabled = false;
+    }
+  };
+
   const postRefreshStage = async (stage) => {
     if (!refreshForm) {
       return null;
@@ -1040,6 +1052,24 @@
     refreshForm.addEventListener("submit", (event) => {
       event.preventDefault();
       runRefreshWorkflow();
+    });
+  }
+
+  if (refreshCancelButton) {
+    refreshCancelButton.addEventListener("click", () => {
+      // Notifica al backend para marcar cancelación
+      const csrfInput = refreshForm ? refreshForm.querySelector('input[name="csrfmiddlewaretoken"]') : null;
+      if (refreshForm && csrfInput) {
+        const formData = new FormData();
+        formData.append("csrfmiddlewaretoken", csrfInput.value);
+        formData.append("stage", "cancel");
+        fetch(refreshForm.action, {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+          body: formData,
+        }).catch(() => {});
+      }
+      cancelRefresh();
     });
   }
 

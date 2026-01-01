@@ -12,53 +12,40 @@
     width: 100vw;
     height: 100vh;
     z-index: 9999;
-    background-color: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(2px);
+    background-color: #0b0b08;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   #refresh-overlay.hidden {
     display: none;
   }
-  #refresh-progress-track,
-  #refresh-progress-bar {
-    height: 0.75rem;
+.refresh-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 0;
+  text-align: center;
+  color: #f7f5f1;
+}
+  .refresh-logo {
+    width: 250px;
+    height: auto;
+    margin: 0 auto 12px;
+    display: block;
   }
-  #refresh-progress-track {
+  .refresh-spinner {
+    width: 64px;
+    height: 64px;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.12));
-    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
-    position: relative;
-    overflow: hidden;
+    border: 6px solid rgba(255, 255, 255, 0.15);
+    border-top-color: #f1c453;
+    margin: 0 auto 16px;
+    animation: refresh-spin 1s linear infinite;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   }
-  #refresh-progress-track::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 10% 50%, rgba(255, 255, 255, 0.45), transparent 55%);
-    opacity: 0.3;
-    mix-blend-mode: screen;
-  }
-  #refresh-progress-bar {
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(120deg, #111827, #312e81 40%, #6366f1 80%, #c7d2fe);
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
-    position: relative;
-    overflow: hidden;
-  }
-  #refresh-progress-bar::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
-    mix-blend-mode: screen;
-    animation: refresh-sheen 2.8s linear infinite;
-  }
-  @keyframes refresh-sheen {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
+  @keyframes refresh-spin {
+    to {
+      transform: rotate(360deg);
     }
   }
   .compare-btn.is-added {
@@ -173,7 +160,7 @@
   }
 </style>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+<div class="min-h-screen bg-white">
   <div class="flex min-h-screen w-full flex-col gap-5 lg:flex-row">
     <div class="flex items-center justify-between gap-3 lg:hidden">
       <div>
@@ -418,48 +405,43 @@
 
     <!-- Contenido de perfumes -->
     <div id="main-panel" class="flex-1 py-8 space-y-6">
-      <div class="rounded-[28px] bg-white/90 p-6 shadow-2xl ring-1 ring-slate-200/80 backdrop-blur">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-xs uppercase tracking-[0.28em] text-slate-500">Main</p>
-            <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900">Colección principal</h1>
-            <p class="mt-1 text-sm text-slate-500">Explora y compara las fragancias de la base de datos.</p>
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] text-slate-900">
+        <div class="space-y-3">
+          <div class="space-y-2">
+            <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Colección</p>
+            <h1 class="text-3xl font-semibold text-slate-900">Perfumes y decants</h1>
+            <p class="text-sm text-slate-600">Explora, busca y compara tus fragancias en una vista limpia y rápida.</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <div class="rounded-full bg-slate-900/90 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-1 ring-white/30">
-              Total: <span id="total-perfumes-count">{{ total_perfumes }}</span>
+            <div class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm">
+              <span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
+              <span>Total: <span id="total-perfumes-count">{{ total_perfumes }}</span></span>
             </div>
+            <button
+              id="comparison-toggle"
+              type="button"
+              class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+              <i class="fa-solid fa-list"></i>
+              <span>Perfumes escogidos</span>
+              <span class="inline-flex items-center justify-center rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-800" id="comparison-toggle-count">0</span>
+            </button>
             <form action="{% url 'refrescar_perfumes' %}" method="post" id="refresh-perfumes-form" data-status-url="{% url 'estado_refresco' %}">
               {% csrf_token %}
               <button
                 type="submit"
                 id="refresh-perfumes-button"
-                class="inline-flex items-center gap-2 rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-400">
+                class="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-300 ring-1 ring-amber-200/60">
                 <i class="fa-solid fa-rotate"></i>
                 <span>Recargar</span>
               </button>
             </form>
-            <button
-              id="comparison-toggle"
-              type="button"
-              class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
-              <i class="fa-solid fa-list"></i>
-              <span>Perfumes escogidos</span>
-              <span class="inline-flex items-center justify-center rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-800" id="comparison-toggle-count">0</span>
-            </button>
           </div>
         </div>
 
-        {% if error %}
-        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-700">
-          {{ error }}
-        </div>
-        {% endif %}
-
         <div class="mt-6">
+          <label for="search" class="sr-only">Buscar</label>
           <div class="relative">
-            <label for="search" class="sr-only">Buscar</label>
-            <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
               <i class="fa-solid fa-magnifying-glass"></i>
             </span>
             <input
@@ -470,17 +452,33 @@
               value="{{ search_query }}"
               autocomplete="off"
               data-suggest-url="{% url 'sugerir_perfumes' %}"
-              class="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+              class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm font-semibold text-slate-800 placeholder:text-slate-500 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200/40">
             <div
               id="search-suggestions"
-              class="absolute z-20 mt-1 hidden w-full rounded-2xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 overflow-hidden">
+              class="absolute z-20 mt-1 hidden w-full rounded-2xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 overflow-hidden text-slate-800">
               <ul class="divide-y divide-slate-200 text-sm" role="listbox"></ul>
             </div>
           </div>
         </div>
+
+        {% if error %}
+        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-700">
+          {{ error }}
+        </div>
+        {% endif %}
       </div>
 
-      <div class="rounded-[28px] bg-white/85 p-4 shadow-2xl ring-1 ring-slate-200/80 backdrop-blur transition-all duration-150">
+      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] transition-all duration-150 text-slate-900">
+        <div class="flex items-center justify-between gap-3 pb-3">
+          <div>
+            <p class="text-[11px] uppercase tracking-[0.28em] text-slate-500">Listado</p>
+            <p class="text-lg font-semibold text-slate-900">Resultados</p>
+          </div>
+          <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500">
+            <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+            <span>Actualizado</span>
+          </div>
+        </div>
         <div id="perfumes-grid">
           {% include 'components/perfumes_grid.html' with perfumes=perfumes search_query=search_query selected_marca_ids=selected_marca_ids selected_estacion_slugs=selected_estacion_slugs selected_genero_ids=selected_genero_ids selected_tienda_codes=selected_tienda_codes %}
         </div>
@@ -926,17 +924,20 @@
   </div>
 </aside>
 
-<div id="refresh-overlay" class="hidden items-center justify-center bg-white px-4 text-slate-900">
-  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200 space-y-4 text-center">
-    <div class="space-y-1">
-      <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Actualización en progreso</p>
-      <p id="refresh-stage-text" class="text-lg font-semibold text-slate-900">Preparando...</p>
-    </div>
-    <div id="refresh-progress-track" class="w-full rounded-full bg-slate-200 overflow-hidden ring-1 ring-slate-300/70">
-      <div id="refresh-progress-bar" class="rounded-full bg-slate-900 transition-all duration-300 ease-out" style="width: 0%;"></div>
-    </div>
-    <p id="refresh-stage-label" class="text-sm text-slate-600">Esperando instrucciones...</p>
-    <p id="refresh-error-text" class="hidden text-sm text-red-500"></p>
+<div id="refresh-overlay" class="hidden flex flex-col items-center justify-center text-center gap-3">
+  <img src="{% static 'assets/logo-toqueFragante.jpg' %}" alt="Logo Toque Fragante" class="refresh-logo">
+  <div class="refresh-spinner"></div>
+  <div class="space-y-1">
+    <p class="text-xs uppercase tracking-[0.35em] text-amber-200/90">Actualización en progreso</p>
+    <p id="refresh-stage-text" class="text-lg font-semibold text-white">Preparando...</p>
   </div>
+  <p id="refresh-stage-label" class="text-sm text-slate-200/90">Esperando instrucciones...</p>
+  <p id="refresh-error-text" class="hidden text-sm text-red-200"></p>
+  <button
+    id="refresh-cancel-button"
+    type="button"
+    class="mt-2 inline-flex items-center gap-2 rounded-2xl border border-slate-300/60 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-white">
+    <span>Cancelar</span>
+  </button>
 </div>
 {% endblock %}

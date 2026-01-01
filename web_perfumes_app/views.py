@@ -268,6 +268,9 @@ REFRESH_STATUS = {
     "scraping": {"state": "idle", "updated_at": None},
     "urls": {"state": "idle", "updated_at": None},
 }
+REFRESH_CANCEL = {
+    "scraping": False,
+}
 
 _driver_lock = threading.Lock()
 _shared_driver = None
@@ -347,6 +350,12 @@ def _set_refresh_status(stage, **kwargs):
 
 def _reset_refresh_status(stage):
     REFRESH_STATUS[stage] = {"state": "idle", "updated_at": timezone.now().isoformat()}
+
+def _set_refresh_cancel(stage, value):
+    REFRESH_CANCEL[stage] = bool(value)
+
+def _is_refresh_cancelled(stage):
+    return REFRESH_CANCEL.get(stage, False)
 
 def _normalizar_nombre_perfume_base(nombre, marca=None):
     """
@@ -914,18 +923,21 @@ def scrapping_silk_perfumes():
         ("perfumes-unisex", "https://silkperfumes.cl/collections/perfumes-unisex?page={page}"),
         ("perfumes-arabes-unisex", "https://silkperfumes.cl/collections/perfumes-arabes-unisex?page={page}"),
     ]
+
     categoria_labels = {
         "perfumes-de-hombre": "Perfumes de hombre",
         "perfumes-arabes-hombre": "Perfumes árabes hombre",
         "perfumes-unisex": "Perfumes unisex",
         "perfumes-arabes-unisex": "Perfumes árabes unisex",
     }
+
     generos_por_categoria = {
         "perfumes-de-hombre": {"Hombre"},
         "perfumes-arabes-hombre": {"Hombre"},
         "perfumes-unisex": {"Unisex"},
         "perfumes-arabes-unisex": {"Unisex"},
     }
+
     genero_cache = {}
 
     def obtener_genero(nombre_genero):
@@ -938,6 +950,7 @@ def scrapping_silk_perfumes():
         return genero_cache[clave]
 
     creados, actualizados, errores = 0, 0, 0
+
     _set_refresh_status(
         "scraping",
         state="running",
@@ -948,10 +961,20 @@ def scrapping_silk_perfumes():
     )
 
     for nombre_categoria, url_template in categorias:
+        if _is_refresh_cancelled("scraping"):
+            print(f"[SILK] Cancelado antes de categoría {nombre_categoria}")
+            break
         categoria_es_unisex = "unisex" in url_template.lower()
         page = 1
 
         while True:
+            if _is_refresh_cancelled("scraping"):
+                print(f"[SILK] Cancelado en categoría {nombre_categoria} página {page}")
+                return {
+                    "creados": creados,
+                    "actualizados": actualizados,
+                    "errores": errores,
+                }
             url = url_template.format(page=page)
             _set_refresh_status(
                 "scraping",
@@ -959,111 +982,137 @@ def scrapping_silk_perfumes():
                 category=nombre_categoria,
                 category_label=categoria_labels.get(
                     nombre_categoria,
-                    nombre_categoria.replace("-", " " ).title(),
+                    nombre_categoria.replace("-", " ").title(),
                 ),
                 page=page,
                 url=url,
             )
+
             print(f"Scrapeando {nombre_categoria} página {page}: {url}")
 
-            response = requests.get(url)
+            response = requests.get(url, timeout=15)
             if response.status_code != 200:
+                print(f"[SILK] Status {response.status_code} en {url}, deteniendo categoría {nombre_categoria}")
                 break
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            name_perfume = soup.find_all('p', class_='card__title')
+            soup = BeautifulSoup(response.text, "html.parser")
+            cards = soup.select("li.js-pagination-result")
 
-            # Si ya no hay perfumes no hay más páginas
-            if not name_perfume:
+            if not cards:
+                print(f"[SILK] Sin cards en página {page} para {nombre_categoria}, se detiene.")
                 break
 
-            page_con_stock = False
-            for n in name_perfume:
-                nombre = n.get_text(strip=True)
-                card = n.find_parent(class_="card")
+            for card in cards:
+                title_el = card.select_one(".card__title")
+                if not title_el:
+                    print("[SILK] Card sin título, se omite")
+                    continue
+
+                nombre = title_el.get_text(strip=True)
+
+                # ===============================
+                # DETECCIÓN REAL DE AGOTADO (SHOPIFY)
+                # ===============================
+                agotado_label = card.select_one(".product-label--sold-out")
+
+                add_btn = card.select_one("button[name='add']")
+                agotado_por_boton = add_btn is not None and add_btn.has_attr("disabled")
+
+                agotado_por_precio = False
+                price_no_variant = card.select_one(".price__no-variant strong")
+                if price_no_variant and "agotad" in price_no_variant.get_text(strip=True).lower():
+                    current = price_no_variant
+                    hidden_found = False
+                    while current:
+                        if current.has_attr("hidden") or "display:none" in (current.get("style", "") or "").lower():
+                            hidden_found = True
+                            break
+                        current = current.find_parent()
+                    if not hidden_found:
+                        agotado_por_precio = True
+
+                if agotado_label or agotado_por_boton or agotado_por_precio:
+                    print(f"[SILK] Agotado detectado, se elimina: {nombre}")
+                    perfumes_agotados = Perfume.objects.filter(
+                        nombre=nombre,
+                        tienda="SILK"
+                    )
+                    for perfume in perfumes_agotados:
+                        if perfume.imagen and default_storage.exists(perfume.imagen.name):
+                            default_storage.delete(perfume.imagen.name)
+                        perfume.delete()
+                    continue
+
+                # ===============================
+                # GÉNEROS
+                # ===============================
                 generos_a_asignar = set(generos_por_categoria.get(nombre_categoria, set()))
-                if "hombre" in url.lower() or "hombre" in nombre_categoria.lower():
+
+                if "hombre" in nombre_categoria.lower():
                     generos_a_asignar.add("Hombre")
-                if categoria_es_unisex or "unisex" in url.lower() or "unisex" in nombre_categoria.lower():
+
+                if categoria_es_unisex:
                     generos_a_asignar.add("Unisex")
 
-                # ELIMINAR PERFUMES AGOTADOS DE LA BD (Y SU IMAGEN)
-                if card:
-                    agotado_span = card.find("span", class_="product-label--sold-out")
-                    if agotado_span and "agotado" in agotado_span.get_text(strip=True).lower():
-                        perfumes_agotados = Perfume.objects.filter(nombre=nombre, tienda="SILK")
-                        for perfume_agotado in perfumes_agotados:
-                            if perfume_agotado.imagen and default_storage.exists(perfume_agotado.imagen.name):
-                                default_storage.delete(perfume_agotado.imagen.name)
-                            perfume_agotado.delete()
-                        continue
-                    else:
-                        page_con_stock = True
-                else:
-                    page_con_stock = True
+                # ===============================
+                # MARCA
+                # ===============================
+                marca_el = card.select_one(".card__vendor")
+                marca_nombre = marca_el.get_text(strip=True) if marca_el else "Desconocida"
+                marca_obj = _obtener_marca_normalizada(marca_nombre)
 
-                # MARCA (como objeto relacionado)
-                marca_obj = None
-                if card:
-                    marca_el = card.find("p", class_="card__vendor")
-                    marca_nombre = marca_el.get_text(strip=True) if marca_el else "Desconocida"
-                    marca_obj = _obtener_marca_normalizada(marca_nombre)
-
-                # PRECIO
-                price_el = card.find("strong", class_="price__current") if card else None
+                # ===============================
+                # PRECIOS
+                # ===============================
+                price_el = card.select_one(".price__current")
                 precio = _parsear_clp(price_el.get_text(strip=True)) if price_el else 0
 
-                # PRECIO ANTERIOR (Si es que hay oferta o algo)
-                price_bef = card.find("s", class_="price__was") if card else None
-                if price_bef:
-                    precio_ant = _parsear_clp(price_bef.get_text(strip=True))
-                else:
-                    precio_ant = precio
+                price_bef = card.select_one(".price__was")
+                precio_ant = (
+                    _parsear_clp(price_bef.get_text(strip=True))
+                    if price_bef else precio
+                )
 
+                if precio <= 0:
+                    print(f"[SILK] Precio inválido o faltante para {nombre}, se omite.")
+                    continue
+
+                # ===============================
                 # URL PRODUCTO
+                # ===============================
                 url_prod = None
-                if card:
-                    a = card.find("a", class_="js-prod-link")
-                    if a and a.get("href"):
-                        href = a["href"]
-                        if href.startswith("http"):
-                            url_prod = href
-                        else:
-                            url_prod = "https://silkperfumes.cl" + href
-                        if "unisex" in href.lower():
-                            generos_a_asignar.add("Unisex")
+                a = card.select_one("a.js-prod-link")
+                if a and a.get("href"):
+                    href = a["href"]
+                    url_prod = href if href.startswith("http") else "https://silkperfumes.cl" + href
 
+                # ===============================
                 # IMAGEN
+                # ===============================
                 img_url = None
-                if card:
-                    img = card.find("img")
-                    if img:
-                        candidates = [
-                            img.get("data-src"),
-                            img.get("data-srcset", "").split(",")[0].split()[0] if img.get("data-srcset") else None,
-                            img.get("src"),
-                        ]
+                img = card.select_one("img.card__main-image") or card.select_one("img")
 
-                        for u in candidates:
-                            if not u:
-                                continue
-                            u = u.strip()
+                if img:
+                    candidates = [
+                        img.get("data-src"),
+                        img.get("data-srcset", "").split(",")[0].split()[0]
+                        if img.get("data-srcset") else None,
+                        img.get("src"),
+                    ]
 
-                            # ignorar svg falso
-                            if u.startswith("data:"):
-                                continue
+                    for u in candidates:
+                        if not u or u.startswith("data:"):
+                            continue
+                        if u.startswith("//"):
+                            u = "https:" + u
+                        elif u.startswith("/"):
+                            u = "https://silkperfumes.cl" + u
+                        img_url = u
+                        break
 
-                            # si empieza con //' agregar https:
-                            if u.startswith("//"):
-                                u = "https:" + u
-                            # si empieza con / ' hacerla absoluta
-                            elif u.startswith("/"):
-                                u = "https://silkperfumes.cl" + u
-
-                            img_url = u
-                            break
-
-                # GUARDAR O ACTUALIZAR
+                # ===============================
+                # GUARDAR / ACTUALIZAR
+                # ===============================
                 perfume, creado = Perfume.objects.get_or_create(
                     nombre=nombre,
                     tienda="SILK",
@@ -1071,13 +1120,13 @@ def scrapping_silk_perfumes():
                         "marca": marca_obj,
                         "precio": precio,
                         "precio_ant": precio_ant,
-                        "tienda": "SILK",
-                        "url_producto": url_prod
-                    }
+                        "url_producto": url_prod,
+                    },
                 )
 
                 if creado:
                     creados += 1
+                    print(f"[SILK] Creado: {nombre}")
                 else:
                     if (
                         perfume.precio != precio
@@ -1089,13 +1138,16 @@ def scrapping_silk_perfumes():
                         perfume.precio_ant = precio_ant
                         perfume.save()
                         actualizados += 1
+                        print(f"[SILK] Actualizado: {nombre}")
 
-                # GUARDAR IMAGEN
+                # ===============================
+                # IMAGEN
+                # ===============================
                 if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
                     try:
                         img_bytes = requests.get(img_url, timeout=10).content
                         perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
-                    except:
+                    except Exception:
                         errores += 1
 
                 if url_prod and not perfume.url_producto:
@@ -1103,18 +1155,16 @@ def scrapping_silk_perfumes():
 
                 perfume.save()
 
-                if generos_a_asignar:
-                    genero_objs = [
-                        obtener_genero(nombre_genero)
-                        for nombre_genero in generos_a_asignar
-                    ]
-                    genero_objs = [genero for genero in genero_objs if genero]
-                    if genero_objs:
-                        perfume.generos.add(*genero_objs)
+                # ===============================
+                # GÉNEROS M2M
+                # ===============================
+                genero_objs = [
+                    obtener_genero(g) for g in generos_a_asignar
+                ]
+                genero_objs = [g for g in genero_objs if g]
+                if genero_objs:
+                    perfume.generos.add(*genero_objs)
 
-            if not page_con_stock:
-                # Página completa agotada; pasar a siguiente categoría
-                break
             page += 1
 
     _set_refresh_status(
@@ -1125,7 +1175,13 @@ def scrapping_silk_perfumes():
         page=0,
         url=None,
     )
-    return {"creados": creados, "actualizados": actualizados, "errores": errores}
+
+    return {
+        "creados": creados,
+        "actualizados": actualizados,
+        "errores": errores,
+    }
+
 
 def scrapping_yauras_perfumes():
     base_url = "https://yauras.cl"
@@ -1161,8 +1217,18 @@ def scrapping_yauras_perfumes():
     )
 
     for nombre_categoria, url_template, generos_categoria in categorias:
+        if _is_refresh_cancelled("scraping"):
+            print(f"[YAURAS] Cancelado antes de categoría {nombre_categoria}")
+            break
         page = 1
         while True:
+            if _is_refresh_cancelled("scraping"):
+                print(f"[YAURAS] Cancelado en categoría {nombre_categoria} página {page}")
+                return {
+                    "creados": creados,
+                    "actualizados": actualizados,
+                    "errores": errores,
+                }
             url = url_template.format(page=page)
             _set_refresh_status(
                 "scraping",
@@ -1373,7 +1439,29 @@ def scrapping_yauras_perfumes():
 
 def scrapping_joy_perfumes():
     base_url = "https://joyperfumes.cl"
-    url_template = f"{base_url}/all?gad_campaignid=23318127065&page={{page}}"
+
+    categorias = [
+        {
+            "label": "Hombre árabe",
+            "path": "/arabehombre-arabe",
+            "generos_forzados": {"Hombre"},
+        },
+        {
+            "label": "Unisex árabe",
+            "path": "/arabeunisex-arabe",
+            "generos_forzados": {"Unisex"},
+        },
+        {
+            "label": "Hombre",
+            "path": "/hombre",
+            "generos_forzados": {"Hombre"},
+        },
+        {
+            "label": "Unisex",
+            "path": "/unisex",
+            "generos_forzados": {"Unisex"},
+        },
+    ]
 
     creados, actualizados, errores = 0, 0, 0
     _set_refresh_status(
@@ -1385,145 +1473,154 @@ def scrapping_joy_perfumes():
         url=None,
     )
 
-    page = 1
-    while True:
-        url = url_template.format(page=page)
-        _set_refresh_status(
-            "scraping",
-            state="running",
-            category="joy",
-            category_label="Joy Perfumes",
-            page=page,
-            url=url,
-        )
-        try:
-            response = requests.get(url, timeout=12)
-        except Exception:
-            errores += 1
+    for categoria in categorias:
+        if _is_refresh_cancelled("scraping"):
+            print(f"[JOY] Cancelado antes de categoría {categoria['label']}")
             break
-
-        if response.status_code != 200:
-            break
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        cards = soup.select("article.product-block")
-        if not cards:
-            break
-
-        for card in cards:
-            status_label = card.select_one(".product-block__label--status")
-            if status_label and "no disponible" in status_label.get_text(strip=True).lower():
-                continue
-
-            title_el = card.select_one(".product-block__name")
-            if not title_el:
-                continue
-            nombre = title_el.get_text(strip=True)
-            if not nombre:
-                continue
-
-            generos_a_asignar = set()
-            lower_name = nombre.lower()
-            if "hombre" in lower_name:
-                generos_a_asignar.add("Hombre")
-            if "mujer" in lower_name:
-                generos_a_asignar.add("Mujer")
-            if "unisex" in lower_name:
-                generos_a_asignar.add("Unisex")
-
-            href = title_el.get("href")
-            url_prod = urllib.parse.urljoin(base_url, href) if href else None
-
-            marca_el = card.select_one(".product-block__brand")
-            marca_nombre_raw = marca_el.get_text(strip=True) if marca_el else ""
-            marca_obj = None
-            if marca_nombre_raw and _normalizar_texto(marca_nombre_raw) not in {"joyperfumes"}:
-                marca_obj = _obtener_marca_normalizada(marca_nombre_raw)
-            if not marca_obj:
-                marca_obj = _inferir_marca_por_nombre(nombre) or _obtener_marca_normalizada(marca_nombre_raw or "Desconocida")
-
-            price_el = card.select_one(".product-block__price")
-            precio = _parsear_clp(price_el.get_text(strip=True)) if price_el else 0
-            precio_ant = precio
-
-            img_url = None
-            img_el = card.select_one("img.product-block__image")
-            sources = card.select("picture source")
-            candidates = []
-            if sources:
-                for src_el in sources:
-                    val = src_el.get("srcset")
-                    if val:
-                        val = val.split(",")[0].split()[0]
-                        candidates.append(val)
-            if img_el and img_el.get("src"):
-                candidates.insert(0, img_el.get("src"))
-
-            for u in candidates:
-                if not u:
-                    continue
-                u = u.strip()
-                if u.startswith("//"):
-                    u = "https:" + u
-                elif u.startswith("/"):
-                    u = urllib.parse.urljoin(base_url, u)
-                img_url = u
+        page = 1
+        while True:
+            if _is_refresh_cancelled("scraping"):
+                print(f"[JOY] Cancelado en categoría {categoria['label']} página {page}")
+                return {"creados": creados, "actualizados": actualizados, "errores": errores}
+            url = f"{base_url}{categoria['path']}?page={page}"
+            _set_refresh_status(
+                "scraping",
+                state="running",
+                category="joy",
+                category_label=f"Joy Perfumes - {categoria['label']}",
+                page=page,
+                url=url,
+            )
+            try:
+                response = requests.get(url, timeout=12)
+            except Exception:
+                errores += 1
                 break
 
-            perfume, creado = Perfume.objects.get_or_create(
-                nombre=nombre,
-                tienda="JOY",
-                defaults={
-                    "marca": marca_obj,
-                    "precio": precio,
-                    "precio_ant": precio_ant,
-                    "tienda": "JOY",
-                    "url_producto": url_prod,
-                },
-            )
+            if response.status_code != 200:
+                break
 
-            if creado:
-                creados += 1
-            else:
-                cambios = False
-                if perfume.precio != precio:
-                    perfume.precio = precio
-                    cambios = True
-                if perfume.precio_ant != precio_ant:
-                    perfume.precio_ant = precio_ant
-                    cambios = True
-                if perfume.marca != marca_obj:
-                    perfume.marca = marca_obj
-                    cambios = True
-                if url_prod and perfume.url_producto != url_prod:
+            soup = BeautifulSoup(response.text, "html.parser")
+            cards = soup.select("article.product-block")
+            if not cards:
+                break
+
+            for card in cards:
+                status_label = card.select_one(".product-block__label--status")
+                if status_label and "no disponible" in status_label.get_text(strip=True).lower():
+                    continue
+
+                title_el = card.select_one(".product-block__name")
+                if not title_el:
+                    continue
+                nombre = title_el.get_text(strip=True)
+                if not nombre:
+                    continue
+
+                generos_a_asignar = set(categoria.get("generos_forzados", set()))
+                if "arabe" in categoria.get("path", ""):
+                    generos_a_asignar.add("Arabe")
+                lower_name = nombre.lower()
+                if "hombre" in lower_name:
+                    generos_a_asignar.add("Hombre")
+                if "mujer" in lower_name:
+                    generos_a_asignar.add("Mujer")
+                if "unisex" in lower_name:
+                    generos_a_asignar.add("Unisex")
+
+                href = title_el.get("href")
+                url_prod = urllib.parse.urljoin(base_url, href) if href else None
+
+                marca_el = card.select_one(".product-block__brand")
+                marca_nombre_raw = marca_el.get_text(strip=True) if marca_el else ""
+                marca_obj = None
+                if marca_nombre_raw and _normalizar_texto(marca_nombre_raw) not in {"joyperfumes"}:
+                    marca_obj = _obtener_marca_normalizada(marca_nombre_raw)
+                if not marca_obj:
+                    marca_obj = _inferir_marca_por_nombre(nombre) or _obtener_marca_normalizada(marca_nombre_raw or "Desconocida")
+
+                price_el = card.select_one(".product-block__price")
+                precio = _parsear_clp(price_el.get_text(strip=True)) if price_el else 0
+                precio_ant = precio
+
+                img_url = None
+                img_el = card.select_one("img.product-block__image")
+                sources = card.select("picture source")
+                candidates = []
+                if sources:
+                    for src_el in sources:
+                        val = src_el.get("srcset")
+                        if val:
+                            val = val.split(",")[0].split()[0]
+                            candidates.append(val)
+                if img_el and img_el.get("src"):
+                    candidates.insert(0, img_el.get("src"))
+
+                for u in candidates:
+                    if not u:
+                        continue
+                    u = u.strip()
+                    if u.startswith("//"):
+                        u = "https:" + u
+                    elif u.startswith("/"):
+                        u = urllib.parse.urljoin(base_url, u)
+                    img_url = u
+                    break
+
+                perfume, creado = Perfume.objects.get_or_create(
+                    nombre=nombre,
+                    tienda="JOY",
+                    defaults={
+                        "marca": marca_obj,
+                        "precio": precio,
+                        "precio_ant": precio_ant,
+                        "tienda": "JOY",
+                        "url_producto": url_prod,
+                    },
+                )
+
+                if creado:
+                    creados += 1
+                else:
+                    cambios = False
+                    if perfume.precio != precio:
+                        perfume.precio = precio
+                        cambios = True
+                    if perfume.precio_ant != precio_ant:
+                        perfume.precio_ant = precio_ant
+                        cambios = True
+                    if perfume.marca != marca_obj:
+                        perfume.marca = marca_obj
+                        cambios = True
+                    if url_prod and perfume.url_producto != url_prod:
+                        perfume.url_producto = url_prod
+                        cambios = True
+                    if perfume.tienda != "JOY":
+                        perfume.tienda = "JOY"
+                        cambios = True
+                    if cambios:
+                        perfume.save()
+                        actualizados += 1
+
+                if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
+                    try:
+                        img_bytes = requests.get(img_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"}).content
+                        perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                    except Exception:
+                        errores += 1
+
+                if url_prod and not perfume.url_producto:
                     perfume.url_producto = url_prod
-                    cambios = True
-                if perfume.tienda != "JOY":
-                    perfume.tienda = "JOY"
-                    cambios = True
-                if cambios:
-                    perfume.save()
-                    actualizados += 1
 
-            if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
-                try:
-                    img_bytes = requests.get(img_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"}).content
-                    perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
-                except Exception:
-                    errores += 1
+                perfume.save()
 
-            if url_prod and not perfume.url_producto:
-                perfume.url_producto = url_prod
+                if generos_a_asignar:
+                    genero_objs = [Genero.objects.get_or_create(nombre=gen.strip().title())[0] for gen in generos_a_asignar]
+                    genero_objs = [g for g in genero_objs if g]
+                    if genero_objs:
+                        perfume.generos.add(*genero_objs)
 
-            perfume.save()
-
-            if generos_a_asignar:
-                genero_objs = [Genero.objects.get_or_create(nombre=gen.strip().title())[0] for gen in generos_a_asignar]
-                genero_objs = [g for g in genero_objs if g]
-                if genero_objs:
-                    perfume.generos.add(*genero_objs)
-
-        page += 1
+            page += 1
 
     _set_refresh_status(
         "scraping",
@@ -1536,8 +1633,27 @@ def scrapping_joy_perfumes():
     return {"creados": creados, "actualizados": actualizados, "errores": errores}
 
 def scrapping_tiendas_perfumes():
+    if _is_refresh_cancelled("scraping"):
+        return {"creados": 0, "actualizados": 0, "errores": 0, "detalle": {}}
+
     resultados_silk = scrapping_silk_perfumes()
+    if _is_refresh_cancelled("scraping"):
+        return {
+            "creados": resultados_silk.get("creados", 0),
+            "actualizados": resultados_silk.get("actualizados", 0),
+            "errores": resultados_silk.get("errores", 0),
+            "detalle": {"silk": resultados_silk},
+        }
+
     resultados_yauras = scrapping_yauras_perfumes()
+    if _is_refresh_cancelled("scraping"):
+        return {
+            "creados": resultados_silk.get("creados", 0) + resultados_yauras.get("creados", 0),
+            "actualizados": resultados_silk.get("actualizados", 0) + resultados_yauras.get("actualizados", 0),
+            "errores": resultados_silk.get("errores", 0) + resultados_yauras.get("errores", 0),
+            "detalle": {"silk": resultados_silk, "yauras": resultados_yauras},
+        }
+
     resultados_joy = scrapping_joy_perfumes()
     return {
         "creados": resultados_silk.get("creados", 0) + resultados_yauras.get("creados", 0) + resultados_joy.get("creados", 0),
@@ -1861,9 +1977,11 @@ def refrescar_perfumes(request):
     if es_ajax:
         try:
             if etapa == "scraping":
+                _set_refresh_cancel("scraping", False)
                 _set_refresh_status("scraping", state="running")
                 resultados = scrapping_tiendas_perfumes()
-                _set_refresh_status("scraping", state="done")
+                state_final = "cancelled" if _is_refresh_cancelled("scraping") else "done"
+                _set_refresh_status("scraping", state=state_final)
                 return JsonResponse(
                     {
                         "ok": True,
@@ -1871,6 +1989,10 @@ def refrescar_perfumes(request):
                         "resultados": resultados,
                     }
                 )
+            elif etapa == "cancel":
+                _set_refresh_cancel("scraping", True)
+                _set_refresh_status("scraping", state="cancelled")
+                return JsonResponse({"ok": True, "stage": "cancel"})
             elif etapa == "urls":
                 urls_actualizadas = actualizar_urls_fragrantica()
                 return JsonResponse(
