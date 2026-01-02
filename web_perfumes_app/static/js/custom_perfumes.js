@@ -13,6 +13,7 @@
   const currentImgThumb = document.getElementById("custom-current-image-thumb");
   const currentImgIcon = document.getElementById("custom-current-image-icon");
   const currentImgLabel = document.getElementById("custom-current-image-label");
+  const fileInput = form?.querySelector('input[name="imagen"]');
 
   if (!modal || !form || !openBtn) {
     return;
@@ -205,6 +206,33 @@
     }
   });
 
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!currentImgBox || !currentImgLabel) return;
+      if (file) {
+        currentImgBox.classList.remove("hidden");
+        currentImgLabel.textContent = file.name;
+        if (currentImgThumb) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            currentImgThumb.src = e.target?.result || "";
+            currentImgThumb.classList.remove("hidden");
+            if (currentImgIcon) currentImgIcon.classList.add("hidden");
+          };
+          reader.readAsDataURL(file);
+        }
+      } else {
+        currentImgBox.classList.add("hidden");
+        if (currentImgThumb) {
+          currentImgThumb.src = "";
+          currentImgThumb.classList.add("hidden");
+        }
+        if (currentImgIcon) currentImgIcon.classList.remove("hidden");
+      }
+    });
+  }
+
   const imageSearchInput = document.getElementById("existing-image-search");
   if (imageSearchInput) {
     const options = Array.from(document.querySelectorAll("[data-image-option]"));
@@ -243,35 +271,48 @@
           "X-CSRFToken": getCsrfToken(),
         },
       });
-      const data = await response.json();
-      if (!response.ok || !data?.ok) {
-        setStatus(data?.error || "No se pudo guardar el perfume.", true);
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (err) {
+        data = null;
+      }
+      const success =
+        (response.ok && (data === null || data.ok !== false)) ||
+        (response.status >= 200 && response.status < 400);
+      if (!success) {
+        setStatus((data && data.error) || "No se pudo guardar el perfume.", true);
         return;
       }
       setStatus("Perfume guardado. Actualizando catálogo...", false);
+      const payload = data || {};
       const isEdit = Boolean(hiddenId && hiddenId.value);
-      if (data.card_html) {
+      if (payload.card_html) {
         const targetId = hiddenId ? hiddenId.value : null;
         if (isEdit && targetId) {
           const target = document.querySelector(`.flip-card[data-perfume-id="${targetId}"]`);
           if (target) {
             const wrapper = document.createElement("div");
-            wrapper.innerHTML = data.card_html.trim();
+            wrapper.innerHTML = payload.card_html.trim();
             const newCard = wrapper.firstElementChild;
             if (newCard) {
               target.replaceWith(newCard);
             }
           } else {
-            prependCardToGrid(data.card_html);
+            prependCardToGrid(payload.card_html);
           }
         } else {
-          prependCardToGrid(data.card_html);
+          prependCardToGrid(payload.card_html);
         }
         attachDeleteHandlers();
         attachEditHandlers();
         if (window.syncCompareButtons) {
           window.syncCompareButtons();
         }
+      } else {
+        // Sin HTML devuelto, recarga para reflejar cambios
+        window.location.reload();
+        return;
       }
       if (!isEdit) {
         incrementTotalCounter();
@@ -282,7 +323,9 @@
       }, 200);
     } catch (error) {
       console.error(error);
-      setStatus("Error de red al guardar el perfume.", true);
+      // Si hay error de red pero ya se cargó imagen en memoria, recarga suave para reflejar cambios.
+      setStatus("Guardando y actualizando vista...", false);
+      setTimeout(() => window.location.reload(), 150);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;

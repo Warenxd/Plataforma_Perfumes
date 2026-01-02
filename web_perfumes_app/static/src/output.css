@@ -64,7 +64,6 @@
     --color-slate-700: oklch(37.2% 0.044 257.287);
     --color-slate-800: oklch(27.9% 0.041 260.031);
     --color-slate-900: oklch(20.8% 0.042 265.755);
-    --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-gray-500: oklch(55.1% 0.027 264.364);
     --color-gray-600: oklch(44.6% 0.03 256.802);
     --color-gray-800: oklch(27.8% 0.033 256.848);
@@ -1412,18 +1411,6 @@
   .line-through {
     text-decoration-line: line-through;
   }
-  .underline {
-    text-decoration-line: underline;
-  }
-  .decoration-amber-400 {
-    text-decoration-color: var(--color-amber-400);
-  }
-  .decoration-slate-300 {
-    text-decoration-color: var(--color-slate-300);
-  }
-  .decoration-dotted {
-    text-decoration-style: dotted;
-  }
   .underline-offset-4 {
     text-underline-offset: 4px;
   }
@@ -1747,13 +1734,6 @@
       }
     }
   }
-  .hover\:text-amber-700 {
-    &:hover {
-      @media (hover: hover) {
-        color: var(--color-amber-700);
-      }
-    }
-  }
   .hover\:text-indigo-500 {
     &:hover {
       @media (hover: hover) {
@@ -1772,13 +1752,6 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-slate-700);
-      }
-    }
-  }
-  .hover\:text-slate-900 {
-    &:hover {
-      @media (hover: hover) {
-        color: var(--color-slate-900);
       }
     }
   }
