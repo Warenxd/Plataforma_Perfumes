@@ -321,7 +321,7 @@
                         {% if mes.ventas %}
                         <div class="divide-y divide-slate-200">
                           {% for v in mes.ventas %}
-                            <div class="flex flex-col gap-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5" data-month-sale data-nombre="{{ v.nombre }}" data-tipo="{{ v.tipo }}" data-tienda="{{ v.tienda }}" data-unidades="{{ v.unidades }}" data-precio="{{ v.precio_unitario }}" data-fecha="{{ v.fecha_venta|date:'Y-m-d' }}" data-imagen="{{ v.imagen }}">
+                            <div class="flex flex-col gap-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5" data-month-sale data-venta-id="{{ v.id }}" data-nombre="{{ v.nombre }}" data-tipo="{{ v.tipo }}" data-tienda="{{ v.tienda }}" data-unidades="{{ v.unidades }}" data-precio="{{ v.precio_unitario }}" data-fecha="{{ v.fecha_venta|date:'Y-m-d' }}" data-imagen="{{ v.imagen }}">
                               <div class="flex items-start gap-4">
                                 {% if v.imagen %}
                                   <div class="w-24 sm:w-28 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">

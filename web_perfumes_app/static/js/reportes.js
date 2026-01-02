@@ -179,173 +179,161 @@
       tableBody.innerHTML = "";
     }
 
-    const attachSuggestions = (row) => {
-      const input = row.querySelector('[name="nombre"][data-suggest-url]');
-      const tiendaSelect = row.querySelector('[name="tienda"]');
-      const imageThumb = row.querySelector("[data-reportes-thumb]");
-      const box = row.querySelector("[data-reportes-suggestions]");
-      const list = box ? box.querySelector("ul") : null;
-      if (!input || !box || !list || !window.fetch) return;
+    let activeSuggestionsBox = null;
 
-      // Flotar el dropdown para que no lo corte la tabla
-      if (!box.dataset.floated) {
-        box.dataset.floated = "1";
-        box.style.position = "fixed";
-        box.style.zIndex = "9999";
-        box.style.maxHeight = "260px";
-        box.style.overflowY = "auto";
-        document.body.appendChild(box);
-      }
+window.addEventListener(
+  "scroll",
+  () => {
+    if (activeSuggestionsBox) {
+      activeSuggestionsBox.classList.add("hidden");
+      activeSuggestionsBox = null;
+    }
+  },
+  { passive: true }
+);
 
-      const placeBox = () => {
-        const rect = input.getBoundingClientRect();
-        box.style.left = `${rect.left + window.scrollX}px`;
-        box.style.top = `${rect.bottom + window.scrollY + 4}px`;
-        box.style.width = `${rect.width}px`;
-      };
+  const attachSuggestions = (row) => {
+  const input = row.querySelector('[name="nombre"][data-suggest-url]');
+  const tiendaSelect = row.querySelector('[name="tienda"]');
+  const imageThumb = row.querySelector("[data-reportes-thumb]");
+  const box = row.querySelector("[data-reportes-suggestions]");
+  const list = box ? box.querySelector("ul") : null;
+  if (!input || !box || !list || !window.fetch) return;
 
-      let controller = null;
-      let debounceTimer = null;
-      let itemsCache = [];
-      let activeIndex = -1;
-      const suggestUrl = input.dataset.suggestUrl;
-      const toggleBox = (show) => {
-        if (show) placeBox();
-        box.classList.toggle("hidden", !show);
-        if (!show) activeIndex = -1;
-      };
-      const updateActive = (idx) => {
-        const items = Array.from(list.children);
-        items.forEach((li, liIdx) => {
-          li.classList.toggle("bg-slate-100", liIdx === idx);
-        });
-        activeIndex = idx;
-        const activeEl = items[idx];
-        if (activeEl && typeof activeEl.scrollIntoView === "function") {
-          activeEl.scrollIntoView({ block: "nearest" });
-        }
-      };
-      const selectItem = (item) => {
-        input.value = item.nombre;
-        if (tiendaSelect && item.tienda_code) {
-          tiendaSelect.value = item.tienda_code;
-        }
-        if (imageThumb) {
-          imageThumb.innerHTML = "";
-          if (item.imagen) {
-            const img = document.createElement("img");
-            img.src = item.imagen;
-            img.alt = item.nombre || "";
-            img.className = "h-full w-full object-cover";
-            imageThumb.appendChild(img);
-          } else {
-            const fallback = document.createElement("span");
-            fallback.className = "text-[11px] font-semibold text-slate-400";
-            fallback.textContent = "Img";
-            imageThumb.appendChild(fallback);
-          }
-        }
-        toggleBox(false);
-      };
-          const render = (items) => {
-            list.innerHTML = "";
-            itemsCache = items;
-            activeIndex = -1;
-            if (!items.length) {
-              toggleBox(false);
-          return;
-        }
-        items.forEach((item) => {
-          const li = document.createElement("li");
-          li.className = "px-3 py-2 cursor-pointer hover:bg-slate-50";
-          const rowEl = document.createElement("div");
-          rowEl.className = "flex items-center gap-3";
-          const thumb = document.createElement("div");
-          thumb.className = "h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center";
-          if (item.imagen) {
-            const img = document.createElement("img");
-            img.src = item.imagen;
-            img.alt = item.nombre || "";
-            img.className = "h-full w-full object-cover";
-            thumb.appendChild(img);
-          } else {
-            const dot = document.createElement("span");
-            dot.className = "text-[11px] font-semibold text-slate-500";
-            dot.textContent = "Sin img";
-            thumb.appendChild(dot);
-          }
-          const info = document.createElement("div");
-          info.className = "leading-tight";
-          const nameEl = document.createElement("p");
-          nameEl.className = "text-sm font-semibold text-slate-900";
-          nameEl.textContent = item.nombre;
-          const marcaEl = document.createElement("p");
-          marcaEl.className = "text-xs text-slate-500";
-          marcaEl.textContent = item.marca || "";
-          const tiendaEl = document.createElement("p");
-          tiendaEl.className = "text-[11px] text-slate-500";
-          tiendaEl.textContent = item.tienda ? `Tienda: ${item.tienda}` : "";
-          info.append(nameEl, marcaEl, tiendaEl);
-          rowEl.append(thumb, info);
-          li.appendChild(rowEl);
-          li.addEventListener("click", () => selectItem(item));
-          list.appendChild(li);
-        });
-        toggleBox(true);
-      };
-          const fetchSuggestions = async (value) => {
-            if (!suggestUrl) return;
-            if (controller) controller.abort();
-            controller = new AbortController();
-            try {
-              const url = new URL(suggestUrl, window.location.origin);
-              url.searchParams.set("q", value);
-              const res = await fetch(url.toString(), {
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                signal: controller.signal,
-              });
-              if (!res.ok) throw new Error("No OK");
-              const data = await res.json();
-              render(data.results || []);
-            } catch (error) {
-              toggleBox(false);
-            }
-          };
-          input.addEventListener("input", (event) => {
-            const value = event.target.value.trim();
-            if (!value) {
-              toggleBox(false);
-              return;
-            }
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => fetchSuggestions(value), 160);
-          });
-      input.addEventListener("blur", () => setTimeout(() => toggleBox(false), 100));
-      input.addEventListener("focus", () => {
-        if (list.children.length) toggleBox(true);
-      });
-      window.addEventListener("scroll", placeBox, true);
-      window.addEventListener("resize", placeBox);
-      input.addEventListener("keydown", (event) => {
-        if (list.children.length === 0) return;
-        if (event.key === "ArrowDown") {
-          event.preventDefault();
-          const next = activeIndex + 1 >= itemsCache.length ? 0 : activeIndex + 1;
-          updateActive(next);
-        } else if (event.key === "ArrowUp") {
-          event.preventDefault();
-          const prev = activeIndex - 1 < 0 ? itemsCache.length - 1 : activeIndex - 1;
-          updateActive(prev);
-        } else if (event.key === "Enter") {
-          if (activeIndex >= 0 && activeIndex < itemsCache.length) {
-            event.preventDefault();
-            selectItem(itemsCache[activeIndex]);
-          }
-        } else if (event.key === "Escape") {
-          toggleBox(false);
-        }
-      });
-    };
+  // Flotar el dropdown
+  if (!box.dataset.floated) {
+    box.dataset.floated = "1";
+    box.style.position = "fixed";
+    box.style.zIndex = "9999";
+    box.style.maxHeight = "260px";
+    box.style.overflowY = "auto";
+    document.body.appendChild(box);
+  }
+
+  let controller = null;
+  let debounceTimer = null;
+  let itemsCache = [];
+  let activeIndex = -1;
+  const suggestUrl = input.dataset.suggestUrl;
+
+  // -------------------------
+  // Posicionamiento
+  // -------------------------
+  const placeBox = () => {
+    const rect = input.getBoundingClientRect();
+    const boxHeight = box.offsetHeight || 260;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    box.style.left = `${rect.left}px`;
+    box.style.width = `${rect.width}px`;
+
+    if (spaceBelow < boxHeight && spaceAbove > boxHeight) {
+      box.style.top = `${rect.top - boxHeight - 4}px`;
+      box.dataset.placement = "top";
+    } else {
+      box.style.top = `${rect.bottom + 4}px`;
+      box.dataset.placement = "bottom";
+    }
+  };
+
+  // -------------------------
+  // Toggle (UNA SOLA VEZ)
+  // -------------------------
+  const toggleBox = (show) => {
+    if (show) {
+      placeBox();
+      activeSuggestionsBox = box;
+    } else {
+      if (activeSuggestionsBox === box) activeSuggestionsBox = null;
+    }
+    box.classList.toggle("hidden", !show);
+    if (!show) activeIndex = -1;
+  };
+
+  const updateActive = (idx) => {
+    const items = Array.from(list.children);
+    items.forEach((li, i) => li.classList.toggle("bg-slate-100", i === idx));
+    activeIndex = idx;
+    items[idx]?.scrollIntoView({ block: "nearest" });
+  };
+
+  const selectItem = (item) => {
+    input.value = item.nombre;
+    if (tiendaSelect && item.tienda_code) tiendaSelect.value = item.tienda_code;
+
+    if (imageThumb) {
+      imageThumb.innerHTML = item.imagen
+        ? `<img src="${item.imagen}" class="h-full w-full object-cover">`
+        : `<span class="text-[11px] font-semibold text-slate-400">Img</span>`;
+    }
+
+    toggleBox(false);
+  };
+
+  const render = (items) => {
+    list.innerHTML = "";
+    itemsCache = items;
+    activeIndex = -1;
+    if (!items.length) return toggleBox(false);
+
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = "px-3 py-2 cursor-pointer hover:bg-slate-50";
+      li.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-xl bg-slate-100 border overflow-hidden flex items-center justify-center">
+            ${item.imagen ? `<img src="${item.imagen}" class="h-full w-full object-cover">` : `<span class="text-[11px]">Img</span>`}
+          </div>
+          <div class="leading-tight">
+            <p class="text-sm font-semibold">${item.nombre}</p>
+            <p class="text-xs text-slate-500">${item.marca || ""}</p>
+            <p class="text-[11px] text-slate-500">${item.tienda ? `Tienda: ${item.tienda}` : ""}</p>
+          </div>
+        </div>
+      `;
+      li.addEventListener("click", () => selectItem(item));
+      list.appendChild(li);
+    });
+
+    toggleBox(true);
+  };
+
+  const fetchSuggestions = async (value) => {
+    if (controller) controller.abort();
+    controller = new AbortController();
+    try {
+      const url = new URL(suggestUrl, window.location.origin);
+      url.searchParams.set("q", value);
+      const res = await fetch(url, { signal: controller.signal });
+      const data = await res.json();
+      render(data.results || []);
+    } catch {
+      toggleBox(false);
+    }
+  };
+
+  // Events
+  input.addEventListener("input", (e) => {
+    const value = e.target.value.trim();
+    if (!value) return toggleBox(false);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => fetchSuggestions(value), 160);
+  });
+
+  input.addEventListener("focus", () => list.children.length && toggleBox(true));
+  input.addEventListener("blur", () => setTimeout(() => toggleBox(false), 100));
+
+  input.addEventListener("keydown", (e) => {
+    if (!itemsCache.length) return;
+    if (e.key === "ArrowDown") updateActive((activeIndex + 1) % itemsCache.length);
+    if (e.key === "ArrowUp") updateActive((activeIndex - 1 + itemsCache.length) % itemsCache.length);
+    if (e.key === "Enter" && activeIndex >= 0) selectItem(itemsCache[activeIndex]);
+    if (e.key === "Escape") toggleBox(false);
+  });
+};
+
+
 
     const updateRowTotal = (row) => {
       const unidadesInput = row.querySelector('[name="unidades"]');
@@ -362,6 +350,7 @@
       if (!tableBody || !window.localStorage) return;
       const rows = Array.from(tableBody.querySelectorAll("[data-reportes-row]"));
       const entries = rows.map((row) => ({
+        id: row.dataset.ventaId || "",
         nombre: (row.querySelector('[name="nombre"]') || {}).value || "",
         tipo: (row.querySelector('[name="tipo"]') || {}).value || "",
         tienda: (row.querySelector('[name="tienda"]') || {}).value || "",
@@ -416,6 +405,11 @@
       const fragment = rowTemplate.content.cloneNode(true);
       const clone = fragment.querySelector("[data-reportes-row]");
       if (!clone) return;
+      if (defaults.id) {
+        clone.dataset.ventaId = defaults.id;
+      } else {
+        delete clone.dataset.ventaId;
+      }
       if (defaults.nombre) clone.querySelector('[name="nombre"]').value = defaults.nombre;
       if (defaults.tipo) clone.querySelector('[name="tipo"]').value = defaults.tipo;
       if (defaults.tienda) clone.querySelector('[name="tienda"]').value = defaults.tienda;
@@ -497,7 +491,8 @@
           alert("Completa todos los campos (unidades > 0, precio > 0).");
           return;
         }
-        entries.push({ nombre, tipo, tienda, unidades, precio_unitario, fecha_venta });
+        const ventaId = row.dataset.ventaId || "";
+        entries.push({ id: ventaId, nombre, tipo, tienda, unidades, precio_unitario, fecha_venta });
       }
       const targetUrl = (formTable && formTable.action) || window.location.href;
       try {
@@ -632,6 +627,7 @@
             if (!entriesToLoad.length) {
               const saleNodes = card.querySelectorAll("[data-month-sale]");
               entriesToLoad = Array.from(saleNodes).map((node) => ({
+                id: node.dataset.ventaId || "",
                 nombre: node.dataset.nombre || "",
                 tipo: node.dataset.tipo || "",
                 tienda: node.dataset.tienda || "",
@@ -650,17 +646,18 @@
               entriesToLoad.forEach((entry) =>
                 addRow(
                   {
+                    id: entry.id,
                     nombre: entry.nombre,
                     tipo: entry.tipo,
                     tienda: entry.tienda,
                     unidades: entry.unidades,
-                precio_unitario: entry.precio_unitario,
-                fecha_venta: entry.fecha_venta,
-                imagen: entry.imagen,
-              },
-              { skipDraftSave: true }
-            )
-          );
+                    precio_unitario: entry.precio_unitario,
+                    fecha_venta: entry.fecha_venta,
+                    imagen: entry.imagen,
+                  },
+                  { skipDraftSave: true }
+                )
+              );
               saveDraft();
               window.scrollTo({ top: container.offsetTop, behavior: "smooth" });
             }
