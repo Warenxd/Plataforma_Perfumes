@@ -3,6 +3,7 @@
   const searchInput = document.getElementById("search");
   const filtersForm = document.getElementById("filters-form");
   const totalPerfumesCount = document.getElementById("total-perfumes-count");
+  const storeCountEls = document.querySelectorAll("[data-store-count]");
   const supportsFetch = typeof window.fetch === "function";
   const filterConfigs = [
     {
@@ -443,6 +444,27 @@
       totalPerfumesCount.textContent = Number.isFinite(num) ? num : 0;
     };
 
+    const updateStoreCounts = (list) => {
+      if (!storeCountEls || storeCountEls.length === 0 || !Array.isArray(list)) return;
+      const map = new Map(list.map((item) => [String(item.code || ""), Number(item.count) || 0]));
+      storeCountEls.forEach((el) => {
+        const code = el.dataset.storeCount || "";
+        if (!code) return;
+        const val = map.has(code) ? map.get(code) : 0;
+        el.textContent = Number.isFinite(val) ? val : 0;
+      });
+    };
+
+    const readStoreCountsFromDom = () => {
+      if (!storeCountEls || storeCountEls.length === 0) return [];
+      return Array.from(storeCountEls)
+        .map((el) => ({
+          code: el.dataset.storeCount || "",
+          count: Number(el.textContent) || 0,
+        }))
+        .filter((item) => item.code);
+    };
+
     const syncSearchInputFromUrl = (url) => {
       if (!searchInput) {
         return;
@@ -478,8 +500,8 @@
       }
     };
 
-    const pushState = (url, html, totalPerfumes, replace = false) => {
-      const state = { html, total_perfumes: totalPerfumes };
+    const pushState = (url, html, totalPerfumes, storeCounts, replace = false) => {
+      const state = { html, total_perfumes: totalPerfumes, tienda_counts: storeCounts || [] };
       if (replace) {
         window.history.replaceState(state, "", url);
       } else {
@@ -507,6 +529,7 @@
         }
         replaceContent(data.html);
         updateTotalPerfumes(data.total_perfumes);
+        updateStoreCounts(data.tienda_counts);
         // Normaliza la URL a la página real devuelta (ej: si pedimos más allá de la última).
         const normalized = new URL(fetchUrl, window.location.origin);
         if (data.page && Number.isFinite(Number(data.page))) {
@@ -520,7 +543,7 @@
         syncSearchInputFromUrl(normalized.toString());
         syncFiltersFromUrl(normalized.toString());
         if (push) {
-          pushState(normalized.toString(), data.html, data.total_perfumes, replaceState);
+          pushState(normalized.toString(), data.html, data.total_perfumes, data.tienda_counts, replaceState);
         }
       } catch (error) {
         console.error(error);
@@ -738,6 +761,7 @@
       if (event.state && typeof event.state.html === "string") {
         replaceContent(event.state.html);
         updateTotalPerfumes(event.state.total_perfumes);
+        updateStoreCounts(event.state.tienda_counts);
         syncSearchInputFromUrl(window.location.href);
         syncFiltersFromUrl(window.location.href);
       } else {
@@ -749,6 +773,7 @@
       window.location.href.split("#")[0],
       grid.innerHTML,
       totalPerfumesCount ? totalPerfumesCount.textContent : null,
+      readStoreCountsFromDom(),
       true
     );
     syncSearchInputFromUrl(window.location.href);

@@ -1,0 +1,109 @@
+{% load format_price %}
+{% if mes %}
+{% with month_id=month_id|default:"month-data-"|add:mes.mes_num %}
+<div class="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm space-y-3" data-month-card data-month-id="{{ mes.mes_num }}">
+  <div class="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
+    <button type="button" class="flex items-center gap-3" data-month-toggle>
+      <span class="rounded-full bg-slate-900/90 px-3 py-1 text-[11px] font-semibold text-white shadow">Mes {{ mes.mes_num }}</span>
+      <p class="text-base sm:text-lg font-semibold text-slate-900">{{ mes.mes }}</p>
+    </button>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] font-semibold text-slate-700 hover:bg-slate-50" data-month-edit data-month-json="{{ month_id }}" title="Cargar este mes para editar">
+        <i class="fa-solid fa-pen-to-square text-slate-500"></i>
+        <span>Editar</span>
+      </button>
+      <div class="text-right">
+        <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Ganancia</p>
+        <p class="text-xl sm:text-2xl font-semibold text-slate-900">{{ mes.ingreso_total|format_price }}</p>
+      </div>
+      <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700" data-month-label>Ocultar</span>
+    </div>
+  </div>
+  <div class="space-y-3" data-month-body>
+    <div class="grid gap-3 md:grid-cols-3">
+      <div class="rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+        <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Perfume más vendido</p>
+        {% if mes.top_perfume %}
+          <p class="font-semibold text-slate-900">{{ mes.top_perfume.nombre }}</p>
+          <p class="text-xs text-slate-600">Tienda: {{ mes.top_perfume_tienda }}</p>
+          <p class="text-xs text-slate-600">Unidades: {{ mes.top_perfume.unidades }}</p>
+        {% else %}
+          <p class="text-xs text-slate-500">Sin datos.</p>
+        {% endif %}
+      </div>
+      <div class="rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+        <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Decant más vendido</p>
+        {% if mes.top_decant %}
+          <p class="font-semibold text-slate-900">{{ mes.top_decant.nombre }}</p>
+          <p class="text-xs text-slate-600">Tienda: {{ mes.top_decant_tienda }}</p>
+          <p class="text-xs text-slate-600">Unidades: {{ mes.top_decant.unidades }}</p>
+        {% else %}
+          <p class="text-xs text-slate-500">Sin datos.</p>
+        {% endif %}
+      </div>
+      <div class="rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+        <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Tienda más vendida</p>
+        {% if mes.top_store %}
+          <p class="font-semibold text-slate-900">{{ mes.top_store_tienda }}</p>
+          <p class="text-xs text-slate-600">Ingresos: {{ mes.top_store.ingresos|format_price }}</p>
+        {% else %}
+          <p class="text-xs text-slate-500">Sin datos.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+      <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-2">Ventas del mes</p>
+      {% if mes.ventas %}
+      <div class="divide-y divide-slate-200">
+        {% for v in mes.ventas %}
+          <div class="flex flex-col gap-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5" data-month-sale data-venta-id="{{ v.id }}" data-nombre="{{ v.nombre }}" data-tipo="{{ v.tipo }}" data-tienda="{{ v.tienda }}" data-unidades="{{ v.unidades }}" data-precio="{{ v.precio_unitario }}" data-fecha="{{ v.fecha_venta|date:'Y-m-d' }}" data-imagen="{{ v.imagen }}">
+            <div class="flex items-start gap-4">
+              {% if v.imagen %}
+                <div class="w-24 sm:w-28 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <img src="{{ v.imagen }}" alt="{{ v.nombre }}" class="h-full w-full object-cover">
+                </div>
+              {% else %}
+                <div class="h-20 w-20 flex-shrink-0 rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400 flex items-center justify-center">N/A</div>
+              {% endif %}
+              <div class="leading-tight">
+                <p class="text-lg sm:text-xl font-semibold text-slate-900">{{ v.nombre }}</p>
+                <div class="mt-1 flex flex-wrap gap-3 text-[14px] sm:text-[15px]">
+                  {% if v.tienda == "SILK" %}
+                    <span class="inline-flex items-center rounded-full bg-indigo-100 px-3.5 py-1.5 font-semibold text-indigo-800">{{ v.tienda_label }}</span>
+                  {% elif v.tienda == "YAURAS" %}
+                    <span class="inline-flex items-center rounded-full bg-amber-100 px-3.5 py-1.5 font-semibold text-amber-800">{{ v.tienda_label }}</span>
+                  {% elif v.tienda == "JOY" %}
+                    <span class="inline-flex items-center rounded-full bg-emerald-100 px-3.5 py-1.5 font-semibold text-emerald-800">{{ v.tienda_label }}</span>
+                  {% else %}
+                    <span class="inline-flex items-center rounded-full bg-slate-200 px-3.5 py-1.5 font-semibold text-slate-800">{{ v.tienda_label }}</span>
+                  {% endif %}
+                  {% if v.tipo == "PERFUME" %}
+                    <span class="inline-flex items-center rounded-full bg-emerald-100 px-3.5 py-1.5 font-semibold text-emerald-800">{{ v.tipo_label }}</span>
+                  {% else %}
+                    <span class="inline-flex items-center rounded-full bg-orange-100 px-3.5 py-1.5 font-semibold text-orange-800">{{ v.tipo_label }}</span>
+                  {% endif %}
+                </div>
+                <p class="text-[14px] sm:text-[15px] text-slate-700">Fecha: <span class="font-semibold text-slate-900">{{ v.fecha_venta|date:"d/m/Y" }}</span></p>
+              </div>
+            </div>
+            <div class="text-right text-sm sm:text-base text-slate-700 space-y-2">
+              <p>Unidades: <span class="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 font-semibold text-slate-800">{{ v.unidades }}</span></p>
+              <p>Precio: <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-800">{{ v.precio_unitario|format_price }}</span></p>
+              <p>Total: <span class="inline-flex items-center rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">{{ v.total|format_price }}</span></p>
+              <button type="button" class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 hover:bg-rose-100" data-reportes-delete data-venta-id="{{ v.id }}" data-delete-url="{% url 'eliminar_venta' v.id %}">
+                <i class="fa-solid fa-trash"></i>
+                <span>Eliminar</span>
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-xs text-slate-500">Sin ventas registradas.</p>
+      {% endif %}
+    </div>
+  </div>
+  {{ mes.ventas|json_script:month_id }}
+</div>
+{% endwith %}
+{% endif %}
