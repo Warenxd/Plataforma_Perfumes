@@ -43,7 +43,6 @@ class Genero(models.Model):
 
 # TABLA DE PERFUMES
 class Perfume(models.Model):
-    
     TIENDA_CHOICES = [
         ('SILK', 'Silk Perfumes'),
         ('YAURAS', 'Yauras Perfumes'),
@@ -56,7 +55,9 @@ class Perfume(models.Model):
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
     generos = models.ManyToManyField(Genero, related_name="perfumes", blank=True, null=True)
-    tienda = models.CharField(max_length=20, choices=TIENDA_CHOICES, default='SILK')
+    tienda = models.CharField(max_length=100, choices=TIENDA_CHOICES, default='SILK')
+    tienda_personalizada = models.CharField(max_length=120, blank=True, null=True)
+    es_custom = models.BooleanField(default=False)
     url_producto = models.URLField(blank=True, null=True)
     # --------------------------------------------------------------------------
     # Mis relaciones (Los ManyToMany siempre sus campos se escriben en plural, no en singular por buenas prácticas)

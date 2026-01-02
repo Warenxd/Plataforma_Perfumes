@@ -102,11 +102,11 @@
                   <th class="py-2 px-3 text-left w-[260px]">Producto</th>
                   <th class="py-2 px-3 text-left w-[110px]">Tipo</th>
                   <th class="py-2 px-3 text-left w-[120px]">Tienda</th>
-                  <th class="py-2 px-3 text-right w-[70px]">Unidades</th>
-                  <th class="py-2 px-3 text-right w-[100px]">Precio unit.</th>
+                  <th class="py-2 px-3 text-right w-[20px]">Unidades</th>
+                  <th class="py-2 px-3 text-right w-[90px]">Precio unit.</th>
                   <th class="py-2 px-3 text-right w-[110px]">Total</th>
                   <th class="py-2 px-3 text-left w-[130px]">Fecha</th>
-                  <th class="py-2 px-3 text-right w-[110px]">Acciones</th>
+                  <th class="py-2 px-3 text-right w-[50px]">Acciones</th>
                 </tr>
               </thead>
               <tbody data-reportes-table-body>
@@ -118,7 +118,7 @@
         </form>
         <template id="reportes-row-template">
           <tr class="border-b border-slate-100" data-reportes-row>
-            <td class="py-2 px-3 align-middle w-[100px]">
+            <td class="py-2 px-3 align-middle w-[90px]">
               <div class="h-16 w-16 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center" data-reportes-thumb>
                 <span class="text-[12px] font-semibold text-slate-400">Img</span>
               </div>
@@ -145,17 +145,17 @@
                 {% endfor %}
               </select>
             </td>
-            <td class="py-2 px-3 align-middle w-[80px]">
+            <td class="py-2 px-3 align-middle w-[20px]">
               <input type="number" min="1" name="unidades" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 text-right focus:border-indigo-400 focus:outline-none" value="1">
             </td>
-            <td class="py-2 px-3 align-middle w-[100px]">
+            <td class="py-2 px-3 align-middle w-[120px]">
               <input type="number" min="0" name="precio_unitario" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 text-right focus:border-indigo-400 focus:outline-none" value="0">
             </td>
             <td class="py-2 px-3 align-middle text-right w-[110px]" data-row-total>$0</td>
             <td class="py-2 px-3 align-middle w-[130px]">
               <input type="date" name="fecha_venta" lang="es-CL" class="w-full rounded-xl border border-slate-200 px-2 py-2 text-sm font-semibold text-slate-800 focus:border-indigo-400 focus:outline-none" value="{{ form.initial.fecha_venta|default:form.fecha_venta.value|default:today }}">
             </td>
-            <td class="py-2 px-3 align-middle text-right w-[110px]">
+            <td class="py-2 px-3 align-middle text-right w-[50px]">
               <button type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-500" data-reportes-remove-row>Quitar</button>
             </td>
           </tr>
@@ -356,15 +356,15 @@
                                 <p>Precio: <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-800">{{ v.precio_unitario|format_price }}</span></p>
                                 <p>Total: <span class="inline-flex items-center rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">{{ v.total|format_price }}</span></p>
                                 <button
-  type="button"
-  class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 hover:bg-rose-100"
-  data-reportes-delete
-  data-venta-id="{{ v.id }}"
-  data-month-id="{{ mes.mes_num }}"
-  data-delete-url="{% url 'eliminar_venta' v.id %}">
-  <i class="fa-solid fa-trash"></i>
-  <span>Eliminar</span>
-</button>
+                                  type="button"
+                                  class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 hover:bg-rose-100"
+                                  data-reportes-delete
+                                  data-venta-id="{{ v.id }}"
+                                  data-month-id="{{ mes.mes_num }}"
+                                  data-delete-url="{% url 'eliminar_venta' v.id %}">
+                                  <i class="fa-solid fa-trash"></i>
+                                  <span>Eliminar</span>
+                                </button>
                               </div>
                             </div>
                           {% endfor %}

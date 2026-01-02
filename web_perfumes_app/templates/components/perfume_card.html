@@ -7,8 +7,10 @@
   data-perfume-id="{{ p.id }}"
   data-perfume-nombre="{{ p.nombre }}"
   data-perfume-marca="{{ p.marca.marca }}"
+  data-perfume-marca-id="{{ p.marca.id }}"
   data-perfume-precio="{{ p.precio|default_if_none:0 }}"
-  data-perfume-tienda="{{ p.tienda }}"
+  data-perfume-tienda="{{ p.tienda_personalizada|default_if_none:p.tienda }}"
+  data-perfume-tienda-raw="{{ p.tienda_personalizada|default_if_none:p.tienda }}"
   data-perfume-url="{{ p.url_producto }}"
   {% if p.imagen %}data-perfume-imagen="{{ p.imagen.url }}"{% endif %}>
   <div class="flip-card-inner">
@@ -27,18 +29,47 @@
         </div>
         {% endif %}
 
+        {% if p.es_custom %}
+        <div class="absolute top-4 right-3">
+          <span class="rounded-full bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-lg flex items-center gap-1">
+            <i class="fa-solid fa-star"></i>
+            Custom
+          </span>
+        </div>
+        {% endif %}
+
         <!-- LOGO TIENDA -->
-        <a href="{{ p.url_producto }}"
-          class="inline-block self-center transition-transform duration-200 hover:scale-110"
-          target="_blank">
-          {% if p.tienda == "SILK" %}
-          <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center" style="height: 2.5rem;">
-          {% elif p.tienda == "YAURAS" %}
-          <img src="{% static 'assets/yauras_perfumes.png' %}" alt="Yauras Perfumes" class="h-6 w-auto" style="height: 3.5rem;">
-          {% elif p.tienda == "JOY" %}
-          <img src="{% static 'assets/joy_perfumes.png' %}" alt="Joy Perfumes" class="h-6 w-auto" style="height: 2.5rem;">
-          {% endif %}
-        </a>
+        {% with tienda_label=p.tienda_personalizada|default_if_none:p.tienda %}
+        {% if tienda_label %}
+          <div class="flex items-center justify-center">
+            {% if p.tienda == "SILK" %}
+            <a href="{{ p.url_producto }}" class="inline-flex items-center gap-2 self-center transition-transform duration-200 hover:scale-105" {% if p.url_producto %}target="_blank"{% endif %}>
+              <img src="{% static 'assets/silk_perfumes.png' %}" alt="Silk Perfumes" class="h-6 w-auto text-center" style="height: 2.5rem;">
+            </a>
+            {% elif p.tienda == "YAURAS" %}
+            <a href="{{ p.url_producto }}" class="inline-flex items-center gap-2 self-center transition-transform duration-200 hover:scale-105" {% if p.url_producto %}target="_blank"{% endif %}>
+              <img src="{% static 'assets/yauras_perfumes.png' %}" alt="Yauras Perfumes" class="h-6 w-auto" style="height: 3.5rem;">
+            </a>
+            {% elif p.tienda == "JOY" %}
+            <a href="{{ p.url_producto }}" class="inline-flex items-center gap-2 self-center transition-transform duration-200 hover:scale-105" {% if p.url_producto %}target="_blank"{% endif %}>
+              <img src="{% static 'assets/joy_perfumes.png' %}" alt="Joy Perfumes" class="h-6 w-auto" style="height: 2.5rem;">
+            </a>
+            {% else %}
+            {% if p.url_producto %}
+            <a href="{{ p.url_producto }}" target="_blank" class="inline-flex items-center mt-4 gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm hover:scale-105 transition">
+              <i class="fa-solid fa-store text-amber-500"></i>
+              <span class="truncate max-w-[180px]">{{ tienda_label }}</span>
+            </a>
+            {% else %}
+            <span class="inline-flex items-center mt-4 gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+              <i class="fa-solid fa-store text-amber-500"></i>
+              <span class="truncate max-w-[180px]">{{ tienda_label }}</span>
+            </span>
+            {% endif %}
+            {% endif %}
+          </div>
+        {% endif %}
+        {% endwith %}
 
         <!-- IMAGEN DE CARD -->
         {% if p.imagen %}
@@ -47,7 +78,7 @@
 
         <!-- MARCA DE CARD -->
         <div class="mt-2 px-4 leading-2 text-sm text-left font-Lexend text-gray-600 wrap-break-word">
-          {{ p.marca.marca }}
+          {{ p.marca.marca|default:"" }}
         </div>
 
         <!-- NOMBRE DE CARD -->
@@ -71,9 +102,9 @@
       </div>
 
       <!-- BOTON COMPARAR -->
-      <div class="compare-section">
+      <div class="compare-section space-y-2">
         <button type="button"
-          class="compare-btn text-xs bg-gray-400 cursor-pointer font-Lexend px-4 py-2 rounded-full">
+          class="compare-btn text-xs font-Lexend rounded-full">
           Agregar para comparar +
         </button>
       </div>
@@ -160,7 +191,23 @@
         {% endif %}
       </div>
 
-      {% if p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 and p.notas_general.count == 0 %}
+      {% if p.es_custom %}
+      <div class="mt-4 flex flex-col gap-2 w-full px-4">
+        <button
+          type="button"
+          class="w-full rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition"
+          data-edit-custom="{{ p.id }}">
+          Editar perfume
+        </button>
+        <button
+          type="button"
+          class="w-full rounded-full bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-200 transition"
+          data-delete-custom="{{ p.id }}"
+          data-delete-url="{% url 'eliminar_perfume_custom' p.id %}">
+          Eliminar perfume
+        </button>
+      </div>
+      {% elif p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 and p.notas_general.count == 0 %}
       <div class="download-wrapper mt-6">
         <form method="post" action="{% url 'descargar_acordes_individual' p.id %}" class="js-download-form">
           {% csrf_token %}
@@ -250,7 +297,7 @@
       <!-- BOTON COMPARAR REVERSO -->
       <div class="compare-section">
         <button type="button"
-          class="compare-btn text-xs bg-gray-400 cursor-pointer font-Lexend px-4 py-2 rounded-full">
+          class="compare-btn text-xs font-Lexend rounded-full">
           Agregar para comparar +
         </button>
       </div>

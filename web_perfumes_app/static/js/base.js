@@ -3,6 +3,7 @@
   const searchInput = document.getElementById("search");
   const filtersForm = document.getElementById("filters-form");
   const totalPerfumesCount = document.getElementById("total-perfumes-count");
+  const customButton = document.getElementById("view-custom-perfumes");
   const storeCountEls = document.querySelectorAll("[data-store-count]");
   const supportsFetch = typeof window.fetch === "function";
   const filterConfigs = [
@@ -136,6 +137,7 @@
       button.textContent = isAdded ? "Agregado" : "Agregar para comparar +";
     });
   };
+  window.syncCompareButtons = syncCompareButtons;
 
   const updateComparisonCounters = (forcedTotal) => {
     const total = typeof forcedTotal === "number" ? forcedTotal : comparisonItems.length;
@@ -444,6 +446,26 @@
       totalPerfumesCount.textContent = Number.isFinite(num) ? num : 0;
     };
 
+    const updateCustomButtonsFromUrl = (urlStr) => {
+      if (!customButton) return;
+      try {
+        const parsed = new URL(urlStr, window.location.origin);
+        const isCustom =
+          (parsed.searchParams.get("custom") || "").toLowerCase() === "true" ||
+          parsed.searchParams.get("custom") === "1";
+        customButton.classList.toggle("bg-emerald-600", isCustom);
+        customButton.classList.toggle("text-white", isCustom);
+        customButton.classList.toggle("border-emerald-200", isCustom);
+        customButton.classList.toggle("hover:bg-emerald-500", isCustom);
+        customButton.classList.toggle("bg-white", !isCustom);
+        customButton.classList.toggle("text-slate-800", !isCustom);
+        customButton.classList.toggle("border-slate-200", !isCustom);
+        customButton.classList.toggle("hover:bg-slate-50", !isCustom);
+      } catch (error) {
+        console.warn("No se pudo actualizar estado de botón custom", error);
+      }
+    };
+
     const updateStoreCounts = (list) => {
       if (!storeCountEls || storeCountEls.length === 0 || !Array.isArray(list)) return;
       const map = new Map(list.map((item) => [String(item.code || ""), Number(item.count) || 0]));
@@ -540,6 +562,7 @@
             normalized.searchParams.set("page", pageNumber);
           }
         }
+        updateCustomButtonsFromUrl(normalized.toString());
         syncSearchInputFromUrl(normalized.toString());
         syncFiltersFromUrl(normalized.toString());
         if (push) {
@@ -704,6 +727,7 @@
         return;
       }
       const url = new URL(window.location.href);
+      url.searchParams.delete("custom");
       filterConfigs.forEach(({ name, selector }) => {
         url.searchParams.delete(name);
         filtersForm
@@ -745,6 +769,22 @@
       });
     }
 
+    if (customButton) {
+      customButton.addEventListener("click", () => {
+        const url = new URL(window.location.href);
+        const isCustom =
+          (url.searchParams.get("custom") || "").toLowerCase() === "true" ||
+          url.searchParams.get("custom") === "1";
+        if (isCustom) {
+          url.searchParams.delete("custom");
+        } else {
+          url.searchParams.set("custom", "1");
+        }
+        url.searchParams.delete("page");
+        fetchPage(url.toString());
+      });
+    }
+
     filterConfigs.forEach(({ selector, clearButton }) => {
       if (clearButton && filtersForm) {
         clearButton.addEventListener("click", (event) => {
@@ -778,6 +818,7 @@
     );
     syncSearchInputFromUrl(window.location.href);
     syncFiltersFromUrl(window.location.href);
+    updateCustomButtonsFromUrl(window.location.href);
   }
 
   if (grid && !supportsFetch) {

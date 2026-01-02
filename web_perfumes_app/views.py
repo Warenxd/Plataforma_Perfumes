@@ -238,6 +238,96 @@ def _slugify_fragrantica_path(texto):
     return "-".join(partes)
 
 
+@require_POST
+def crear_perfume_custom(request):
+    """
+    Crea o actualiza un perfume personalizado con datos básicos y opcionalmente usa
+    una imagen existente como base.
+    """
+    nombre = (request.POST.get("nombre") or "").strip()
+    marca_id_raw = request.POST.get("marca")
+    tienda_nombre = (request.POST.get("tienda") or "").strip() or "Personalizada"
+    precio_raw = (request.POST.get("precio") or "").replace(".", "").replace(",", "")
+    imagen_subida = request.FILES.get("imagen")
+    imagen_existente_id = request.POST.get("imagen_existente")
+    perfume_id_raw = request.POST.get("perfume_id")
+    url_producto = (request.POST.get("url_producto") or "").strip() or None
+
+    if not nombre or not marca_id_raw or not precio_raw:
+        return JsonResponse({"ok": False, "error": "Nombre, marca y precio son obligatorios."}, status=400)
+
+    try:
+        precio_valor = int(precio_raw)
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "El precio debe ser un número entero."}, status=400)
+
+    if precio_valor <= 0:
+        return JsonResponse({"ok": False, "error": "El precio debe ser mayor a 0."}, status=400)
+
+    # Normaliza tienda para los códigos conocidos y mantiene el texto ingresado para nuevas tiendas.
+    tienda_canon = tienda_nombre
+    for code, label in Perfume.TIENDA_CHOICES:
+        if tienda_nombre.upper() in {code.upper(), (label or "").upper()}:
+            tienda_canon = code
+            break
+
+    try:
+        marca_obj = Marca.objects.get(pk=int(marca_id_raw))
+    except (Exception,):
+        return JsonResponse({"ok": False, "error": "Selecciona una marca válida existente."}, status=400)
+
+    with transaction.atomic():
+        perfume_obj = None
+        if perfume_id_raw not in (None, "", "0"):
+            try:
+                perfume_obj = Perfume.objects.get(pk=int(perfume_id_raw), es_custom=True)
+            except (Exception,):
+                return JsonResponse({"ok": False, "error": "Perfume personalizado no encontrado."}, status=404)
+
+        if perfume_obj:
+            perfume_obj.nombre = nombre
+            perfume_obj.marca = marca_obj
+            perfume_obj.precio = precio_valor
+            perfume_obj.tienda = tienda_canon
+            perfume_obj.tienda_personalizada = tienda_nombre
+            perfume_obj.url_producto = url_producto
+            if imagen_subida:
+                perfume_obj.imagen = imagen_subida
+            elif imagen_existente_id not in (None, "", "0"):
+                try:
+                    base_perfume = Perfume.objects.get(pk=int(imagen_existente_id))
+                    if base_perfume.imagen:
+                        perfume_obj.imagen = base_perfume.imagen
+                except (ValueError, Perfume.DoesNotExist):
+                    pass
+            perfume_obj.save()
+            perfume = perfume_obj
+        else:
+            perfume = Perfume.objects.create(
+                nombre=nombre,
+                marca=marca_obj,
+                precio=precio_valor,
+                tienda=tienda_canon,
+                tienda_personalizada=tienda_nombre,
+                es_custom=True,
+                url_producto=url_producto,
+            )
+            if imagen_subida:
+                perfume.imagen = imagen_subida
+                perfume.save(update_fields=["imagen"])
+            elif imagen_existente_id not in (None, "", "0"):
+                try:
+                    base_perfume = Perfume.objects.get(pk=int(imagen_existente_id))
+                    if base_perfume.imagen:
+                        perfume.imagen = base_perfume.imagen
+                        perfume.save(update_fields=["imagen"])
+                except (ValueError, Perfume.DoesNotExist):
+                    pass
+
+    card_html = render_to_string("components/perfume_card.html", {"p": perfume}, request=request)
+    return JsonResponse({"ok": True, "perfume_id": perfume.id, "card_html": card_html})
+
+
 def _probar_slug_fragrantica(nombre_perfume):
     """
     Intenta construir directamente la URL /perfume/<Marca>/<Nombre>.html y la valida con HEAD.
@@ -2120,6 +2210,7 @@ def home(request):
     _normalizar_marcas_existentes()
 
     search_query = (request.GET.get("q") or "").strip()
+    custom_only = request.GET.get("custom") in {"1", "true", "True"}
     marca_ids_raw = request.GET.getlist("marca")
     marca_ids = []
     for valor in marca_ids_raw:
@@ -2137,7 +2228,7 @@ def home(request):
             continue
 
     tienda_codes_raw = request.GET.getlist("tienda")
-    tienda_codes = [code.strip().upper() for code in tienda_codes_raw if code.strip()]
+    tienda_codes = [code.strip() for code in tienda_codes_raw if code.strip()]
 
     estacion_slugs_raw = request.GET.getlist("estacion")
     selected_estacion_slugs = []
@@ -2172,6 +2263,9 @@ def home(request):
         .select_related("marca")
     )
     list_mode = False
+
+    if custom_only:
+        perfumes_list = perfumes_list.filter(es_custom=True)
 
     if search_query:
         palabras = [p.strip() for p in re.split(r'\s+', search_query) if p.strip()]
@@ -2208,9 +2302,13 @@ def home(request):
             list_mode = True
     if tienda_codes:
         if list_mode:
-            perfumes_list = [p for p in perfumes_list if (p.tienda or "").strip().upper() in tienda_codes]
+            tienda_codes_set = {code.lower() for code in tienda_codes}
+            perfumes_list = [p for p in perfumes_list if (p.tienda or "").strip().lower() in tienda_codes_set]
         else:
-            perfumes_list = perfumes_list.filter(tienda__in=tienda_codes)
+            q_tiendas = Q()
+            for code in tienda_codes:
+                q_tiendas |= Q(tienda__iexact=code)
+            perfumes_list = perfumes_list.filter(q_tiendas)
     if marca_ids:
         if list_mode:
             marca_ids_set = set(marca_ids)
@@ -2253,9 +2351,18 @@ def home(request):
         print(f"[Home] {perfume.nombre}: {estaciones_info}")
 
     total_perfumes = len(perfumes_list) if list_mode else perfumes_list.count()
+    tienda_labels = dict(Perfume.TIENDA_CHOICES)
+    tienda_counts = [
+        {
+          "code": row["tienda"],
+          "label": tienda_labels.get(row["tienda"], row["tienda"]),
+          "count": row["count"] or 0,
+        }
+        for row in Perfume.objects.values("tienda").annotate(count=Count("id")).order_by("tienda")
+        if row.get("tienda")
+    ]
     marcas = Marca.objects.filter(perfumes__isnull=False).order_by("marca").distinct()
     generos = Genero.objects.filter(perfumes__isnull=False).order_by("nombre").distinct()
-    tienda_labels = dict(Perfume.TIENDA_CHOICES)
     tiendas = [
         {"code": code, "label": tienda_labels.get(code, code)}
         for code in Perfume.objects.order_by("tienda").values_list("tienda", flat=True).distinct()
@@ -2265,6 +2372,12 @@ def home(request):
         {"slug": data["slug"], "label": data["label"]}
         for data in estaciones_slug_map.values()
     ]
+    imagenes_existentes = (
+        Perfume.objects.exclude(imagen__isnull=True)
+        .exclude(imagen="")
+        .select_related("marca")
+        .order_by("nombre")
+    )
     selected_marca_ids = [str(pk) for pk in marca_ids]
     selected_genero_ids = [str(pk) for pk in genero_ids]
     selected_tienda_codes = [code for code in tienda_codes]
@@ -2290,6 +2403,8 @@ def home(request):
                 "total_pages": perfumes.paginator.num_pages,
                 "query": search_query,
                 "total_perfumes": total_perfumes,
+                "tienda_counts": tienda_counts,
+                "custom_only": custom_only,
             }
         )
 
@@ -2309,6 +2424,9 @@ def home(request):
             "estaciones_filtro": estaciones_filtro,
             "selected_estacion_slugs": selected_estacion_slugs,
             "estacion_min_porcentaje": ESTACION_MIN_PORCENTAJE,
+            "tienda_counts": tienda_counts,
+            "imagenes_existentes": imagenes_existentes,
+            "custom_only": custom_only,
         },
     )
 
@@ -2575,6 +2693,11 @@ INPUT_CLASSES = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 te
 
 
 class VentaRegistroForm(forms.ModelForm):
+    def __init__(self, *args, tiendas_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if tiendas_choices:
+            self.fields["tienda"].choices = tiendas_choices
+
     class Meta:
         model = VentaRegistro
         fields = ["nombre", "tipo", "tienda", "unidades", "precio_unitario", "fecha_venta"]
@@ -2610,15 +2733,38 @@ class VentaRegistroForm(forms.ModelForm):
 
 def reportes(request):
     tienda_map = dict(Perfume.TIENDA_CHOICES)
+    tiendas_custom = set(
+        Perfume.objects.exclude(tienda__isnull=True)
+        .exclude(tienda="")
+        .values_list("tienda", flat=True)
+    )
+    tiendas_registro = set(
+        VentaRegistro.objects.exclude(tienda__isnull=True)
+        .exclude(tienda="")
+        .values_list("tienda", flat=True)
+    )
+    tiendas_unicas = tiendas_custom.union(tiendas_registro)
+    tienda_labels = dict(tienda_map)
+    for code in tiendas_unicas:
+        if code and code not in tienda_labels:
+            tienda_labels[code] = code
+    tiendas_choices = sorted(
+        [(code, label) for code, label in tienda_labels.items() if code],
+        key=lambda x: x[1].lower()
+    )
+    if not tiendas_choices and Perfume.TIENDA_CHOICES:
+        tiendas_choices = list(Perfume.TIENDA_CHOICES)
+    # Reutiliza mapa extendido
+    tienda_map = tienda_labels
     total_expr = ExpressionWrapper(F("precio_unitario") * F("unidades"), output_field=IntegerField())
     ventas_qs = VentaRegistro.objects.all()
     years_available = [d.year for d in ventas_qs.dates("fecha_venta", "year", order="DESC")]
     current_year = timezone.now().year
 
+    partial_param = request.GET.get("partial") or request.POST.get("partial")
     is_partial = (
         request.headers.get("x-requested-with") == "XMLHttpRequest"
-        or request.GET.get("partial") == "1"
-        or request.POST.get("partial") == "1"
+        or partial_param in {"1", "month"}
     )
 
     year_param = request.POST.get("year") or request.GET.get("year")
@@ -2627,10 +2773,12 @@ def reportes(request):
     except (TypeError, ValueError):
         selected_year = None
 
+    default_tienda = tiendas_choices[0][0] if tiendas_choices else (Perfume.TIENDA_CHOICES[0][0] if Perfume.TIENDA_CHOICES else None)
+
     form_initial = {
         "fecha_venta": timezone.now().date(),
         "tipo": VentaRegistro.TIPO_PERFUME,
-        "tienda": Perfume.TIENDA_CHOICES[0][0] if Perfume.TIENDA_CHOICES else None,
+        "tienda": default_tienda,
     }
 
     if request.method == "POST" and request.headers.get("Content-Type", "").startswith("application/json"):
@@ -2640,11 +2788,15 @@ def reportes(request):
         except Exception:
             return JsonResponse({"ok": False, "error": "Formato inválido"}, status=400)
         nuevos = []
+        updates = []
+        target_year = selected_year
         for entry in entries:
             try:
+                venta_id_raw = entry.get("id")
+                venta_id = int(venta_id_raw) if venta_id_raw not in (None, "", 0) else None
                 nombre = (entry.get("nombre") or "").strip()
                 tipo = entry.get("tipo") or VentaRegistro.TIPO_PERFUME
-                tienda = entry.get("tienda") or Perfume.TIENDA_CHOICES[0][0]
+                tienda = entry.get("tienda") or default_tienda
                 unidades = int(entry.get("unidades") or 0)
                 precio_unitario = int(entry.get("precio_unitario") or 0)
                 fecha_txt = entry.get("fecha_venta") or ""
@@ -2653,22 +2805,41 @@ def reportes(request):
                 return JsonResponse({"ok": False, "error": "Datos incompletos o inválidos"}, status=400)
             if not nombre or unidades <= 0 or precio_unitario <= 0:
                 return JsonResponse({"ok": False, "error": "Nombre, unidades y precio son obligatorios"}, status=400)
-            nuevos.append(
-                VentaRegistro(
-                    nombre=nombre,
-                    tipo=tipo,
-                    tienda=tienda,
-                    unidades=unidades,
-                    precio_unitario=precio_unitario,
-                    fecha_venta=fecha_venta,
+            if venta_id:
+                try:
+                    venta = VentaRegistro.objects.get(pk=venta_id)
+                except VentaRegistro.DoesNotExist:
+                    return JsonResponse({"ok": False, "error": f"Venta {venta_id} no encontrada"}, status=404)
+                venta.nombre = nombre
+                venta.tipo = tipo
+                venta.tienda = tienda
+                venta.unidades = unidades
+                venta.precio_unitario = precio_unitario
+                venta.fecha_venta = fecha_venta
+                updates.append(venta)
+            else:
+                nuevos.append(
+                    VentaRegistro(
+                        nombre=nombre,
+                        tipo=tipo,
+                        tienda=tienda,
+                        unidades=unidades,
+                        precio_unitario=precio_unitario,
+                        fecha_venta=fecha_venta,
+                    )
                 )
-            )
-        if nuevos:
-            VentaRegistro.objects.bulk_create(nuevos)
-        target_year = nuevos[0].fecha_venta.year if nuevos else selected_year
-        return JsonResponse({"ok": True, "count": len(nuevos), "year": target_year})
+            target_year = fecha_venta.year
+        if updates or nuevos:
+            with transaction.atomic():
+                if updates:
+                    VentaRegistro.objects.bulk_update(
+                        updates, ["nombre", "tipo", "tienda", "unidades", "precio_unitario", "fecha_venta"]
+                    )
+                if nuevos:
+                    VentaRegistro.objects.bulk_create(nuevos)
+        return JsonResponse({"ok": True, "created": len(nuevos), "updated": len(updates), "year": target_year})
     elif request.method == "POST":
-        form = VentaRegistroForm(request.POST)
+        form = VentaRegistroForm(request.POST, tiendas_choices=tiendas_choices)
         if form.is_valid():
             venta = form.save()
             selected_year = venta.fecha_venta.year
@@ -2681,7 +2852,7 @@ def reportes(request):
                 redirect_url = f"{redirect_url}?{urllib.parse.urlencode(params)}"
             return redirect(redirect_url)
     else:
-        form = VentaRegistroForm(initial=form_initial)
+        form = VentaRegistroForm(initial=form_initial, tiendas_choices=tiendas_choices)
 
     # Enriquecer widget del nombre con endpoint de sugerencias
     try:
@@ -2813,6 +2984,29 @@ def reportes(request):
         "hay_datos": ventas_qs.exists(),
         "today": timezone.now().date(),
     }
+    # Partial específico de un mes para actualizaciones ligeras (ej. eliminar venta)
+    if is_partial and request.GET.get("partial") == "month":
+        try:
+            month_num = int(request.GET.get("month") or 0)
+        except (TypeError, ValueError):
+            month_num = None
+        if month_num and 1 <= month_num <= len(monthly_data):
+            mes_data = monthly_data[month_num - 1]
+            month_context = {
+                "mes": mes_data,
+                "month_id": f"month-data-{mes_data['mes_num']}",
+            }
+            html = render_to_string("reportes_month_partial.html", month_context, request=request)
+            return HttpResponse(html)
+
     if is_partial:
         return render(request, "reportes_partial.html", context)
     return render(request, "reportes.html", context)
+@require_POST
+def eliminar_perfume_custom(request, perfume_id):
+    try:
+        perfume = Perfume.objects.get(pk=perfume_id, es_custom=True)
+    except Perfume.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Perfume no encontrado o no es personalizado."}, status=404)
+    perfume.delete()
+    return JsonResponse({"ok": True})
