@@ -1,0 +1,22 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual envs
+venv/
+.venv/
+
+# Node artifacts
+node_modules/
+
+# Local data/output
+media/
+output/
+error_logs/
+
+# Misc
+*.log
+*.sqlite3
+.git
