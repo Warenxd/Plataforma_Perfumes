@@ -277,13 +277,17 @@
       } catch (err) {
         data = null;
       }
-      const success =
-        (response.ok && (data === null || data.ok !== false)) ||
-        (response.status >= 200 && response.status < 400);
+      const success = response.ok && (data === null || data.ok !== false);
       if (!success) {
+        console.warn("Guardar perfume custom: respuesta no OK", {
+          status: response.status,
+          statusText: response.statusText,
+          data,
+        });
         setStatus((data && data.error) || "No se pudo guardar el perfume.", true);
         return;
       }
+      console.log("Guardar perfume custom: éxito", { isEdit: Boolean(hiddenId && hiddenId.value), data });
       setStatus("Perfume guardado. Actualizando catálogo...", false);
       const payload = data || {};
       const isEdit = Boolean(hiddenId && hiddenId.value);
@@ -304,8 +308,6 @@
         } else {
           prependCardToGrid(payload.card_html);
         }
-        attachDeleteHandlers();
-        attachEditHandlers();
         if (window.syncCompareButtons) {
           window.syncCompareButtons();
         }
@@ -323,9 +325,7 @@
       }, 200);
     } catch (error) {
       console.error(error);
-      // Si hay error de red pero ya se cargó imagen en memoria, recarga suave para reflejar cambios.
-      setStatus("Guardando y actualizando vista...", false);
-      setTimeout(() => window.location.reload(), 150);
+      setStatus("Error de red al guardar el perfume.", true);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
