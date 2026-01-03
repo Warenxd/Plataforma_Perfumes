@@ -6,6 +6,8 @@
   const totalCounter = document.getElementById("total-perfumes-count");
   const gridContainer = document.getElementById("perfumes-grid");
   const getGridTop = () => document.getElementById("perfumes-grid-top");
+  const getEmptyGridMessage = () =>
+    '<p class="mt-4 text-gray-600 text-center">No hay perfumes en la base de datos.</p>';
   const buildGridIfMissing = (html) => {
     if (!gridContainer || !html) return null;
     gridContainer.innerHTML = `
@@ -119,6 +121,39 @@
     totalCounter.textContent = Math.max(0, current + delta);
   };
 
+  const removeCardFromGrid = (id) => {
+    if (!id) return;
+    const card = document.querySelector(`.flip-card[data-perfume-id="${id}"]`);
+    if (card) {
+      const gridTop = card.closest("#perfumes-grid-top");
+      const finalizeRemoval = () => {
+        card.remove();
+        const hasCards = gridTop ? gridTop.querySelector(".flip-card") : null;
+        if (!hasCards && gridContainer) {
+          gridContainer.innerHTML = getEmptyGridMessage();
+        }
+        if (window.syncCompareButtons) {
+          window.syncCompareButtons();
+        }
+      };
+
+      // Animación de salida antes de quitar la card
+      let timer = null;
+      const onEnd = () => {
+        if (timer) clearTimeout(timer);
+        finalizeRemoval();
+      };
+      timer = setTimeout(onEnd, 400);
+      card.addEventListener("animationend", onEnd, { once: true });
+      card.addEventListener("animationcancel", onEnd, { once: true });
+      card.classList.add("animate__animated", "animate__fadeOutDown");
+      return;
+    }
+    if (window.syncCompareButtons) {
+      window.syncCompareButtons();
+    }
+  };
+
   const formatPriceWithDots = (num) => {
     const n = Number(num) || 0;
     return n.toLocaleString("es-CL");
@@ -203,8 +238,8 @@
       } catch (error) {
         console.warn("No se pudo limpiar comparación tras eliminar perfume custom", error);
       }
-      // Recarga para refrescar filtros, contadores y listado
-      window.location.reload();
+      removeCardFromGrid(id);
+      incrementTotalCounter(-1);
     } catch (error) {
       console.error(error);
       alert("Error al eliminar el perfume.");

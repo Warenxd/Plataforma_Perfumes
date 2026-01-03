@@ -121,6 +121,24 @@ container.addEventListener("click", async (event) => {
 
   deleteBtn.disabled = true;
 
+  const saleRow = deleteBtn.closest("[data-month-sale]");
+  const animateRemoval = () => {
+    if (!saleRow) return Promise.resolve();
+    return new Promise((resolve) => {
+      const onEnd = () => resolve();
+      const timer = setTimeout(onEnd, 400);
+      saleRow.addEventListener("animationend", () => {
+        clearTimeout(timer);
+        resolve();
+      }, { once: true });
+      saleRow.addEventListener("animationcancel", () => {
+        clearTimeout(timer);
+        resolve();
+      }, { once: true });
+      saleRow.classList.add("animate__animated", "animate__fadeOutDown");
+    });
+  };
+
   try {
     // 1️⃣ Eliminar venta
     const res = await fetch(deleteUrl, {
@@ -138,7 +156,9 @@ container.addEventListener("click", async (event) => {
       return;
     }
 
-    // 2️⃣ Pedir HTML parcial del año
+    // 2️⃣ Animación y recarga parcial del año
+    await animateRemoval();
+
     const yearForm = container.querySelector("[data-reportes-year-form]");
     const baseUrl = yearForm
       ? yearForm.getAttribute("action")
