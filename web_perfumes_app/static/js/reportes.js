@@ -557,11 +557,13 @@ window.addEventListener(
     const accordion = container.querySelector('[data-accordion="year"]');
     const animateSection = (el, open) => {
       if (!el) return;
+      console.log("[Reportes][Accordion] animate", { open, el });
       el.style.overflow = "hidden";
       el.style.transition = "max-height 260ms ease";
       const onEnd = () => {
         if (!open) el.classList.add("hidden");
         el.removeEventListener("transitionend", onEnd);
+        console.log("[Reportes][Accordion] animate end", { open });
       };
       if (open) {
         el.classList.remove("hidden");

@@ -4,7 +4,17 @@
   const openBtn = document.getElementById("open-custom-perfume-modal");
   const statusBox = document.getElementById("custom-perfume-status");
   const totalCounter = document.getElementById("total-perfumes-count");
-  const gridTop = document.getElementById("perfumes-grid-top");
+  const gridContainer = document.getElementById("perfumes-grid");
+  const getGridTop = () => document.getElementById("perfumes-grid-top");
+  const buildGridIfMissing = (html) => {
+    if (!gridContainer || !html) return null;
+    gridContainer.innerHTML = `
+      <div id="perfumes-grid-top" class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 justify-items-center">
+        ${html}
+      </div>
+    `;
+    return getGridTop();
+  };
   const hiddenId = document.getElementById("custom-perfume-id");
   const submitBtn = form?.querySelector("button[type='submit']");
   const titleEl = modal?.querySelector("h2");
@@ -75,7 +85,16 @@
   };
 
   const prependCardToGrid = (html) => {
-    if (!gridTop || !html) return;
+    if (!html) return;
+    let gridTop = getGridTop();
+    if (!gridTop) {
+      gridTop = buildGridIfMissing(html);
+      if (!gridTop) return;
+      if (window.syncCompareButtons) {
+        window.syncCompareButtons();
+      }
+      return;
+    }
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
     const newCard = wrapper.firstElementChild;
