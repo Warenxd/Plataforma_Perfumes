@@ -587,16 +587,26 @@ window.addEventListener(
       const label = accordion.querySelector("[data-accordion-label]");
       let isOpen = uiState.yearOpen !== undefined ? uiState.yearOpen : true;
       const setState = (open) => {
+        console.log("[Reportes][Accordion] setState", { open, hasBody: !!body });
         isOpen = open;
         uiState.yearOpen = open;
         saveState(uiState);
         if (body) {
           animateSection(body, open);
+        } else {
+          console.warn("[Reportes][Accordion] body no encontrado al cambiar estado");
         }
         if (label) label.textContent = open ? "Ocultar" : "Mostrar";
       };
+      console.log("[Reportes][Accordion] init", { isOpen, trigger: !!trigger, body: !!body, label: !!label });
       setState(isOpen);
-      trigger && trigger.addEventListener("click", () => setState(!isOpen));
+      trigger &&
+        trigger.addEventListener("click", () => {
+          console.log("[Reportes][Accordion] click toggle", { current: isOpen, next: !isOpen });
+          setState(!isOpen);
+        });
+    } else {
+      console.warn("[Reportes][Accordion] no se encontró el acordeón de año");
     }
 
     // Toggle por mes

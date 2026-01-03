@@ -472,6 +472,9 @@
   .max-h-\[80vh\] {
     max-height: 80vh;
   }
+  .max-h-\[92vh\] {
+    max-height: 92vh;
+  }
   .max-h-\[320px\] {
     max-height: 320px;
   }
@@ -1901,6 +1904,11 @@
   .sm\:gap-5 {
     @media (width >= 40rem) {
       gap: calc(var(--spacing) * 5);
+    }
+  }
+  .sm\:p-6 {
+    @media (width >= 40rem) {
+      padding: calc(var(--spacing) * 6);
     }
   }
   .sm\:px-2 {
