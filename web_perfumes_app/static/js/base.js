@@ -399,7 +399,7 @@
       const container = form?.querySelector(".js-download-progress");
       const bar = form?.querySelector(".js-download-progress-bar");
       if (!container || !bar) return;
-      setDownloadStatus(form, "Descargando acordes, notas y estaciones...", false);
+      setDownloadStatus(form, "Buscando URL en Fragrantica...", false);
       container.classList.remove("hidden");
       bar.style.width = "5%";
       if (progressMap.has(form)) {

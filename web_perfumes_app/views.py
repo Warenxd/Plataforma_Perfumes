@@ -941,7 +941,7 @@ def actualizar_acordes_todos():
 def descargar_acordes_individual(request, perfume_id):
     perfume = get_object_or_404(Perfume, id=perfume_id)
     es_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in (request.headers.get("accept") or "")
-    
+
     if not perfume.fragrantica_url:
         encontrada = _buscar_fragrantica_con_driver(perfume.nombre)
         if encontrada:
@@ -954,108 +954,24 @@ def descargar_acordes_individual(request, perfume_id):
             if es_ajax:
                 return JsonResponse({"ok": False, "message": "No se pudo encontrar URL de Fragrantica"}, status=400)
             return redirect('home')
-    
-    try:
-        data = obtener_acordes(perfume.fragrantica_url)
-        acordes_data = (data or {}).get('acordes', [])
-        notas_data = (data or {}).get('notas', {})
-        estaciones_data = (data or {}).get('estaciones', [])
 
-        datos_guardados = False
-
-        if acordes_data:
-            acorde_objs = []
-            for item in acordes_data:
-                acorde, _ = Acorde.objects.get_or_create(nombre=item['acorde'])
-
-                bg_tuple = item.get('background_rgb')
-                if bg_tuple:
-                    r, g, b = bg_tuple
-                    new_color = f"{r},{g},{b}"
-                    if acorde.background_rgb != new_color:
-                        acorde.background_rgb = new_color
-                        acorde.save(update_fields=["background_rgb"])
-
-                acorde_objs.append(acorde)
-
-            if acorde_objs:
-                perfume.acordes.add(*acorde_objs)
-                datos_guardados = True
-
-        secciones_notas = {
-            "salida": perfume.notas_salida,
-            "corazon": perfume.notas_corazon,
-            "base": perfume.notas_base,
-            "general": perfume.notas_general,
-        }
-
-        for seccion, manager in secciones_notas.items():
-            nombres = (notas_data or {}).get(seccion, [])
-            if not nombres:
-                continue
-
-            nota_objs = []
-            for nombre in nombres:
-                nota, _ = Nota.objects.get_or_create(nombre=nombre.strip())
-                nota_objs.append(nota)
-
-            if nota_objs:
-                manager.add(*nota_objs)
-                datos_guardados = True
-
-        estaciones_guardadas = _guardar_estaciones_perfume(perfume, estaciones_data)
-        datos_guardados = datos_guardados or estaciones_guardadas
-
-        propagados = _compartir_detalles_perfume(perfume)
-
-        if datos_guardados:
-            success_msg = f"¡Acordes y notas cargados para {perfume.nombre}!"
-            if not es_ajax:
-                messages.success(request, success_msg)
-        else:
-            success_msg = f"No se encontraron acordes ni notas para {perfume.nombre}"
-            if not es_ajax:
-                messages.info(request, success_msg)
-
-        # Refrescar instancia (incluyendo relaciones) para devolver HTML actualizado
+    if es_ajax:
         perfume = (
             Perfume.objects.select_related("marca")
             .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "notas_general", "estaciones")
             .get(pk=perfume.id)
         )
+        card_html = render_to_string("components/perfume_card.html", {"p": perfume}, request=request)
+        return JsonResponse({
+            "ok": True,
+            "message": "URL de Fragrantica guardada.",
+            "nombre": perfume.nombre,
+            "html": card_html,
+            "id": perfume.id,
+        })
 
-        if es_ajax:
-            card_html = render_to_string("components/perfume_card.html", {"p": perfume}, request=request)
-            updated_cards = []
-            for otro in propagados:
-                try:
-                    otro_fresh = (
-                        Perfume.objects.select_related("marca")
-                        .prefetch_related("acordes", "notas_salida", "notas_corazon", "notas_base", "notas_general", "estaciones")
-                        .get(pk=otro.id)
-                    )
-                    card = render_to_string("components/perfume_card.html", {"p": otro_fresh}, request=request)
-                    updated_cards.append({"id": otro.id, "html": card})
-                except Exception as e:
-                    print(f"[Compartir] No se pudo renderizar tarjeta para {otro.nombre}: {e}")
-            return JsonResponse({
-                "ok": True,
-                "message": success_msg,
-                "nombre": perfume.nombre,
-                "html": card_html,
-                "id": perfume.id,
-                "updated_cards": updated_cards,
-            })
-
-    except Exception as e:
-        error_msg = f"Error al cargar acordes: {e}"
-        if not es_ajax:
-            messages.error(request, error_msg)
-        if es_ajax:
-            return JsonResponse({"ok": False, "message": error_msg, "nombre": perfume.nombre}, status=400)
-        return redirect('home')
-
-    return redirect('home')  # o a la página del perfume si tienes detalle
+    messages.success(request, f"URL de Fragrantica guardada para {perfume.nombre}.")
+    return redirect('home')  # o a la pagina del perfume si tienes detalle
 
 
 # FUNCIONES SCRAPPING
