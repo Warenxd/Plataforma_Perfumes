@@ -2,7 +2,7 @@ services:
   - type: web
     name: plataforma-perfumes
     env: python
-    buildCommand: apt-get update && apt-get install -y chromium && npm ci && npx @tailwindcss/cli -i web_perfumes_app/assets/input.css -o web_perfumes_app/static/src/output.css && pip install -r requirements.txt && python -m playwright install chromium && python manage.py collectstatic --noinput && python manage.py migrate
+    buildCommand: apt-get update && apt-get install -y wget gnupg && wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-linux.gpg && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && apt-get update && apt-get install -y google-chrome-stable && npm ci && npx @tailwindcss/cli -i web_perfumes_app/assets/input.css -o web_perfumes_app/static/src/output.css && pip install -r requirements.txt && python -m playwright install chromium && python manage.py collectstatic --noinput && python manage.py migrate
     startCommand: gunicorn site_perfumes.wsgi:application --timeout 180
     autoDeploy: true
     envVars:
