@@ -30,7 +30,7 @@ class Estacion(models.Model):
     
 # TABLA DE MARCA DE PERFUMES
 class Marca(models.Model):
-    marca = models.CharField(max_length=100, unique=True)
+    marca = models.CharField(max_length=250, unique=True)
 
     def __str__(self):
         return self.nombre
@@ -55,7 +55,7 @@ class Perfume(models.Model):
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
     generos = models.ManyToManyField(Genero, related_name="perfumes", blank=True, null=True)
-    tienda = models.CharField(max_length=100, choices=TIENDA_CHOICES, default='SILK')
+    tienda = models.CharField(max_length=250, choices=TIENDA_CHOICES, default='SILK')
     tienda_personalizada = models.CharField(max_length=120, blank=True, null=True)
     es_custom = models.BooleanField(default=False)
     url_producto = models.URLField(blank=True, null=True)
