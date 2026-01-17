@@ -6,8 +6,8 @@ from django.utils import timezone
 
 # TABLA DE ACORDES PRINCIPALES DE LOS PERFUMES
 class Acorde(models.Model):
-    nombre = models.CharField(max_length=50, unique=True)
-    background_rgb = models.CharField(max_length=20, null=True, blank=True)
+    nombre = models.CharField(max_length=250, unique=True)
+    background_rgb = models.CharField(max_length=250, null=True, blank=True)
 
     def __str__(self):
         return self.nombre
@@ -15,14 +15,14 @@ class Acorde(models.Model):
 
 # TABLA DE NOTAS DE LOS PERFUMES
 class Nota(models.Model):
-    nombre = models.CharField(max_length=50, unique=True) #Con unique no existirán o crearán dos registros con el mismo nombre
+    nombre = models.CharField(max_length=250, unique=True) #Con unique no existirán o crearán dos registros con el mismo nombre
 
     def __str__(self):
         return self.nombre
 
 # TABLA DE ESTACIONES DEL AÑO DE PERFUMES
 class Estacion(models.Model):
-    nombre = models.CharField(max_length=50)
+    nombre = models.CharField(max_length=250)
     porcentaje = models.FloatField(null=True, blank=True)
 
     def __str__(self):
@@ -36,7 +36,7 @@ class Marca(models.Model):
         return self.nombre
     
 class Genero(models.Model):
-    nombre = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    nombre = models.CharField(max_length=250, unique=True, blank=True, null=True)
 
     def __str__(self):
         return self.nombre
@@ -56,7 +56,7 @@ class Perfume(models.Model):
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
     generos = models.ManyToManyField(Genero, related_name="perfumes", blank=True, null=True)
     tienda = models.CharField(max_length=250, choices=TIENDA_CHOICES, default='SILK')
-    tienda_personalizada = models.CharField(max_length=120, blank=True, null=True)
+    tienda_personalizada = models.CharField(max_length=250, blank=True, null=True)
     es_custom = models.BooleanField(default=False)
     url_producto = models.URLField(blank=True, null=True)
     # --------------------------------------------------------------------------
@@ -87,9 +87,9 @@ class VentaRegistro(models.Model):
         (TIPO_DECANT, "Decant"),
     ]
 
-    nombre = models.CharField(max_length=160)
-    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default=TIPO_PERFUME)
-    tienda = models.CharField(max_length=20, choices=Perfume.TIENDA_CHOICES)
+    nombre = models.CharField(max_length=250)
+    tipo = models.CharField(max_length=250, choices=TIPO_CHOICES, default=TIPO_PERFUME)
+    tienda = models.CharField(max_length=250, choices=Perfume.TIENDA_CHOICES)
     unidades = models.PositiveIntegerField(default=1)
     precio_unitario = models.PositiveIntegerField(help_text="Precio de venta del ítem.")
     fecha_venta = models.DateField(default=timezone.now)
