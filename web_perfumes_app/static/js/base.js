@@ -1012,6 +1012,33 @@
     refreshStatusInterval = setInterval(poll, 1000);
   };
 
+  const waitForStageCompletion = async (stageKey) => {
+    if (!refreshStatusUrl || !stageKey || !supportsFetch) {
+      return null;
+    }
+    const deadline = Date.now() + 30 * 60 * 1000;
+    while (Date.now() < deadline) {
+      const url = new URL(refreshStatusUrl, window.location.origin);
+      url.searchParams.set("stage", stageKey);
+      url.searchParams.set("_", Date.now());
+      const response = await fetch(url.toString(), {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (response.ok) {
+        const payload = await response.json().catch(() => null);
+        const statusData = payload && typeof payload.status === "object" ? payload.status : null;
+        if (statusData && statusData.state === "error") {
+          throw new Error(statusData.error || "Error en scraping.");
+        }
+        if (statusData && (statusData.state === "done" || statusData.state === "cancelled")) {
+          return payload;
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    throw new Error("Tiempo de espera agotado.");
+  };
+
   const cancelRefresh = () => {
     stopStatusPolling();
     stopProgressAnimation();
@@ -1082,12 +1109,20 @@
           startStatusPolling(stage.statusKey);
         }
         const data = await postRefreshStage(stage.key);
-        if (stage.statusKey) {
+        if (stage.statusKey && data && data.started) {
+          const finalPayload = await waitForStageCompletion(stage.statusKey);
           stopStatusPolling();
+          stopProgressAnimation();
+          updateProgress(stage.progress);
+          updateStageText(stage.title, stage.formatter ? stage.formatter(finalPayload) : "Etapa completada.");
+        } else {
+          if (stage.statusKey) {
+            stopStatusPolling();
+          }
+          stopProgressAnimation();
+          updateProgress(stage.progress);
+          updateStageText(stage.title, stage.formatter ? stage.formatter(data) : "Etapa completada.");
         }
-        stopProgressAnimation();
-        updateProgress(stage.progress);
-        updateStageText(stage.title, stage.formatter ? stage.formatter(data) : "Etapa completada.");
       }
       updateStageText("Actualización completada", "Refrescando la vista con los nuevos datos...");
       updateProgress(100);

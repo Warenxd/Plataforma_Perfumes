@@ -1792,6 +1792,7 @@ def scrapping_tiendas_perfumes():
     if _is_refresh_cancelled("scraping"):
         return {"creados": 0, "actualizados": 0, "errores": 0, "detalle": {}}
 
+    print("[SCRAPE] Iniciando Silk")
     resultados_silk = scrapping_silk_perfumes()
     if _is_refresh_cancelled("scraping"):
         return {
@@ -1801,6 +1802,7 @@ def scrapping_tiendas_perfumes():
             "detalle": {"silk": resultados_silk},
         }
 
+    print("[SCRAPE] Iniciando Yauras")
     resultados_yauras = scrapping_yauras_perfumes()
     if _is_refresh_cancelled("scraping"):
         return {
@@ -1810,6 +1812,7 @@ def scrapping_tiendas_perfumes():
             "detalle": {"silk": resultados_silk, "yauras": resultados_yauras},
         }
 
+    print("[SCRAPE] Iniciando Joy")
     resultados_joy = scrapping_joy_perfumes()
     return {
         "creados": resultados_silk.get("creados", 0) + resultados_yauras.get("creados", 0) + resultados_joy.get("creados", 0),
