@@ -1265,7 +1265,7 @@ def scrapping_silk_perfumes():
                 # ===============================
                 # IMAGEN
                 # ===============================
-                if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
+                if img_url and not perfume.imagen:
                     try:
                         img_bytes = _descargar_imagen(img_url)
                         if img_bytes:
@@ -1527,7 +1527,7 @@ def scrapping_yauras_perfumes():
                         perfume.save()
                         actualizados += 1
 
-                if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
+                if img_url and not perfume.imagen:
                     try:
                         print(f"[Yauras IMG] Descargando imagen de '{nombre}': {img_url}")
                         img_bytes = _descargar_imagen(img_url)
@@ -1730,7 +1730,7 @@ def scrapping_joy_perfumes():
                         perfume.save()
                         actualizados += 1
 
-                if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
+                if img_url and not perfume.imagen:
                     try:
                         img_bytes = _descargar_imagen(img_url)
                         if img_bytes:
