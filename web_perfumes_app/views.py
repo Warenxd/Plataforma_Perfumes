@@ -2160,7 +2160,9 @@ def refrescar_perfumes(request):
         except Exception as e:
             if etapa:
                 _set_refresh_status(etapa, state="error", error=str(e))
-            return JsonResponse({"ok": False, "error": str(e)}, status=500)    try:
+            return JsonResponse({"ok": False, "error": str(e)}, status=500)
+
+    try:
         _set_refresh_status("scraping", state="running")
         started = _start_scrape_async()
         if started:
