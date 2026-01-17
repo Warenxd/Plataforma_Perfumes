@@ -209,16 +209,26 @@
       </div>
       {% elif p.acordes.count == 0 and p.notas_salida.count == 0 and p.notas_corazon.count == 0 and p.notas_base.count == 0 and p.notas_general.count == 0 %}
       <div class="download-wrapper mt-6">
+        {% if p.fragrantica_url %}
+        <a
+          href="{{ p.fragrantica_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="download-btn inline-flex w-full items-center justify-center">
+          Ver en Fragrantica
+        </a>
+        {% else %}
         <form method="post" action="{% url 'descargar_acordes_individual' p.id %}" class="js-download-form">
           {% csrf_token %}
           <button type="submit" class="download-btn js-download-btn">
-            Descargar detalles
+            Descargar URL a Fragrantica
           </button>
           <div class="js-download-progress hidden mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-200">
             <div class="js-download-progress-bar h-full w-0 bg-emerald-500 transition-[width] duration-200 ease-linear"></div>
           </div>
           <p class="mt-2 text-xs text-slate-500 js-download-status hidden"></p>
         </form>
+        {% endif %}
       </div>
       {% endif %}
 
