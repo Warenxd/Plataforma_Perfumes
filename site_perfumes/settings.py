@@ -30,6 +30,7 @@ SECRET_KEY = os.getenv(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+USE_CLOUDINARY = bool(os.getenv("CLOUDINARY_URL") or os.getenv("CLOUDINARY_CLOUD_NAME"))
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
 CSRF_TRUSTED_ORIGINS = (
@@ -50,6 +51,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'web_perfumes_app',
 ]
+if USE_CLOUDINARY:
+    INSTALLED_APPS += [
+        "cloudinary_storage",
+        "cloudinary",
+    ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -148,3 +154,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Serve media via Django when set (e.g., Render).
 SERVE_MEDIA = os.getenv("SERVE_MEDIA", "").lower() == "true"
+
+if USE_CLOUDINARY:
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    if not os.getenv("CLOUDINARY_URL"):
+        CLOUDINARY_STORAGE = {
+            "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
+            "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
+            "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
+        }
