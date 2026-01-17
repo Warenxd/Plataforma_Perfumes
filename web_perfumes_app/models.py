@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.utils import DataError
 from django.utils import timezone
 
 # Create your models here.
@@ -49,7 +50,7 @@ class Perfume(models.Model):
         ('JOY', 'Joy Perfumes'),
     ]
 
-    nombre = models.CharField(max_length=250, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
+    nombre = models.TextField(blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
     precio = models.IntegerField(null=False, blank=False)
     precio_ant = models.IntegerField(null=True, blank=True)
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
@@ -68,6 +69,15 @@ class Perfume(models.Model):
     notas_general = models.ManyToManyField(Nota, related_name='perfumes_general', blank=True, null=True)
     estaciones = models.ManyToManyField(Estacion, related_name='perfumes', blank=True) #related_name sirve para hacer consultas inversas, para hacer consultas desde la tabla relacionada hacia la original
     fragrantica_url = models.URLField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        try:
+            return super().save(*args, **kwargs)
+        except DataError as e:
+            nombre = self.nombre or ""
+            max_len = self._meta.get_field("nombre").max_length
+            print(f"[Perfume Save] DataError: {e} | nombre_len={len(nombre)} | max_len={max_len} | nombre='{nombre[:200]}'")
+            raise
 
     @property
     def descuento(self):
