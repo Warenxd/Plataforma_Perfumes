@@ -82,7 +82,7 @@
         gap: 0.35rem;
         transition: opacity 0.25s ease;
         padding-top: 18px;
-        padding-bottom: 70px; /* espacio para precio y botón */
+        padding-bottom: 70px; /* espacio para precio y botИn */
     }
 
     .card-price {
@@ -171,7 +171,7 @@
         width: min(100%, 360px);
         max-width: 380px;
         min-height: clamp(640px, 72vh, 760px);
-        height: auto; /* permite crecer con el contenido en vistas móviles */
+        height: auto; /* permite crecer con el contenido en vistas mИviles */
         margin-inline: auto;
         perspective: 1000px;
         font-family: inherit;

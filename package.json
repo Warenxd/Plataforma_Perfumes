@@ -8,7 +8,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "npx @tailwindcss/cli -i web_perfumes_app/static/src/input.css -o web_perfumes_app/static/src/output.css --watch",
+    "dev": "npx @tailwindcss/cli -i web_perfumes_app/assets/input.css -o web_perfumes_app/static/src/output.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
