@@ -33,6 +33,31 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_pla
 from .models import *
 
 # Create your views here.
+def _descargar_imagen(url, timeout=(4, 8), max_bytes=3_000_000):
+    if not url:
+        return None
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
+    }
+    try:
+        with requests.get(url, headers=headers, timeout=timeout, stream=True) as resp:
+            resp.raise_for_status()
+            total = 0
+            chunks = []
+            for chunk in resp.iter_content(chunk_size=64 * 1024):
+                if not chunk:
+                    continue
+                total += len(chunk)
+                if total > max_bytes:
+                    print(f"[IMG] Imagen demasiado grande, se omite: {url}")
+                    return None
+                chunks.append(chunk)
+            return b"".join(chunks)
+    except Exception as e:
+        print(f"[IMG] Error descargando {url}: {e}")
+        return None
+
 def _parsear_clp(texto):
     dig = re.sub(r'[^\d]', '', texto or '')
     if not dig:
@@ -1242,8 +1267,11 @@ def scrapping_silk_perfumes():
                 # ===============================
                 if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
                     try:
-                        img_bytes = requests.get(img_url, timeout=10).content
-                        perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                        img_bytes = _descargar_imagen(img_url)
+                        if img_bytes:
+                            perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                        else:
+                            errores += 1
                     except Exception:
                         errores += 1
 
@@ -1502,8 +1530,11 @@ def scrapping_yauras_perfumes():
                 if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
                     try:
                         print(f"[Yauras IMG] Descargando imagen de '{nombre}': {img_url}")
-                        img_bytes = requests.get(img_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"}).content
-                        perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                        img_bytes = _descargar_imagen(img_url)
+                        if img_bytes:
+                            perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                        else:
+                            errores += 1
                     except Exception as e:
                         print(f"[Yauras IMG] Error al descargar imagen de '{nombre}' ({img_url}): {e}")
                         errores += 1
@@ -1701,8 +1732,11 @@ def scrapping_joy_perfumes():
 
                 if img_url and (not perfume.imagen or not default_storage.exists(perfume.imagen.name)):
                     try:
-                        img_bytes = requests.get(img_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"}).content
-                        perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                        img_bytes = _descargar_imagen(img_url)
+                        if img_bytes:
+                            perfume.imagen.save(f"{nombre}.jpg", ContentFile(img_bytes), save=False)
+                        else:
+                            errores += 1
                     except Exception:
                         errores += 1
 

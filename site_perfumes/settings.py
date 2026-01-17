@@ -146,3 +146,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 # Ruta donde se guardan de manera física las imagenes
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Serve media via Django when set (e.g., Render).
+SERVE_MEDIA = os.getenv("SERVE_MEDIA", "").lower() == "true"

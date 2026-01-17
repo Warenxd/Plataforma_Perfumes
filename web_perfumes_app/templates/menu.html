@@ -161,10 +161,10 @@
 </style>
 
 <div class="min-h-screen bg-white">
-  <div class="flex min-h-screen w-full flex-col gap-5 lg:flex-row">
+  <div class="flex min-h-screen w-full flex-col gap-5 px-4 lg:flex-row lg:px-0">
     <div class="flex items-center justify-between gap-3 lg:hidden">
       <div>
-        <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Panel</p>
+        <p class="text-[11px] uppercase tracking-[0.3em] text-slate-500">Menu</p>
         <p class="text-lg font-semibold text-slate-900">Explorador</p>
       </div>
       <button
@@ -189,7 +189,10 @@
       </div>
       <div class="flex items-center justify-between gap-3 pl-2 pr-2">
         <div>
-          <p class="text-[11px] uppercase tracking-[0.3em] text-slate-200/80">Panel</p>
+          <p class="text-[11px] uppercase tracking-[0.3em] text-slate-200/80">
+            <span class="lg:hidden">Menu</span>
+            <span class="hidden lg:inline">Panel</span>
+          </p>
           <p class="text-lg font-semibold text-white">Explorador</p>
         </div>
         <button
