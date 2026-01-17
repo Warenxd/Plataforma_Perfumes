@@ -928,6 +928,9 @@
       if (status.page) {
         parts.push(`Página ${status.page}`);
       }
+      if (status.item) {
+        parts.push(status.item);
+      }
       if (status.url) {
         parts.push(status.url);
       }

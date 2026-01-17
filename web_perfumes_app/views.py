@@ -36,6 +36,7 @@ from .models import *
 def _descargar_imagen(url, timeout=(4, 8), max_bytes=3_000_000):
     if not url:
         return None
+    print(f"[IMG] Descargando: {url}")
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
@@ -392,6 +393,27 @@ _shared_driver = None
 _driver_instances_created = 0
 _driver_use_lock = threading.Lock()
 _driver_idle_timer = None
+_scrape_thread = None
+_scrape_lock = threading.Lock()
+
+
+def _run_scrape_async():
+    try:
+        resultados = scrapping_tiendas_perfumes()
+        state_final = "cancelled" if _is_refresh_cancelled("scraping") else "done"
+        _set_refresh_status("scraping", state=state_final, resultados=resultados, item=None)
+    except Exception as e:
+        _set_refresh_status("scraping", state="error", error=str(e))
+
+
+def _start_scrape_async():
+    global _scrape_thread
+    with _scrape_lock:
+        if _scrape_thread and _scrape_thread.is_alive():
+            return False
+        _scrape_thread = threading.Thread(target=_run_scrape_async, daemon=True)
+        _scrape_thread.start()
+        return True
 
 
 def _get_shared_driver():
@@ -1131,6 +1153,7 @@ def scrapping_silk_perfumes():
                     continue
 
                 nombre = title_el.get_text(strip=True)
+                _set_refresh_status("scraping", item=nombre)
 
                 # ===============================
                 # DETECCIÓN REAL DE AGOTADO (SHOPIFY)
@@ -1393,6 +1416,7 @@ def scrapping_yauras_perfumes():
                 nombre = link_el.get_text(strip=True)
                 if not nombre:
                     continue
+                _set_refresh_status("scraping", item=nombre)
 
                 generos_a_asignar = set(generos_categoria)
                 if "hombre" in url.lower() or "hombre" in nombre_categoria.lower():
@@ -1644,6 +1668,7 @@ def scrapping_joy_perfumes():
                 nombre = title_el.get_text(strip=True)
                 if not nombre:
                     continue
+                _set_refresh_status("scraping", item=nombre)
 
                 generos_a_asignar = set(categoria.get("generos_forzados", set()))
                 if "arabe" in categoria.get("path", ""):
@@ -2110,14 +2135,11 @@ def refrescar_perfumes(request):
             if etapa == "scraping":
                 _set_refresh_cancel("scraping", False)
                 _set_refresh_status("scraping", state="running")
-                resultados = scrapping_tiendas_perfumes()
-                state_final = "cancelled" if _is_refresh_cancelled("scraping") else "done"
-                _set_refresh_status("scraping", state=state_final)
                 return JsonResponse(
                     {
                         "ok": True,
                         "stage": "scraping",
-                        "resultados": resultados,
+                        "started": _start_scrape_async(),
                     }
                 )
             elif etapa == "cancel":
@@ -2138,14 +2160,13 @@ def refrescar_perfumes(request):
         except Exception as e:
             if etapa:
                 _set_refresh_status(etapa, state="error", error=str(e))
-            return JsonResponse({"ok": False, "error": str(e)}, status=500)
-
-    try:
+            return JsonResponse({"ok": False, "error": str(e)}, status=500)    try:
         _set_refresh_status("scraping", state="running")
-        resultados = scrapping_tiendas_perfumes()
-        _set_refresh_status("scraping", state="done")
-        mensajes_extra = f"Scraping completado. Creados: {resultados.get('creados', 0)}, actualizados: {resultados.get('actualizados', 0)}"
-        messages.success(request, f"Recarga completada. {mensajes_extra}")
+        started = _start_scrape_async()
+        if started:
+            messages.success(request, "Recarga iniciada. Puedes seguir el progreso en pantalla.")
+        else:
+            messages.info(request, "La recarga ya esta en curso.")
     except Exception as e:
         _set_refresh_status("scraping", state="error", error=str(e))
         messages.error(request, f"Ocurrió un problema al refrescar los perfumes: {e}")
