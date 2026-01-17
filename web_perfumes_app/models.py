@@ -49,7 +49,7 @@ class Perfume(models.Model):
         ('JOY', 'Joy Perfumes'),
     ]
 
-    nombre = models.CharField(max_length=150, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
+    nombre = models.CharField(max_length=250, blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
     precio = models.IntegerField(null=False, blank=False)
     precio_ant = models.IntegerField(null=True, blank=True)
     imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
