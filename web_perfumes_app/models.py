@@ -53,7 +53,7 @@ class Perfume(models.Model):
     nombre = models.TextField(blank=True, null=False) #Blank permite que el campo esté vacio, se usa cuando son campos opcionales
     precio = models.IntegerField(null=False, blank=False)
     precio_ant = models.IntegerField(null=True, blank=True)
-    imagen = models.ImageField(upload_to= 'perfumes/', null=True, blank=True)
+    imagen = models.ImageField(upload_to='perfumes/', null=True, blank=True, max_length=255)
     marca = models.ForeignKey('Marca', on_delete=models.SET_NULL, null=True, blank=True, related_name='perfumes') #Autor del perfume
     generos = models.ManyToManyField(Genero, related_name="perfumes", blank=True, null=True)
     tienda = models.CharField(max_length=250, choices=TIENDA_CHOICES, default='SILK')
