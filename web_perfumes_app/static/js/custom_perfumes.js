@@ -5,6 +5,10 @@
   const statusBox = document.getElementById("custom-perfume-status");
   const totalCounter = document.getElementById("total-perfumes-count");
   const gridContainer = document.getElementById("perfumes-grid");
+  const storeFiltersList = document.getElementById("store-filters-list");
+  const storeFiltersEmpty = document.getElementById("store-filters-empty");
+  const storeCountsWrapper = document.getElementById("store-counts-wrapper");
+  const storeCountsList = document.getElementById("store-counts-list");
   const getGridTop = () => document.getElementById("perfumes-grid-top");
   const getEmptyGridMessage = () =>
     '<p class="mt-4 text-gray-600 text-center">No hay perfumes en la base de datos.</p>';
@@ -119,6 +123,78 @@
     if (!totalCounter) return;
     const current = Number(totalCounter.textContent) || 0;
     totalCounter.textContent = Math.max(0, current + delta);
+  };
+
+  const updateStoreFilters = (stores) => {
+    if (!storeFiltersList) return;
+    const selected = new Set(
+      Array.from(document.querySelectorAll('input[name="tienda"]:checked')).map((el) => el.value)
+    );
+    storeFiltersList.innerHTML = "";
+    if (!Array.isArray(stores) || stores.length === 0) {
+      if (storeFiltersEmpty) {
+        storeFiltersEmpty.classList.remove("hidden");
+      } else {
+        storeFiltersList.innerHTML = '<p class="text-xs text-slate-300">No hay tiendas registradas.</p>';
+      }
+      return;
+    }
+    if (storeFiltersEmpty) {
+      storeFiltersEmpty.classList.add("hidden");
+    }
+    stores.forEach((store) => {
+      const code = store?.code || "";
+      if (!code) return;
+      const label = store?.label || code;
+      const wrapper = document.createElement("label");
+      wrapper.className =
+        "flex items-center justify-between gap-2 rounded-xl border border-[#1d2430] px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm transition hover:border-[#2a3342] hover:bg-[#121924]";
+      const text = document.createElement("span");
+      text.className = "truncate";
+      text.textContent = label;
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = "tienda";
+      input.value = code;
+      input.className =
+        "h-4 w-4 rounded border-slate-500 bg-white text-indigo-600 accent-indigo-500 focus:ring-2 focus:ring-indigo-300 focus:ring-offset-1 focus:ring-offset-slate-900 transition";
+      if (selected.has(code)) {
+        input.checked = true;
+      }
+      wrapper.append(text, input);
+      storeFiltersList.appendChild(wrapper);
+    });
+  };
+
+  const updateStoreCounts = (counts) => {
+    if (!storeCountsList) return;
+    storeCountsList.innerHTML = "";
+    if (!Array.isArray(counts) || counts.length === 0) {
+      if (storeCountsWrapper) {
+        storeCountsWrapper.classList.add("hidden");
+      }
+      return;
+    }
+    if (storeCountsWrapper) {
+      storeCountsWrapper.classList.remove("hidden");
+    }
+    counts.forEach((item) => {
+      const code = item?.code || "";
+      if (!code) return;
+      const label = item?.label || code;
+      const count = Number(item?.count) || 0;
+      const chip = document.createElement("span");
+      chip.className =
+        "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm";
+      const tag = document.createElement("span");
+      tag.className = "inline-flex items-center gap-1 rounded-full bg-slate-900 text-white px-2 py-0.5 text-[11px]";
+      tag.textContent = label;
+      const countEl = document.createElement("span");
+      countEl.dataset.storeCount = code;
+      countEl.textContent = count;
+      chip.append(tag, countEl);
+      storeCountsList.appendChild(chip);
+    });
   };
 
   const removeCardFromGrid = (id) => {
@@ -240,6 +316,12 @@
       }
       removeCardFromGrid(id);
       incrementTotalCounter(-1);
+      if (Array.isArray(json?.tiendas)) {
+        updateStoreFilters(json.tiendas);
+      }
+      if (Array.isArray(json?.tienda_counts)) {
+        updateStoreCounts(json.tienda_counts);
+      }
     } catch (error) {
       console.error(error);
       alert("Error al eliminar el perfume.");
@@ -370,10 +452,16 @@
         window.location.reload();
         return;
       }
-      if (!isEdit) {
-        incrementTotalCounter();
-      }
-      setTimeout(() => {
+		if (!isEdit) {
+			incrementTotalCounter();
+		}
+		if (Array.isArray(payload.tiendas)) {
+			updateStoreFilters(payload.tiendas);
+		}
+		if (Array.isArray(payload.tienda_counts)) {
+			updateStoreCounts(payload.tienda_counts);
+		}
+		setTimeout(() => {
         closeModal();
         setStatus("Perfume añadido con éxito.", false, true);
       }, 200);

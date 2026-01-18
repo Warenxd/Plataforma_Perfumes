@@ -352,7 +352,16 @@ def crear_perfume_custom(request):
                     pass
 
     card_html = render_to_string("components/perfume_card.html", {"p": perfume}, request=request)
-    return JsonResponse({"ok": True, "perfume_id": perfume.id, "card_html": card_html})
+    tienda_counts, tiendas = _build_tienda_filtros_data()
+    return JsonResponse(
+        {
+            "ok": True,
+            "perfume_id": perfume.id,
+            "card_html": card_html,
+            "tienda_counts": tienda_counts,
+            "tiendas": tiendas,
+        }
+    )
 
 
 def _probar_slug_fragrantica(nombre_perfume):
@@ -2178,6 +2187,24 @@ def sugerir_perfumes(request):
         )
     return JsonResponse({"results": data})
 
+def _build_tienda_filtros_data():
+    tienda_labels = dict(Perfume.TIENDA_CHOICES)
+    tienda_counts = [
+        {
+            "code": row["tienda"],
+            "label": tienda_labels.get(row["tienda"], row["tienda"]),
+            "count": row["count"] or 0,
+        }
+        for row in Perfume.objects.values("tienda").annotate(count=Count("id")).order_by("tienda")
+        if row.get("tienda")
+    ]
+    tiendas = [
+        {"code": code, "label": tienda_labels.get(code, code)}
+        for code in Perfume.objects.order_by("tienda").values_list("tienda", flat=True).distinct()
+        if code
+    ]
+    return tienda_counts, tiendas
+
 # RENDER DE VISTAS
 def home(request):
     _normalizar_marcas_existentes()
@@ -2324,23 +2351,9 @@ def home(request):
         print(f"[Home] {perfume.nombre}: {estaciones_info}")
 
     total_perfumes = len(perfumes_list) if list_mode else perfumes_list.count()
-    tienda_labels = dict(Perfume.TIENDA_CHOICES)
-    tienda_counts = [
-        {
-          "code": row["tienda"],
-          "label": tienda_labels.get(row["tienda"], row["tienda"]),
-          "count": row["count"] or 0,
-        }
-        for row in Perfume.objects.values("tienda").annotate(count=Count("id")).order_by("tienda")
-        if row.get("tienda")
-    ]
+    tienda_counts, tiendas = _build_tienda_filtros_data()
     marcas = Marca.objects.filter(perfumes__isnull=False).order_by("marca").distinct()
     generos = Genero.objects.filter(perfumes__isnull=False).order_by("nombre").distinct()
-    tiendas = [
-        {"code": code, "label": tienda_labels.get(code, code)}
-        for code in Perfume.objects.order_by("tienda").values_list("tienda", flat=True).distinct()
-        if code
-    ]
     estaciones_filtro = [
         {"slug": data["slug"], "label": data["label"]}
         for data in estaciones_slug_map.values()
@@ -2982,4 +2995,5 @@ def eliminar_perfume_custom(request, perfume_id):
     except Perfume.DoesNotExist:
         return JsonResponse({"ok": False, "error": "Perfume no encontrado o no es personalizado."}, status=404)
     perfume.delete()
-    return JsonResponse({"ok": True})
+    tienda_counts, tiendas = _build_tienda_filtros_data()
+    return JsonResponse({"ok": True, "tienda_counts": tienda_counts, "tiendas": tiendas})

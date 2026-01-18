@@ -4,7 +4,7 @@
   const filtersForm = document.getElementById("filters-form");
   const totalPerfumesCount = document.getElementById("total-perfumes-count");
   const customButton = document.getElementById("view-custom-perfumes");
-  const storeCountEls = document.querySelectorAll("[data-store-count]");
+  const getStoreCountEls = () => document.querySelectorAll("[data-store-count]");
   const supportsFetch = typeof window.fetch === "function";
   const filterConfigs = [
     {
@@ -467,6 +467,7 @@
     };
 
     const updateStoreCounts = (list) => {
+      const storeCountEls = getStoreCountEls();
       if (!storeCountEls || storeCountEls.length === 0 || !Array.isArray(list)) return;
       const map = new Map(list.map((item) => [String(item.code || ""), Number(item.count) || 0]));
       storeCountEls.forEach((el) => {
@@ -478,6 +479,7 @@
     };
 
     const readStoreCountsFromDom = () => {
+      const storeCountEls = getStoreCountEls();
       if (!storeCountEls || storeCountEls.length === 0) return [];
       return Array.from(storeCountEls)
         .map((el) => ({
