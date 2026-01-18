@@ -2155,21 +2155,17 @@ def sugerir_perfumes(request):
         perfumes_qs = perfumes_qs.filter(Q(nombre__icontains=palabra) | Q(marca__marca__icontains=palabra))
 
     tienda_map = dict(Perfume.TIENDA_CHOICES)
-    resultados = (
-        perfumes_qs.order_by("nombre")
-        .values("nombre", "marca__marca", "imagen", "tienda")
-        .distinct()[:12]
-    )
+    resultados = perfumes_qs.order_by("nombre").distinct()[:12]
     data = []
-    for r in resultados:
-        nombre = r.get("nombre")
+    for perfume in resultados:
+        nombre = perfume.nombre
         if not nombre:
             continue
-        marca = r.get("marca__marca") or ""
-        imagen = r.get("imagen") or ""
-        if imagen and not imagen.startswith("http"):
-            imagen = request.build_absolute_uri(f"{settings.MEDIA_URL}{imagen}")
-        tienda_code = r.get("tienda") or ""
+        marca = perfume.marca.marca if perfume.marca else ""
+        imagen = perfume.imagen.url if perfume.imagen else ""
+        if imagen and imagen.startswith("/"):
+            imagen = request.build_absolute_uri(imagen)
+        tienda_code = perfume.tienda or ""
         tienda_label = tienda_map.get(tienda_code, tienda_code)
         data.append(
             {
