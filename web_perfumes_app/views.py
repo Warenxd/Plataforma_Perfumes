@@ -86,6 +86,7 @@ MARCA_EQUIVALENCIAS = {
     "dolce & gabbana": "Dolce & Gabbana",
     "dolce & gabanna.": "Dolce & Gabbana",
     "dolce & gabanna": "Dolce & Gabbana",
+    "dolce&gabbana" : "Dolce & Gabbana",
     "boss": "Hugo Boss",
     "hugo boss": "Hugo Boss",
     "ysl": "Yves Saint Laurent",
