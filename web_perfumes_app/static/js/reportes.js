@@ -188,6 +188,16 @@ container.addEventListener("click", async (event) => {
 
     const newRoot = doc.querySelector("[data-reportes-root]");
     const currentRoot = container;
+    let needsReinit = false;
+
+    if (newRoot && currentRoot) {
+      const newSummary = newRoot.querySelector("[data-reportes-summary]");
+      const currentSummary = currentRoot.querySelector("[data-reportes-summary]");
+      if (newSummary && currentSummary) {
+        currentSummary.replaceWith(newSummary);
+        needsReinit = true;
+      }
+    }
 
     // 3️⃣ Reemplazar SOLO el mes afectado
     if (monthId && newRoot) {
@@ -201,6 +211,7 @@ container.addEventListener("click", async (event) => {
       // Si el mes aún existe → reemplazar
       if (newMonthCard && currentMonthCard) {
         currentMonthCard.replaceWith(newMonthCard);
+        needsReinit = true;
         initReportes(currentRoot);
         return;
       }
@@ -208,11 +219,19 @@ container.addEventListener("click", async (event) => {
       // Si el mes quedó vacío → eliminar card
       if (!newMonthCard && currentMonthCard) {
         currentMonthCard.remove();
+        if (needsReinit) {
+          initReportes(currentRoot);
+        }
         return;
       }
     }
 
     // 4️⃣ Fallback general (no debería pasar)
+    if (needsReinit) {
+      initReportes(currentRoot);
+      return;
+    }
+
     replaceContent(url.toString(), { method: "GET" });
 
   } catch (error) {
