@@ -2860,11 +2860,22 @@ def reportes(request):
     nombres_ventas = list(ventas_year.values_list("nombre", flat=True).distinct())
     imagen_map = {}
     if nombres_ventas:
-        for p in Perfume.objects.filter(nombre__in=nombres_ventas).values("nombre", "imagen"):
-            img = p.get("imagen") or ""
-            if img and not str(img).startswith("http"):
-                img = request.build_absolute_uri(f"{settings.MEDIA_URL}{img}")
-            imagen_map.setdefault(p["nombre"], img)
+        for p in Perfume.objects.filter(nombre__in=nombres_ventas).only("nombre", "imagen"):
+            img_url = ""
+            if p.imagen:
+                try:
+                    img_url = p.imagen.url
+                except Exception:
+                    img_name = p.imagen.name or ""
+                    if img_name:
+                        try:
+                            img_url = default_storage.url(img_name)
+                        except Exception:
+                            img_url = img_name
+            if img_url and img_url.startswith("/"):
+                img_url = request.build_absolute_uri(img_url)
+            if img_url:
+                imagen_map.setdefault(p.nombre, img_url)
 
     monthly_data = []
     for idx, month_name in enumerate(MESES_ES, start=1):
